@@ -2,9 +2,12 @@
 
 import sys
 import numpy as np
-from GeologicalModel3D import GeologicalModel
+from .GeologicalModel3D import GeologicalModel
 
 if __name__ == '__main__':
+    main()
+
+def main():
     lines = '';
     for line in sys.stdin:    
         lines += line;

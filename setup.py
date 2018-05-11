@@ -6,5 +6,10 @@ setup(
     description='A bridge between Gmlib and VK',
     packages=find_packages(exclude=['doc']),
     python_requires='>=3',
-    install_requires=['numpy']
+    install_requires=['numpy'],
+#    scripts=['GeoCruncher/main.py']
+    entry_points='''
+        [console_scripts]
+        geocruncher=geocruncher.main:main
+    ''',
 )
