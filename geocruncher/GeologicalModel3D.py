@@ -8,7 +8,7 @@ from collections import namedtuple
 import json
 import numpy as np
 import pypotential3D as pypotential
-import topography_reader
+from gmlib import topography_reader
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
