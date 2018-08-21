@@ -101,7 +101,7 @@ def extract_mnt(f, decimals=8):
 
 def sec_extract(sec):
     # Original code uses file, but for minimum changing we use StringIO
-    f = StringIO(sec)
+    f = open(sec)#Modified
     line = f.readline()
     while not line.startswith('Surfaces'):
         line = f.readline()

@@ -8,7 +8,7 @@ from collections import namedtuple
 import json
 import numpy as np
 import pypotential3D as pypotential
-from gmlib import topography_reader
+import topography_reader
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
@@ -79,7 +79,58 @@ class Pile:
         assert reference=='top' or reference=='base'
         self.reference = reference
         self.all_series = None
+        
+class Fault: # test de ma part echoué
 
+    @classmethod
+    def from_dict(cls, dct):
+        res.GCFiniteFault=FiniteFault.from_dict(dct)
+        res.GCFiniteFault=FiniteFault.from_dict(dct)
+
+        return res
+        
+    def __init__(self):
+        self.name = None
+        self.stops_on = None
+        self.potential_data = None
+        res.lateralExtent= None
+        res.verticalExtent= None
+        res.influenceRadius= None
+                             
+class FiniteFault: # test de ma part echoué
+
+    @classmethod
+    def from_dict(cls, dct):
+        res.name = dct['name']
+        res.stops_on = dct['stopsOn']
+        res.potential_data = PotentialData.from_dict(dct['potentialData'])
+        res.lateralExtent=dct['lateralExtent']
+        res.verticalExtent=dct['verticalExtent']
+        res.influenceRadius=dct['influenceRadius']
+        return res
+        
+    def __init__(self):
+        self.name = None
+        self.stops_on = None
+        self.potential_data = None
+        res.lateralExtent= None
+        res.verticalExtent= None
+        res.influenceRadius= None
+
+class InfiniteFault:# test de ma part echoué
+
+    @classmethod
+    def from_dict(cls, dct):
+        res = InfiniteFault(dct['name'])
+        res.stops_on = (dct['stopsOn'])
+        res.potential_data = PotentialData.from_dict(dct['potentialData'])
+        return res
+        
+    def __init__(self, name):
+        self.name = name
+        self.stops_on = None
+        self.potential_data = None
+        
 class CovarianceModel:
     @classmethod
     def from_dict(cls, dct):
@@ -188,7 +239,7 @@ class GeologicalModel:
         box['Zmax'] = dct['extent']['zMax']
 
         pile = Pile.from_dict(dct['pile'])
-        faults_data = {} # TODO: add support for fault data
+        faults_data = {} # Fault.from_dict(dct['pile']) test de ma part
         topography = topography_reader.sec_extract(dct['topography'])
         
         return GeologicalModel(box, pile, faults_data, topography)

@@ -1,57 +1,55 @@
 # -*- coding: utf-8 -*-
 
+from geomodeller_project import extract_project_data
 import sys
+import re
+import os
 import numpy as np
-#from .GeologicalModel3D import GeologicalModel
 
-def printStderr(msg):
-    sys.stderr.write(msg)
-    sys.stderr.flush()
+from GeologicalModel3D import GeologicalModel
+from ComputeIntersections import CrossSectionIntersections
+from ComputeIntersections import MapIntersections
 
-def main():
-    while True:
-        cmd = sys.stdin.readline().strip().split(" ")
-        if cmd[0] == 'SetProjectData':
-            xmlFile = cmd[1]
-            printStderr('Reading project XML data from ' + xmlFile + '\n')
-            # TODO
-        elif cmd[0] == "SetProjectDEM":
-            demFile = cmd[1]
-            printStderr('Setting DEM file to ' + demFile + '\n')
-            # TODO
-        elif cmd[0] == "ComputeImplicitModel":
-            printStderr('Computing implicit model ...')
-            # TODO
-        elif cmd[0] == "QueryBoundariesCrossSection":
-            printStderr("Query boundaries cross section ...")
-        elif cmd[0] == "Shutdown":
-            printStderr("Shutting down ...")
-            return
-        else:
-            printStderr('Invalid command\n')
+[box, pile, faults_data, topography, formation_colors]=extract_project_data(sys.argv[3])
+model = GeologicalModel(box, pile, faults_data, topography)
+box = model.getbox()
+os.remove(sys.argv[3])
 
-#    lines = '';
-#    for line in sys.stdin:    
-#        lines += line;
+nPoints=20
+if sys.argv[1] == 'crossSection':
+    numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])	
+    xCoord=[float(numberfromstring[0]),float(numberfromstring[1])]
+    yCoord=[float(numberfromstring[2]),float(numberfromstring[3])]
+    zCoord=[float(numberfromstring[4]),float(numberfromstring[5])]
+    imgSize=[float(numberfromstring[6]),float(numberfromstring[7])]          
+    (outputX, outputY, outputRank)=CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
+    output="{\"X\":" + outputX + ",\"Y\":" + outputY + ",\"Rank\":" + outputRank +"}"
+    sys.stdout.write(output)
+    sys.stdout.flush() 
 
-#    model = GeologicalModel.from_json(lines)
+if sys.argv[1] == "map":
+    xCoord=[box.xmin,box.xmax]
+    yCoord=[box.ymin,box.ymax]
+    (outputX, outputY, outputRank)=MapIntersections.output(xCoord,yCoord,nPoints,model,topography)
+    output="{\"X\":" + outputX + ",\"Y\":" + outputY + ",\"Rank\":" + outputRank +"}"
+    sys.stdout.write(output)
+    sys.stdout.flush() 
 
-    # stolen from test-GeologicalModel3D
-#    box = model.getbox()
-#    diagonal = np.array([box.xmax, box.ymax])
-#    origin = np.array([box.xmin, box.ymin])
-#    diagonal-= origin
-#    zmin, zmax = box.zmin, box.zmax
-
-#    nu, nz = 100, 100
-#    z, u = np.meshgrid(np.linspace(zmin, zmax, nz),
-#                       np.linspace(0, 1, nu))
-#    pts = np.hstack([origin + np.reshape(u, (-1, 1)) * diagonal,
-#                     np.reshape(z, (-1, 1))])
-#    ranks = np.array([model.rank(p) for p in pts])
-#    print(ranks[0], ranks[1], ranks[2], ranks[3])
-
-
-if __name__ == '__main__':
-    main()
-
+if sys.argv[1] == 'all':
+    numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])	
+    output="{"
+    sectionNumber=int(np.shape(numberfromstring)[0]/8)
+    for i in range(0, sectionNumber):
+        xCoord=[float(numberfromstring[0+i*8]),float(numberfromstring[1+i*8])]
+        yCoord=[float(numberfromstring[2+i*8]),float(numberfromstring[3+i*8])]
+        zCoord=[float(numberfromstring[4+i*8]),float(numberfromstring[5+i*8])]
+        imgSize=[float(numberfromstring[6+i*8]),float(numberfromstring[7+i*8])]          
+        (outputX, outputY, outputRank)=CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
+        output=output+"\"CrossSection" +str(i) + "\":" + " {\"X\":" + outputX + ",\"Y\":" + outputY + ",\"Rank\":" + outputRank +"}"+","
+    xCoord=[box.xmin,box.xmax]
+    yCoord=[box.ymin,box.ymax]
+    (outputX, outputY, outputRank)=MapIntersections.output(xCoord,yCoord,nPoints,model,topography)
+    output=output+"\"Map\":" +  " {\"X\":" + outputX + ",\"Y\":" + outputY + ",\"Rank\":" + outputRank +"}"
+    output=output+"}"
+    sys.stdout.write(output)
+    sys.stdout.flush() 
