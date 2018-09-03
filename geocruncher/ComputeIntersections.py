@@ -11,7 +11,7 @@ class MapIntersections:
             y0=yCoord[0]
             xBoundaryList=np.array([])
             yBoundaryList=np.array([])
-            ranksBeforeList=np.array([])
+            ranksAfterList=np.array([])
             for i in range(0, nPoints):
                 u=0
                 x=xMapRange[i]
@@ -24,10 +24,10 @@ class MapIntersections:
                         xBoundary=xMapRange[i]
                         xBoundaryList=np.append(xBoundaryList, xBoundary)
                         yBoundaryList=np.append(yBoundaryList, round(yBoundary))
-                        ranksBeforeList=np.append(ranksBeforeList,round(ranksBefore))
+                        ranksAfterList=np.append(ranksAfterList,round(ranksAfter))
 
            
-            return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksBeforeList.astype(int), precision=0, separator=',',suppress_small=True))
+            return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksAfterList.astype(int), precision=0, separator=',',suppress_small=True))
             
     def bijection(x,y1,y2,topography,imgSize,model):
         while (abs(y1-y2)>(imgSize/10000)):
@@ -46,16 +46,16 @@ class CrossSectionIntersections:
             slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
             np.set_printoptions(suppress=True)
             np.set_printoptions(threshold=np.nan)
-            xImgRange=np.linspace(imgSize[1],0,nPoints)
+            xImgRange=np.linspace(0,imgSize[1],nPoints)
             yImgRange=np.linspace(0,imgSize[0],nPoints)
             nPointsZ=nPoints
-            xCrossSectionRange=np.linspace(xCoord[1],xCoord[0],nPoints)
+            xCrossSectionRange=np.linspace(xCoord[0],xCoord[1],nPoints)
             zCrossSectionRange=np.linspace(zCoord[0],zCoord[1],nPointsZ)
             x0=xCoord[0]
             y0=yCoord[0]
             xBoundaryList=np.array([])
             yBoundaryList=np.array([])
-            ranksBeforeList=np.array([])
+            ranksAfterList=np.array([])
             data=np.array([[0],[0],[0, 0, 0]])
             
             for i in range(0, nPoints):
@@ -71,8 +71,8 @@ class CrossSectionIntersections:
                         xBoundary=xImgRange[i]
                         xBoundaryList=np.append(xBoundaryList, xBoundary)
                         yBoundaryList=np.append(yBoundaryList, yBoundary)
-                        ranksBeforeList=np.append(ranksBeforeList,ranksBefore)                    
-            return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksBeforeList.astype(int), precision=0, separator=',',suppress_small=True))
+                        ranksAfterList=np.append(ranksAfterList,ranksAfter)                    
+            return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksAfterList.astype(int), precision=0, separator=',',suppress_small=True))
 
             
     def bijection(x,y,z1,z2,imgSize,model):

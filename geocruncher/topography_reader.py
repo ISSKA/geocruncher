@@ -7,6 +7,7 @@
 import os
 import numpy as np
 from io import StringIO
+import re
 
 class ImplicitHorizontalPlane:
 
@@ -99,6 +100,36 @@ def extract_mnt(f, decimals=8):
     xmin, ymin = x.min(), y.min()
     return (xmin, ymin), (float(dx), float(dy)), z
 
+def extract_mnt_txt(f,xRange,yRange, decimals=8):
+    # we already have read the code character (first character on the line)
+    l = f.readline().strip().split()
+    print("l")
+    print(l)
+    #nx, ny = (int(s) for s in l[6:8])
+    #assert int(l[8]) + 2 == nx and int(l[9]) + 2 == ny
+    zmap = []
+    #line = l[10:]
+    line = l
+    print(np.shape(l))
+    dbvdfb
+    while line:
+        zmap.append(np.array([float(s) for s in line]))
+        line = f.readline().strip().split()
+    zmap = np.array(zmap)
+    print(zmap)
+    x, y, z = (zmap[:, k::3] for k in range(3))
+    def clean(a):
+        a = np.delete(a, [1, nx-2], axis=0)
+        a = np.delete(a, [1, ny-2], axis=1)
+        return a
+    x, y, z = (clean(a) for a in (x, y, z))
+    dx = np.unique(np.round(x[1:,:] - x[:-1, :], decimals))
+    assert dx.shape==(1,)
+    dy = np.unique(np.round(y[:,1:] - y[:, :-1], decimals))
+    assert dy.shape==(1,)
+    xmin, ymin = x.min(), y.min()
+    return (xmin, ymin), (float(dx), float(dy)), z
+    
 def sec_extract(sec):
     # Original code uses file, but for minimum changing we use StringIO
     f = open(sec)#Modified
@@ -112,3 +143,26 @@ def sec_extract(sec):
         return ImplicitHorizontalPlane(point[2])
     elif code==9:
         return ImplicitDTM(*extract_mnt(f))
+        
+def txt_extract(file):
+    # Original code uses file, but for minimum changing we use StringIO
+    
+    f = open(file)#Modified
+    ncols =float(re.findall(r"\d+",f.readline())[0])
+    nrows =float(re.findall(r"\d+",f.readline())[0])
+    xllcorner =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    yllcorner =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    cellsize =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    f.readline()
+    zmap = []
+    line = f.readline().strip().split()
+    while line:
+        reversed_arr = np.array([float(s) for s in line])
+        zmap.append(reversed_arr)
+        line = f.readline().strip().split()
+    zmap = np.array(zmap[::-1])
+    xRange=np.linspace(xllcorner,xllcorner+cellsize*(ncols),ncols+1)
+    yRange=np.linspace(yllcorner,yllcorner+cellsize*(nrows),nrows+1)
+
+
+    return ImplicitDTM((xllcorner, yllcorner), (float(cellsize), float(cellsize)), zmap.transpose())
