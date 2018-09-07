@@ -187,10 +187,8 @@ def extract_project_data_noTopography(filepath):
     box = read_box(root, ns)
     faults_data = read_faults_data(root, ns)
     pile = read_pile(root, ns)
-    #name, filename = read_topography_info(root, ns)
     project_directory = os.path.split(filepath)[0]
-    formation_colors = read_formation_colors(root, ns)
-    return box, pile, faults_data, formation_colors
+    return box, pile, faults_data
     
 def make_center(aSerie,xmin,xmax,ymin,ymax,zmin,zmax):
     cx = (xmin+xmax)/2
