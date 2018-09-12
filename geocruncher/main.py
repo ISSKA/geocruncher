@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 #from .GeologicalModel3D import GeologicalModel
+import gmlib.GeologicalModel3D
 
 def printStderr(msg):
     sys.stderr.write(msg)
