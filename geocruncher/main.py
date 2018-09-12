@@ -19,7 +19,7 @@ if __name__ == '__main__':
     box = model.getbox()
 
     if sys.argv[1] == 'crossSection':
-        nPoints=60
+        nPoints=50
         numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
         xCoord=[float(numberfromstring[0]),float(numberfromstring[1])]
         yCoord=[float(numberfromstring[2]),float(numberfromstring[3])]
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         sys.stdout.flush()
     
     if sys.argv[1] == "map":
-        nPoints=65
+        nPoints=50
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
         (outputX, outputY, outputRank) = MapIntersections.output(xCoord,yCoord,nPoints,model,topography)
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         sys.stdout.flush()
     
     if sys.argv[1] == 'all':
-        nPoints=20
+        nPoints=15
         numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
         output="{"
         sectionNumber=int(np.shape(numberfromstring)[0]/8)

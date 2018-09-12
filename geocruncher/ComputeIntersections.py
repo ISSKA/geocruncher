@@ -19,7 +19,7 @@ class MapIntersections:
                     else:
                         y2=yMid
                 # transformation between real coordinates and image coordinates
-                return(yCoord[1]-yMid+yCoord[0])
+                return(yMid)
             else:
                 return(-1)
                 
@@ -36,7 +36,7 @@ class MapIntersections:
                 
         #x,y,z Coordinates expressed in real coordinates
         xMapRange=np.linspace(xCoord[0],xCoord[1],nPoints)
-        yMapRange=np.linspace(yCoord[1],yCoord[0],nPoints*zInterpFactor)
+        yMapRange=np.linspace(yCoord[0],yCoord[1],nPoints*zInterpFactor)
         
         #x,y interpolation points + list of ranks
         xInterp= np.repeat([xMapRange], [nPoints*zInterpFactor], axis=0).transpose()
