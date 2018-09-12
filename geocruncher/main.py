@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+"""
+GeoCruncher main entry point
+
+GeoCruncher is a simple interface to GmLib, computing cross sections or 3D meshes for a project.
+
+Commands are passed as arguments to this script and are space separated.
+
+Commands:
+    geocruncher project_file.xml dem_file.bin
+
+
+"""
 
 import topography_reader
 from geomodeller_project import extract_project_data_noTopography
