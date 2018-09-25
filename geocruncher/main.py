@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import topography_reader
 from geomodeller_project import extract_project_data_noTopography
 import sys
@@ -58,4 +56,4 @@ if __name__ == '__main__':
         output = "%(output)s\"Map\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}}" % locals() #for optimisation
         sys.stdout.write(output)
         sys.stdout.flush()
-    
+ 
