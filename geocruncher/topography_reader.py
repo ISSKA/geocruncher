@@ -6,7 +6,6 @@
 
 import os
 import numpy as np
-from io import StringIO
 import re
 
 class ImplicitHorizontalPlane:
@@ -100,50 +99,21 @@ def extract_mnt(f, decimals=8):
     xmin, ymin = x.min(), y.min()
     return (xmin, ymin), (float(dx), float(dy)), z
 
-def extract_mnt_txt(f,xRange,yRange, decimals=8):
-    # we already have read the code character (first character on the line)
-    l = f.readline().strip().split()
-    print("l")
-    print(l)
-    #nx, ny = (int(s) for s in l[6:8])
-    #assert int(l[8]) + 2 == nx and int(l[9]) + 2 == ny
-    zmap = []
-    #line = l[10:]
-    line = l
-    print(np.shape(l))
-    dbvdfb
-    while line:
-        zmap.append(np.array([float(s) for s in line]))
-        line = f.readline().strip().split()
-    zmap = np.array(zmap)
-    print(zmap)
-    x, y, z = (zmap[:, k::3] for k in range(3))
-    def clean(a):
-        a = np.delete(a, [1, nx-2], axis=0)
-        a = np.delete(a, [1, ny-2], axis=1)
-        return a
-    x, y, z = (clean(a) for a in (x, y, z))
-    dx = np.unique(np.round(x[1:,:] - x[:-1, :], decimals))
-    assert dx.shape==(1,)
-    dy = np.unique(np.round(y[:,1:] - y[:, :-1], decimals))
-    assert dy.shape==(1,)
-    xmin, ymin = x.min(), y.min()
-    return (xmin, ymin), (float(dx), float(dy)), z
+def sec_extract(filename):
+    if os.path.exists(filename):
+        with open(filename) as f:
+            line = f.readline()
+            while not line.startswith('Surfaces'):
+                line = f.readline()
+            code = int(f.read(1))
+            if code==1:
+                point, normal = extract_plane(f)
+                assert normal[0] == 0 and normal[1]==0
+                return ImplicitHorizontalPlane(point[2])
+            elif code==9:
+                return ImplicitDTM(*extract_mnt(f))
+    raise IOError(filename + ' not found')
     
-def sec_extract(sec):
-    # Original code uses file, but for minimum changing we use StringIO
-    f = open(sec)#Modified
-    line = f.readline()
-    while not line.startswith('Surfaces'):
-        line = f.readline()
-    code = int(f.read(1))
-    if code==1:
-        point, normal = extract_plane(f)
-        assert normal[0] == 0 and normal[1]==0
-        return ImplicitHorizontalPlane(point[2])
-    elif code==9:
-        return ImplicitDTM(*extract_mnt(f))
-        
 def txt_extract(file):
     # Original code uses file, but for minimum changing we use StringIO
     
@@ -166,3 +136,29 @@ def txt_extract(file):
 
 
     return ImplicitDTM((xllcorner, yllcorner), (float(cellsize), float(cellsize)), zmap.transpose())
+
+if __name__=='__main__':
+    from matplotlib import pyplot as plt
+    zmap = np.array([[0, 1],
+                     [0, 2]])
+    origin = (1, 1)
+    steps = (2, 2)
+    dtm = ImplicitDTM(origin, steps, zmap)
+    nx, ny = 20, 20
+    xmin, xmax = 0, 4
+    ymin, ymax = 0, 4
+    xy = np.meshgrid(np.linspace(xmin, xmax, nx), np.linspace(ymin, ymax, ny))
+    x, y = (a.ravel() for a in xy)
+    z = np.array([dtm.evaluate_z((xi, yi)) for xi, yi in zip(x, y)])
+    z.shape = nx, ny
+    plt.gca().set_aspect('equal')
+    box = (xmin, xmax, ymin, ymax)
+    plt.imshow(np.transpose(z)[::-1], extent=box)
+    O = origin
+    d = steps
+    cell = np.array([ O,
+            (O[0]+d[0], O[0]),
+            (O[0]+d[0], O[0]+d[1]),
+            (O[0], O[0]+d[1]),
+            O])
+    plt.plot(cell[:, 0], cell[:, 1], 'r')

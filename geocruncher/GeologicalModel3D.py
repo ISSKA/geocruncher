@@ -5,16 +5,17 @@
 #
 
 from collections import namedtuple
-import json
 import numpy as np
-import pypotential3D as pypotential
+import yaml
+
+import gmlib.pypotential3D as pypotential
+from gmlib import geomodeller_data
+#from gmlib import geomodeller_project
+from geomodeller_project import extract_project_data_noTopography
 import topography_reader
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
-
-GradientData = namedtuple('GradientData', ['locations', 'values'])
-
 
 def covariance_data(potdata):
     covmodel = potdata.covariance_model
@@ -78,6 +79,7 @@ def point_between(p1, p2, field, v, precision=0.01):
          return None
     return None
 
+
 def distance(p1,p2):
     x = p1[0]-p2[0]
     y = p1[1]-p2[1]
@@ -85,24 +87,36 @@ def distance(p1,p2):
     dist = np.sqrt(x**2 + y**2 +z**2)
     return dist
 
+
+def extract_data_from_legacy_geomodeller_file(filename):
+    return extract_project_data_noTopography(filename)
+
+
 class GeologicalModel:
 
-    @classmethod
-    def from_geomodeller_project(cls, filename):
-        print('Loading model from:', filename)
-        box, pile, faults_data, topography = geomodeller_project.extract_project_data(filename)
-        return cls(box, pile, faults_data, topography)
-    
-
-    def __init__(self, box, pile, faults_data, topography):
+    def __init__(self, filename,  topography_filename, convert_to_yaml=None):
+        if filename.endswith('.xml'):
+            data = extract_data_from_legacy_geomodeller_file(filename)
+            topography=topography_reader.txt_extract(topography_filename)
+            if convert_to_yaml is not None:
+                with open(convert_to_yaml, 'w') as f:
+                    print(yaml.dump(data), file=f)
+        elif filename.endswith('.yaml'):
+            with open(filename) as f:
+                data = yaml.load(f)
+        else:
+            raise IOError("Unknown file extension.")        
+        #box, pile, faults_data, topography, formation_colors = data
+        box, pile, faults_data = data
         self.box = box
         self.pile = pile
         self.faults_data = faults_data
         self.topography = topography
+        #self.formation_colors = formation_colors
         faults = {}
         fault_drifts = {}
-
         for name, data in faults_data.items():
+#            print('\tbuilding fault:', name)
             potdata = data.potential_data
             field = pypotential.potential_field(
                    covariance_data(potdata),
@@ -112,25 +126,24 @@ class GeologicalModel:
             fault = pypotential.Fault(field)
             faults[name] = fault
             fault_drifts[name] = pypotential.make_drift(fault)
-
         fields=[]
         values = []
         relations = []
         for serie in pile.all_series:
+#            print('\tbuilding serie:', serie.name)
             potdata = serie.potential_data
             if potdata:
                drifts = drift_basis(potdata)
                if serie.influenced_by_fault:
                    for name in serie.influenced_by_fault:
                        drifts.append(fault_drifts[name])
-
                field = pypotential.potential_field(
                          covariance_data(potdata),
                          gradient_data(potdata),
                          interface_data(potdata),
                          drifts)
-
                for interface in potdata.interfaces:
+                  #print("values on interface:", field(interface))
                   values.append(np.mean(field(interface)))
                   fields.append(field)
                   relations.append(serie.relation)
@@ -139,7 +152,6 @@ class GeologicalModel:
         self.relations = relations
         self.faults = faults
         self.fault_drifts = fault_drifts
-
 
     def nbformations(self):
         n = len(self.fields) + 1
@@ -237,3 +249,10 @@ class GeologicalModel:
                if (Ri == 'erode') :
                   break
         return True
+    
+    def rank_colors(self):
+        result = [None, ]
+        for serie in self.pile.all_series:
+            for formation in serie.formations:
+                result.append(self.formation_colors[formation])
+        return result
