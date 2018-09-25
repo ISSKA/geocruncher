@@ -1,3 +1,5 @@
-with import <nixpkgs> {};
+{ nixpkgs ? (import <nixpkgs> {}), gmlib ? (nixpkgs.callPackage ../viskar-ops/packages/gmlib.nix {}) }:
 
-(python36.withPackages (ps: with ps; [ numpy pytest ])).env
+with nixpkgs;
+
+(python36.withPackages (ps: with ps; [ numpy pytest gmlib ])).env
