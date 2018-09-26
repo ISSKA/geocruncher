@@ -19,13 +19,14 @@ if __name__ == '__main__':
     model = GeologicalModel(sys.argv[3],sys.argv[4])
     box = model.getbox()
     
-    with open(sys.argv[2]) as f:
-        data = json.load(f)
+
     if sys.argv[1] == 'crossSection':
+        with open(sys.argv[2]) as f:
+            data = json.load(f)
         nPoints=60
-        xCoord=[data[0]["lowerLeft"]["x"],data[0]["upperRight"]["x"]]
-        yCoord=[data[0]["lowerLeft"]["y"],data[0]["upperRight"]["y"]]
-        zCoord=[data[0]["lowerLeft"]["z"],data[0]["upperRight"]["z"]]
+        xCoord=[data["lowerLeft"]["x"],data["upperRight"]["x"]]
+        yCoord=[data["lowerLeft"]["y"],data["upperRight"]["y"]]
+        zCoord=[data["lowerLeft"]["z"],data["upperRight"]["z"]]
         imgSize=[10000,10000]#hardcoded for now   
         (outputX, outputY, outputRank) = CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
         output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
@@ -42,6 +43,8 @@ if __name__ == '__main__':
         sys.stdout.flush()
     
     if sys.argv[1] == 'all':
+        with open(sys.argv[2]) as f:
+            data = json.load(f)
         nPoints=30
         numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
         output="{"
