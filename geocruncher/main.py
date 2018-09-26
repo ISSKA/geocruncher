@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import topography_reader
 from geomodeller_project import extract_project_data_noTopography
 import sys
@@ -7,6 +9,8 @@ import numpy as np
 from GeologicalModel3D import GeologicalModel
 from ComputeIntersections import CrossSectionIntersections
 from ComputeIntersections import MapIntersections
+import json
+from pprint import pprint
 
 
 if __name__ == '__main__':
@@ -14,14 +18,15 @@ if __name__ == '__main__':
     #[box, pile, faults_data]=extract_project_data_noTopography(sys.argv[3])
     model = GeologicalModel(sys.argv[3],sys.argv[4])
     box = model.getbox()
-
+    
+    with open(sys.argv[2]) as f:
+        data = json.load(f)
     if sys.argv[1] == 'crossSection':
         nPoints=60
-        numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
-        xCoord=[float(numberfromstring[0]),float(numberfromstring[1])]
-        yCoord=[float(numberfromstring[2]),float(numberfromstring[3])]
-        zCoord=[float(numberfromstring[4]),float(numberfromstring[5])]
-        imgSize=[float(numberfromstring[6]),float(numberfromstring[7])]          
+        xCoord=[data[0]["lowerLeft"]["x"],data[0]["upperRight"]["x"]]
+        yCoord=[data[0]["lowerLeft"]["y"],data[0]["upperRight"]["y"]]
+        zCoord=[data[0]["lowerLeft"]["z"],data[0]["upperRight"]["z"]]
+        imgSize=[10000,10000]#hardcoded for now   
         (outputX, outputY, outputRank) = CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
         output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
         sys.stdout.write(output)
@@ -40,14 +45,15 @@ if __name__ == '__main__':
         nPoints=30
         numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
         output="{"
-        sectionNumber=int(np.shape(numberfromstring)[0]/8)
-        for i in range(0, sectionNumber):
-            xCoord=[float(numberfromstring[0+i*8]),float(numberfromstring[1+i*8])]
-            yCoord=[float(numberfromstring[2+i*8]),float(numberfromstring[3+i*8])]
-            zCoord=[float(numberfromstring[4+i*8]),float(numberfromstring[5+i*8])]
-            imgSize=[float(numberfromstring[6+i*8]),float(numberfromstring[7+i*8])]          
+        i=0
+        for i in range(0, len(data)):
+            xCoord=[data[i]["lowerLeft"]["x"],data[i]["upperRight"]["x"]]
+            yCoord=[data[i]["lowerLeft"]["y"],data[i]["upperRight"]["y"]]
+            zCoord=[data[i]["lowerLeft"]["z"],data[i]["upperRight"]["z"]]
+            imgSize=[10000,10000]#hardcoded for now          
             (outputX, outputY, outputRank)=CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
             index=str(i)
+            i=i+1
             output = "%(output)s\"CrossSection%(index)s\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}," % locals()
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
@@ -56,4 +62,4 @@ if __name__ == '__main__':
         output = "%(output)s\"Map\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}}" % locals() #for optimisation
         sys.stdout.write(output)
         sys.stdout.flush()
- 
+    
