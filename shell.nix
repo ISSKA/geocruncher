@@ -2,4 +2,4 @@
 
 with nixpkgs;
 
-(python36.withPackages (ps: with ps; [ numpy pytest gmlib ])).env
+(python36.withPackages (ps: with ps; [ numpy pytest gmlib pytest pytestrunner ])).env
