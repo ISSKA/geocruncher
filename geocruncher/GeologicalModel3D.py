@@ -3,6 +3,7 @@
 # This file is part of gmlib. It is free software.
 # You can redistribute it and/or modify it under the terms of the GNU Affero General Public License version 3.
 #
+# !!!This file have been modified to fit in GeoCruncher which is part of visualKarsys, all comment regarding modifications from gmlib are signaled by these triple exclamation points!!!
 
 from collections import namedtuple
 import numpy as np
@@ -10,9 +11,12 @@ import yaml
 
 import gmlib.pypotential3D as pypotential
 from gmlib import geomodeller_data
+from geomodeller_project import extract_project_data_noTopography
+
+# !!!A custom topography_reader file is used in place of the gmlib topography_reader file!!!
+import topography_reader 
 #from gmlib import geomodeller_project
-from .geomodeller_project import extract_project_data_noTopography
-from . import topography_reader
+
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
@@ -87,7 +91,7 @@ def distance(p1,p2):
     dist = np.sqrt(x**2 + y**2 +z**2)
     return dist
 
-
+# !!!The noTopography version is created by us to read from different files!!!
 def extract_data_from_legacy_geomodeller_file(filename):
     return extract_project_data_noTopography(filename)
 
@@ -97,6 +101,7 @@ class GeologicalModel:
     def __init__(self, filename,  topography_filename, convert_to_yaml=None):
         if filename.endswith('.xml'):
             data = extract_data_from_legacy_geomodeller_file(filename)
+            # !!!The topography is read separately from the other datas right!!!
             topography=topography_reader.txt_extract(topography_filename)
             if convert_to_yaml is not None:
                 with open(convert_to_yaml, 'w') as f:
@@ -105,18 +110,18 @@ class GeologicalModel:
             with open(filename) as f:
                 data = yaml.load(f)
         else:
-            raise IOError("Unknown file extension.")        
+            raise IOError("Unknown file extension.")    
+        # !!!In this version we do not needto read either topography or formation colors from data, also all print have been delete to not interfere with the real response!!!
         #box, pile, faults_data, topography, formation_colors = data
+        #self.formation_colors = formation_colors
         box, pile, faults_data = data
         self.box = box
         self.pile = pile
         self.faults_data = faults_data
         self.topography = topography
-        #self.formation_colors = formation_colors
         faults = {}
         fault_drifts = {}
         for name, data in faults_data.items():
-#            print('\tbuilding fault:', name)
             potdata = data.potential_data
             field = pypotential.potential_field(
                    covariance_data(potdata),
@@ -130,7 +135,6 @@ class GeologicalModel:
         values = []
         relations = []
         for serie in pile.all_series:
-#            print('\tbuilding serie:', serie.name)
             potdata = serie.potential_data
             if potdata:
                drifts = drift_basis(potdata)
@@ -143,7 +147,6 @@ class GeologicalModel:
                          interface_data(potdata),
                          drifts)
                for interface in potdata.interfaces:
-                  #print("values on interface:", field(interface))
                   values.append(np.mean(field(interface)))
                   fields.append(field)
                   relations.append(serie.relation)
