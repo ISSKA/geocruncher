@@ -3,101 +3,23 @@
 # This file is part of gmlib. It is free software.
 # You can redistribute it and/or modify it under the terms of the GNU Affero General Public License version 3.
 #
+# !!!This file have been modified to fit in GeoCruncher which is part of visualKarsys, all comment regarding modifications from gmlib are signaled by these triple exclamation points!!!
 
 from collections import namedtuple
-import json
 import numpy as np
-import pypotential3D as pypotential
-from gmlib import topography_reader
+import yaml
+
+import gmlib.pypotential3D as pypotential
+from gmlib import geomodeller_data
+from geomodeller_project import extract_project_data_noTopography
+
+# !!!A custom topography_reader file is used in place of the gmlib topography_reader file!!!
+import topography_reader 
+#from gmlib import geomodeller_project
+
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
-
-GradientData = namedtuple('GradientData', ['locations', 'values'])
-class PotentialData:
-    @classmethod
-    def from_dict(cls, dct):
-        # Interface stuff memo
-        # input: 'interfaces': [{'points': [{'x': 0.0, 'y': 0.0, 'z': 0.0}, {'x': 1.0, 'y': 1.0, 'z': 1.0}]}],
-        # output: [array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])]
-        
-        def vec_to_list(vec):
-            return [vec['x'], vec['y'], vec['z']]
-
-        # The original code seems to assume that the points are a numpy array, but the list of points as a normal list/array
-        def points_to_array(points):
-            return np.array([vec_to_list(v) for v in points], dtype=np.double)
-
-        def gradiant_data(gds):
-            locations = []
-            values = []
-            for gd in gds:
-                locations += gd['position']['x'], gd['position']['y'], gd['position']['z']
-                values += gd['value']['x'], gd['value']['y'], gd['value']['z']
-                
-            return GradientData(
-                np.array(locations, dtype=np.double),
-                np.array(values, dtype=np.double)
-            )
-        
-        return PotentialData(
-            CovarianceModel.from_dict(dct['covarianceModel']),
-            gradiant_data(dct['gradients']),
-            [points_to_array(x['points']) for x in dct['interfaces']]
-        )
-
-    def __init__(self, covariance_model, gradients, interfaces):
-        self.covariance_model = covariance_model
-        self.gradients = gradients
-        self.interfaces = interfaces
-
-class SeriesData:
-    @classmethod
-    def from_dict(cls, dct):
-        res = SeriesData(dct['name'])
-        res.formations = dct['formations']
-        res.relation = list(dct['relation'].keys())[0].lower()
-        res.influenced_by_fault = dct['influencedByFaults']
-        res.potential_data = PotentialData.from_dict(dct['potentialData'])
-        return res
-
-    def __init__(self, name):
-        self.name = name
-        self.formations = None
-        self.relation = None
-        self.influenced_by_fault = None
-        self.potential_data = None
-
-class Pile:
-    @classmethod
-    def from_dict(cls, dct):
-        res = SeriesData(list(dct['reference'].keys())[0].lower())
-        res.all_series = [SeriesData.from_dict(x) for x in dct['series']]
-        return res
-        
-    def __init__(self, reference):
-        assert reference=='top' or reference=='base'
-        self.reference = reference
-        self.all_series = None
-
-class CovarianceModel:
-    @classmethod
-    def from_dict(cls, dct):
-        res = CovarianceModel()
-        res.anisotropy_angles = np.array([dct['anisotropy']['a1'], dct['anisotropy']['a2'], dct['anisotropy']['a3']])
-        res.anisotropy_values = np.array([dct['anisotropy']['v1'], dct['anisotropy']['v2'], dct['anisotropy']['v3']])
-        res.covariance_model = list(dct['covarianceModel'].keys())[0].lower()
-        if res.covariance_model == 'cubic':
-            res.covariance_model = 'cubique' # -_-'
-
-        res.drift_order = dct['degreeDrift']
-        res.isotropic = dct['isIsotropic']
-        res.gradient_nugget = dct['nuggetGradient']
-        res.gradient_variance = dct['gradient']
-        res.range = dct['range']
-        res.potential_nugget = dct['nuggetPotential']
-        res.tangent_variance = dct['tangentVariance']
-        return res
 
 def covariance_data(potdata):
     covmodel = potdata.covariance_model
@@ -161,6 +83,7 @@ def point_between(p1, p2, field, v, precision=0.01):
          return None
     return None
 
+
 def distance(p1,p2):
     x = p1[0]-p2[0]
     y = p1[1]-p2[1]
@@ -168,39 +91,36 @@ def distance(p1,p2):
     dist = np.sqrt(x**2 + y**2 +z**2)
     return dist
 
+# !!!The noTopography version is created by us to read from different files!!!
+def extract_data_from_legacy_geomodeller_file(filename):
+    return extract_project_data_noTopography(filename)
+
+
 class GeologicalModel:
 
-    @classmethod
-    def from_geomodeller_project(cls, filename):
-        print('Loading model from:', filename)
-        box, pile, faults_data, topography = geomodeller_project.extract_project_data(filename)
-        return cls(box, pile, faults_data, topography)
-
-    @classmethod
-    def from_json(cls, json_str):
-        dct = json.loads(json_str)
-        box = {}
-        box['Xmin'] = dct['extent']['xMin']
-        box['Xmax'] = dct['extent']['xMax']
-        box['Ymin'] = dct['extent']['yMin']
-        box['Ymax'] = dct['extent']['yMax']
-        box['Zmin'] = dct['extent']['zMin']
-        box['Zmax'] = dct['extent']['zMax']
-
-        pile = Pile.from_dict(dct['pile'])
-        faults_data = {} # TODO: add support for fault data
-        topography = topography_reader.sec_extract(dct['topography'])
-        
-        return GeologicalModel(box, pile, faults_data, topography)
-
-    def __init__(self, box, pile, faults_data, topography):
+    def __init__(self, filename,  topography_filename, convert_to_yaml=None):
+        if filename.endswith('.xml'):
+            data = extract_data_from_legacy_geomodeller_file(filename)
+            # !!!The topography is read separately from the other datas right!!!
+            topography=topography_reader.txt_extract(topography_filename)
+            if convert_to_yaml is not None:
+                with open(convert_to_yaml, 'w') as f:
+                    print(yaml.dump(data), file=f)
+        elif filename.endswith('.yaml'):
+            with open(filename) as f:
+                data = yaml.load(f)
+        else:
+            raise IOError("Unknown file extension.")    
+        # !!!In this version we do not needto read either topography or formation colors from data, also all print have been delete to not interfere with the real response!!!
+        #box, pile, faults_data, topography, formation_colors = data
+        #self.formation_colors = formation_colors
+        box, pile, faults_data = data
         self.box = box
         self.pile = pile
         self.faults_data = faults_data
         self.topography = topography
         faults = {}
         fault_drifts = {}
-
         for name, data in faults_data.items():
             potdata = data.potential_data
             field = pypotential.potential_field(
@@ -211,7 +131,6 @@ class GeologicalModel:
             fault = pypotential.Fault(field)
             faults[name] = fault
             fault_drifts[name] = pypotential.make_drift(fault)
-
         fields=[]
         values = []
         relations = []
@@ -222,13 +141,11 @@ class GeologicalModel:
                if serie.influenced_by_fault:
                    for name in serie.influenced_by_fault:
                        drifts.append(fault_drifts[name])
-
                field = pypotential.potential_field(
                          covariance_data(potdata),
                          gradient_data(potdata),
                          interface_data(potdata),
                          drifts)
-
                for interface in potdata.interfaces:
                   values.append(np.mean(field(interface)))
                   fields.append(field)
@@ -238,7 +155,6 @@ class GeologicalModel:
         self.relations = relations
         self.faults = faults
         self.fault_drifts = fault_drifts
-
 
     def nbformations(self):
         n = len(self.fields) + 1
@@ -336,3 +252,10 @@ class GeologicalModel:
                if (Ri == 'erode') :
                   break
         return True
+    
+    def rank_colors(self):
+        result = [None, ]
+        for serie in self.pile.all_series:
+            for formation in serie.formations:
+                result.append(self.formation_colors[formation])
+        return result

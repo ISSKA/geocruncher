@@ -6,7 +6,9 @@ setup(
     description='A bridge between Gmlib and VK',
     packages=find_packages(exclude=['doc']),
     python_requires='>=3',
+    setup_requires=['pytest-runner'],
     install_requires=['numpy'],
+    tests_require=['pytest'],
 #    scripts=['GeoCruncher/main.py']
     entry_points='''
         [console_scripts]

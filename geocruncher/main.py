@@ -1,58 +1,73 @@
 # -*- coding: utf-8 -*-
 
+from . import topography_reader
+from .geomodeller_project import extract_project_data_noTopography
 import sys
+import re
+import os
 import numpy as np
-#from .GeologicalModel3D import GeologicalModel
-import gmlib.GeologicalModel3D
-
-def printStderr(msg):
-    sys.stderr.write(msg)
-    sys.stderr.flush()
-
-def main():
-    while True:
-        cmd = sys.stdin.readline().strip().split(" ")
-        if cmd[0] == 'SetProjectData':
-            xmlFile = cmd[1]
-            printStderr('Reading project XML data from ' + xmlFile + '\n')
-            # TODO
-        elif cmd[0] == "SetProjectDEM":
-            demFile = cmd[1]
-            printStderr('Setting DEM file to ' + demFile + '\n')
-            # TODO
-        elif cmd[0] == "ComputeImplicitModel":
-            printStderr('Computing implicit model ...')
-            # TODO
-        elif cmd[0] == "QueryBoundariesCrossSection":
-            printStderr("Query boundaries cross section ...")
-        elif cmd[0] == "Shutdown":
-            printStderr("Shutting down ...")
-            return
-        else:
-            printStderr('Invalid command\n')
-
-#    lines = '';
-#    for line in sys.stdin:    
-#        lines += line;
-
-#    model = GeologicalModel.from_json(lines)
-
-    # stolen from test-GeologicalModel3D
-#    box = model.getbox()
-#    diagonal = np.array([box.xmax, box.ymax])
-#    origin = np.array([box.xmin, box.ymin])
-#    diagonal-= origin
-#    zmin, zmax = box.zmin, box.zmax
-
-#    nu, nz = 100, 100
-#    z, u = np.meshgrid(np.linspace(zmin, zmax, nz),
-#                       np.linspace(0, 1, nu))
-#    pts = np.hstack([origin + np.reshape(u, (-1, 1)) * diagonal,
-#                     np.reshape(z, (-1, 1))])
-#    ranks = np.array([model.rank(p) for p in pts])
-#    print(ranks[0], ranks[1], ranks[2], ranks[3])
+from .GeologicalModel3D import GeologicalModel
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections
+import json
+from pprint import pprint
 
 
 if __name__ == '__main__':
-    main()
+    run_geocruncher(sys.argv)
 
+def main():
+    run_geocruncher(sys.argv)
+
+def run_geocruncher(args):
+
+    #[box, pile, faults_data]=extract_project_data_noTopography(sys.argv[3])
+    model = GeologicalModel(args[3], args[4])
+    box = model.getbox()
+    
+
+    if args[1] == 'crossSection':
+        with open(sys.args[2]) as f:
+            data = json.load(f)
+        nPoints=60
+        xCoord=[data["lowerLeft"]["x"],data["upperRight"]["x"]]
+        yCoord=[data["lowerLeft"]["y"],data["upperRight"]["y"]]
+        zCoord=[data["lowerLeft"]["z"],data["upperRight"]["z"]]
+        imgSize=[10000,10000]#hardcoded for now   
+        (outputX, outputY, outputRank) = CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
+        output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    
+    if args[1] == "map":
+        nPoints=80
+        xCoord=[box.xmin,box.xmax]
+        yCoord=[box.ymin,box.ymax]
+        (outputX, outputY, outputRank) = MapIntersections.output(xCoord,yCoord,nPoints,model)
+        output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    
+    if args[1] == 'all':
+        with open(args[2]) as f:
+            data = json.load(f)
+        nPoints=30
+        numberfromstring=re.findall(r"-?\d+\.\d+", args[2])
+        output="{"
+        i=0
+        for i in range(0, len(data)):
+            xCoord=[data[i]["lowerLeft"]["x"],data[i]["upperRight"]["x"]]
+            yCoord=[data[i]["lowerLeft"]["y"],data[i]["upperRight"]["y"]]
+            zCoord=[data[i]["lowerLeft"]["z"],data[i]["upperRight"]["z"]]
+            imgSize=[10000,10000]#hardcoded for now          
+            (outputX, outputY, outputRank)=CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
+            index=str(i)
+            i=i+1
+            output = "%(output)s\"CrossSection%(index)s\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}," % locals()
+        xCoord=[box.xmin,box.xmax]
+        yCoord=[box.ymin,box.ymax]
+        nPoints=45
+        (outputX, outputY, outputRank)=MapIntersections.output(xCoord,yCoord,nPoints,model)
+        output = "%(output)s\"Map\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}}" % locals() #for optimisation
+        sys.stdout.write(output)
+        sys.stdout.flush()
+    
