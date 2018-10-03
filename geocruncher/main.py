@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import topography_reader
-from geomodeller_project import extract_project_data_noTopography
+from . import topography_reader
+from .geomodeller_project import extract_project_data_noTopography
 import sys
 import re
 import os
 import numpy as np
-from GeologicalModel3D import GeologicalModel
-from ComputeIntersections import CrossSectionIntersections
-from ComputeIntersections import MapIntersections
+from .GeologicalModel3D import GeologicalModel
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections
 import json
 from pprint import pprint
 

@@ -11,8 +11,8 @@ import yaml
 import gmlib.pypotential3D as pypotential
 from gmlib import geomodeller_data
 #from gmlib import geomodeller_project
-from geomodeller_project import extract_project_data_noTopography
-import topography_reader
+from .geomodeller_project import extract_project_data_noTopography
+from . import topography_reader
 
 Intersection = namedtuple('Intersection', ['point', 'rank'])
 Box =  namedtuple('Box', ['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax'])
