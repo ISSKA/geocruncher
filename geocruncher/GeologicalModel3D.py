@@ -11,10 +11,10 @@ import yaml
 
 import gmlib.pypotential3D as pypotential
 from gmlib import geomodeller_data
-from geomodeller_project import extract_project_data_noTopography
 
 # !!!A custom topography_reader file is used in place of the gmlib topography_reader file!!!
-import topography_reader 
+from .geomodeller_project import extract_project_data_noTopography
+from  . import topography_reader
 #from gmlib import geomodeller_project
 
 
