@@ -13,9 +13,12 @@ from pprint import pprint
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    run_geocruncher(sys.argv)
 
-def main(args):
+def main():
+    run_geocruncher(sys.argv)
+
+def run_geocruncher(args):
 
     #[box, pile, faults_data]=extract_project_data_noTopography(sys.argv[3])
     model = GeologicalModel(args[3], args[4])
