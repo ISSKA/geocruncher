@@ -13,14 +13,17 @@ from pprint import pprint
 
 
 if __name__ == '__main__':
-	
+    main(sys.argv)
+
+def main(args):
+
     #[box, pile, faults_data]=extract_project_data_noTopography(sys.argv[3])
-    model = GeologicalModel(sys.argv[3],sys.argv[4])
+    model = GeologicalModel(args[3], args[4])
     box = model.getbox()
     
 
-    if sys.argv[1] == 'crossSection':
-        with open(sys.argv[2]) as f:
+    if args[1] == 'crossSection':
+        with open(sys.args[2]) as f:
             data = json.load(f)
         nPoints=60
         xCoord=[data["lowerLeft"]["x"],data["upperRight"]["x"]]
@@ -32,7 +35,7 @@ if __name__ == '__main__':
         sys.stdout.write(output)
         sys.stdout.flush()
     
-    if sys.argv[1] == "map":
+    if args[1] == "map":
         nPoints=80
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
@@ -41,11 +44,11 @@ if __name__ == '__main__':
         sys.stdout.write(output)
         sys.stdout.flush()
     
-    if sys.argv[1] == 'all':
-        with open(sys.argv[2]) as f:
+    if args[1] == 'all':
+        with open(args[2]) as f:
             data = json.load(f)
         nPoints=30
-        numberfromstring=re.findall(r"-?\d+\.\d+",sys.argv[2])
+        numberfromstring=re.findall(r"-?\d+\.\d+", args[2])
         output="{"
         i=0
         for i in range(0, len(data)):
