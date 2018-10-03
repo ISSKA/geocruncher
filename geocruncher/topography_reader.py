@@ -7,6 +7,7 @@
 import os
 import numpy as np
 import re
+from gmlib.topography_reader import ImplicitDTM
 
 def txt_extract(file):
     # Original code uses file, but for minimum changing we use StringIO
