@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 from . import topography_reader
 from .geomodeller_project import extract_project_data_noTopography
 import sys
@@ -12,8 +13,6 @@ import json
 from pprint import pprint
 
 
-if __name__ == '__main__':
-    run_geocruncher(sys.argv)
 
 def main():
     run_geocruncher(sys.argv)
