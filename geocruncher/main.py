@@ -8,7 +8,7 @@ import re
 import os
 import numpy as np
 from .GeologicalModel3D import GeologicalModel
-from .ComputeIntersections import CrossSectionIntersections, MapIntersections
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder
 import json
 from pprint import pprint
 
@@ -50,23 +50,17 @@ def run_geocruncher(args):
         with open(args[2]) as f:
             data = json.load(f)
         nPoints=30
-        numberfromstring=re.findall(r"-?\d+\.\d+", args[2])
-        output="{"
-        i=0
-        for i in range(0, len(data)):
-            xCoord=[data[i]["lowerLeft"]["x"],data[i]["upperRight"]["x"]]
-            yCoord=[data[i]["lowerLeft"]["y"],data[i]["upperRight"]["y"]]
-            zCoord=[data[i]["lowerLeft"]["z"],data[i]["upperRight"]["z"]]
-            imgSize=[10000,10000]#hardcoded for now          
-            (outputX, outputY, outputRank)=CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
-            index=str(i)
-            i=i+1
-            output = "%(output)s\"CrossSection%(index)s\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}," % locals()
+        outputs = []
+        for rect in data:
+            xCoord=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
+            yCoord=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
+            zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
+            imgSize=[10000,10000]#hardcoded for now
+            outputs.append(CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize));
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
         nPoints=45
-        (outputX, outputY, outputRank)=MapIntersections.output(xCoord,yCoord,nPoints,model)
-        output = "%(output)s\"Map\":{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}}" % locals() #for optimisation
-        sys.stdout.write(output)
+        outputs.append(MapIntersections.output(xCoord,yCoord,nPoints,model))
+        json.dump(outputs, sys.stdout, indent = 2, cls=GeocruncherJsonEncoder)
         sys.stdout.flush()
     

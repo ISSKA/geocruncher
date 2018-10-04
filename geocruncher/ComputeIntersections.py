@@ -1,17 +1,32 @@
 import sys
 import numpy as np
+import json
+
+class GeocruncherJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Boundary):
+            return {'firstUnitId': obj.firstUnitId, 'secondUnitId': -1, 'points': obj.points}
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+class Boundary:
+    def __init__(self, firstUnitId, secondUnitId, points):
+        self.firstUnitId = firstUnitId
+        self.secondUnitId = secondUnitId = secondUnitId
+        self.points = points
+
 
 class MapIntersections:
-	
-    def output(xCoord,yCoord,nPoints,model):  
-		
+
+    def output(xCoord,yCoord,nPoints,model):
+
         topography=model.topography
-		
+
         def computeRank(a,b):
             evaluate_z = topography.evaluate_z
             ranks=model.rank
             return ranks([a,b,evaluate_z([a,b])])
-	        				                    	        
+
         def findIntersectionY(rankUp,rankDown,y1,y2,x):
             if rankUp != rankDown:
                 while (abs(y1-y2)>(abs(yCoord[0]-yCoord[1])/1000)):
@@ -23,7 +38,7 @@ class MapIntersections:
                 return ((y1+y2)/2)
             else:
                 return(-1)
-                
+
         def findIntersectionX(rankLeft,rankRight,x1,x2,y):
             if rankLeft != rankRight:
                 while (abs(x1-x2)>(abs(xCoord[0]-xCoord[1])/1000)):
@@ -34,8 +49,8 @@ class MapIntersections:
                         x2=xMid
                 return ((x1+x2)/2)
             else:
-                return(-1)                
-                  
+                return(-1)
+
         def computeInterface(index):
             #Find the intersections between two interpolation points
             startIndex=index*nPoints+(nPoints-1)*index
@@ -51,7 +66,7 @@ class MapIntersections:
             return np.array(list(map(computeRank,x[index],y[index]))).transpose()
 
         slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
-        
+
         xStep=(xCoord[1]-xCoord[0])/nPoints
         yStep=(yCoord[1]-yCoord[0])/nPoints
 
@@ -59,42 +74,40 @@ class MapIntersections:
         #x,y,z Coordinates expressed in real coordinates
         xMapRange=np.linspace(xCoord[0],xCoord[1],nPoints)
         yMapRange=np.linspace(yCoord[0],yCoord[1],nPoints)
-        
+
         #x, z = np.ogrid[xCoord[0]:xCoord[1]:nPoints , zCoord[0]:zCoord[1]:nPoints]
         y, x = np.meshgrid(yMapRange, xMapRange)
-		
+
         #x,y interpolation points
         ranksBelowList=np.zeros((nPoints)*(nPoints-1)*2)
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
-                
+
         #Main computation loop
         rankMatrix=list(map(computeRankMatrix,(np.arange(0,nPoints))))
-        
+
         list(map(computeInterface,(np.arange(0,nPoints-1))))
-        
-        
+
+
         xBoundaryList= xBoundaryList[yBoundaryList!=-1]
         ranksBelowList = ranksBelowList[yBoundaryList!=-1]
-        yBoundaryList = yBoundaryList[yBoundaryList!=-1]         
-     
+        yBoundaryList = yBoundaryList[yBoundaryList!=-1]
+
         ranksBelowList = ranksBelowList[xBoundaryList!=-1]
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
-        
-        return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksBelowList.astype(int), precision=0, separator=',',suppress_small=True))
 
-	
-            	
+        return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
+
 class CrossSectionIntersections:
 
     def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
-		
+
         def computeRank(x,z):
-            y=slope*(x-xCoord[0])+yCoord[0] 
+            y=slope*(x-xCoord[0])+yCoord[0]
             ranks=model.rank
             return ranks([x,y,z])
-			
+
         def findIntersectionY(rankUp,rankDown,z1,z2,x):
             if rankUp != rankDown:
                 while (abs(z1-z2)>(abs(zCoord[0]-zCoord[1])/1000)):
@@ -106,7 +119,7 @@ class CrossSectionIntersections:
                 return ((z1+z2)/2)
             else:
                 return(-1)
-                
+
         def findIntersectionX(rankLeft,rankRight,x1,x2,z):
             if rankLeft != rankRight:
                 while (abs(x1-x2)>(abs(xCoord[0]-xCoord[1])/1000)):
@@ -117,8 +130,8 @@ class CrossSectionIntersections:
                         x2=xMid
                 return ((x1+x2)/2)
             else:
-                return(-1)                
-                  
+                return(-1)
+
         def computeInterface(index):
             #Find the intersections between two interpolation points
             startIndex=index*nPoints+(nPoints-1)*index
@@ -134,41 +147,56 @@ class CrossSectionIntersections:
             return np.array(list(map(computeRank,x[index],z[index]))).transpose()
 
         slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
-        
+
         xStep=(xCoord[1]-xCoord[0])/nPoints
         zStep=(zCoord[1]-zCoord[0])/nPoints
 
         #x Coordinates expressed in pixels
-        xImgRange=np.linspace(0,imgSize[1],nPoints) 
-        zImgRange=np.linspace(0,imgSize[0],nPoints) 
+        xImgRange=np.linspace(0,imgSize[1],nPoints)
+        zImgRange=np.linspace(0,imgSize[0],nPoints)
 
         #x,y,z Coordinates expressed in real coordinates
-        xCrossSectionRange=np.linspace(xCoord[0],xCoord[1],nPoints) 
-        zCrossSectionRange=np.linspace(zCoord[0],zCoord[1],nPoints) 
-        
+        xCrossSectionRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+        zCrossSectionRange=np.linspace(zCoord[0],zCoord[1],nPoints)
+
         #x, z = np.ogrid[xCoord[0]:xCoord[1]:nPoints , zCoord[0]:zCoord[1]:nPoints]
         z, x = np.meshgrid(zCrossSectionRange, xCrossSectionRange)
-		
+
         #x,y interpolation points
         ranksBelowList=np.zeros((nPoints)*(nPoints-1)*2)
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
-                
+
         #Main computation loop
         rankMatrix=list(map(computeRankMatrix,(np.arange(0,nPoints))))
-        
+
         list(map(computeInterface,(np.arange(0,nPoints-1))))
-        
-        
+
+
         xBoundaryList= xBoundaryList[yBoundaryList!=-1]
         ranksBelowList = ranksBelowList[yBoundaryList!=-1]
-        yBoundaryList = yBoundaryList[yBoundaryList!=-1]         
-     
+        yBoundaryList = yBoundaryList[yBoundaryList!=-1]
+
         ranksBelowList = ranksBelowList[xBoundaryList!=-1]
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
-        
+
         xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) #coord conversions
         yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))  #coord conversions
 
-        return (np.array2string(xBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(yBoundaryList.astype(int), precision=0, separator=',',suppress_small=True),np.array2string(ranksBelowList.astype(int), precision=0, separator=',',suppress_small=True))
+        return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
+
+
+
+
+def computeBoundaries(ranksBelow, xs, ys):
+    boundaries = dict()
+    for x, y, rBelow in zip(xs, ys, ranksBelow):
+        p = {'x': x, 'y': y}
+        if rBelow in boundaries:
+            boundaries[rBelow].append(p)
+        else:
+            boundaries[rBelow] = [ p ]
+
+    # TODO other unit
+    return [ Boundary(rBelow, -1, ps) for rBelow, ps in boundaries.items() ]
