@@ -50,17 +50,18 @@ def run_geocruncher(args):
         with open(args[2]) as f:
             data = json.load(f)
         nPoints=30
-        outputs = []
+        crossSections = []
         for rect in data:
             xCoord=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
             yCoord=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
             zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
             imgSize=[10000,10000]#hardcoded for now
-            outputs.append(CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize));
+            crossSections.append(CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize));
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
         nPoints=45
-        outputs.append(MapIntersections.output(xCoord,yCoord,nPoints,model))
-        json.dump(outputs, sys.stdout, indent = 2, cls=GeocruncherJsonEncoder)
+        outputs = { 'forMaps': MapIntersections.output(xCoord,yCoord,nPoints,model), 'forCrossSections': crossSections }
+        with open(args[5], 'w') as f:
+            json.dump(outputs, f, indent = 2, cls=GeocruncherJsonEncoder)
         sys.stdout.flush()
     
