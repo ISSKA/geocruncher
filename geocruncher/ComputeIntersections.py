@@ -5,14 +5,13 @@ import json
 class GeocruncherJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Boundary):
-            return {'firstUnitId': obj.firstUnitId, 'secondUnitId': -1, 'points': obj.points}
+            return {'rankBelow': obj.rankBelow, 'points': obj.points}
         else:
             return json.JSONEncoder.default(self, obj)
 
 class Boundary:
-    def __init__(self, firstUnitId, secondUnitId, points):
-        self.firstUnitId = firstUnitId
-        self.secondUnitId = secondUnitId = secondUnitId
+    def __init__(self, rankBelow, points):
+        self.rankBelow = rankBelow
         self.points = points
 
 
@@ -199,4 +198,4 @@ def computeBoundaries(ranksBelow, xs, ys):
             boundaries[rBelow] = [ p ]
 
     # TODO other unit
-    return [ Boundary(rBelow, -1, ps) for rBelow, ps in boundaries.items() ]
+    return [ Boundary(rBelow, ps) for rBelow, ps in boundaries.items() ]
