@@ -23,29 +23,6 @@ def run_geocruncher(args):
     model = GeologicalModel(args[3], args[4])
     box = model.getbox()
     
-
-    if args[1] == 'crossSection':
-        with open(sys.args[2]) as f:
-            data = json.load(f)
-        nPoints=60
-        xCoord=[data["lowerLeft"]["x"],data["upperRight"]["x"]]
-        yCoord=[data["lowerLeft"]["y"],data["upperRight"]["y"]]
-        zCoord=[data["lowerLeft"]["z"],data["upperRight"]["z"]]
-        imgSize=[10000,10000]#hardcoded for now   
-        (outputX, outputY, outputRank) = CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model,imgSize);
-        output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
-        sys.stdout.write(output)
-        sys.stdout.flush()
-    
-    if args[1] == "map":
-        nPoints=80
-        xCoord=[box.xmin,box.xmax]
-        yCoord=[box.ymin,box.ymax]
-        (outputX, outputY, outputRank) = MapIntersections.output(xCoord,yCoord,nPoints,model)
-        output = "{\"X\":%(outputX)s ,\"Y\":%(outputY)s ,\"serieBelow\":%(outputRank)s}" % locals() #for optimisation
-        sys.stdout.write(output)
-        sys.stdout.flush()
-    
     if args[1] == 'all':
         with open(args[2]) as f:
             data = json.load(f)
