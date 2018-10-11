@@ -21,7 +21,7 @@ def run_geocruncher(args):
     model = GeologicalModel(args[3])
     model.topography = txt_extract(args[4])
     box = model.getbox()
-    
+
     if args[1] == 'all':
         with open(args[2]) as f:
             data = json.load(f)
@@ -39,4 +39,12 @@ def run_geocruncher(args):
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent = 2, cls=GeocruncherJsonEncoder)
         sys.stdout.flush()
-    
+
+    if args[1] == 'meshes':
+        projectFile = args[2]
+        topographyFile = args[3]
+
+        model = GeologicalModel(projectFile)
+        model.topography = txt_extract(topographyFile)
+        # TODO Run mesh calculation script
+        # TODO output files
