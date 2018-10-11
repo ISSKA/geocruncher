@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
-from . import topography_reader
-from .geomodeller_project import extract_project_data_noTopography
+from .topography_reader import txt_extract
 import sys
 import re
 import os
 import numpy as np
-from .GeologicalModel3D import GeologicalModel
+from gmlib.GeologicalModel3D import GeologicalModel
 from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder
 import json
 from pprint import pprint
@@ -19,8 +18,8 @@ def main():
 
 def run_geocruncher(args):
 
-    #[box, pile, faults_data]=extract_project_data_noTopography(sys.argv[3])
-    model = GeologicalModel(args[3], args[4])
+    model = GeologicalModel(args[3])
+    model.topography = txt_extract(args[4])
     box = model.getbox()
     
     if args[1] == 'all':
