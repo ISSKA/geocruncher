@@ -45,7 +45,7 @@ def run_geocruncher(args):
             yCoord = yCoordNew
             if xCoord[0] == xCoord[1]:
                 xCoord[0] = xCoord[1] + 1
-            crossSections.append( CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model, [ratio, ratio], offSet));
+            crossSections.append( CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model, [1, ratio], offSet));
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
         nPoints=60

@@ -181,7 +181,7 @@ class CrossSectionIntersections:
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
         xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) + offSet #coord conversions
-        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0]))) + offSet #coord conversions
+        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))#coord conversions
 
         return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
 
