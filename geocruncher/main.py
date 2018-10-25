@@ -29,15 +29,23 @@ def run_geocruncher(args):
         for rect in data:
             xCoord=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
             yCoord=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
+            xCoordNew=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
+            yCoordNew=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
             zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
             if zCoord[0] < box.zmax or zCoord[0] > box.zmin or zCoord[1] > box.zmin or zCoord[1] < box.zmax: 
                 if isOutofBounds(xCoord[0], yCoord[0], box) == 'true':
-                    (xCoord[0], yCoord[0]) = intersectBounds(xCoord, yCoord, zCoord, box, 0)
+                    (xCoordNew[0], yCoordNew[0]) = intersectBounds(xCoord, yCoord, zCoord, box, 0)
                 if isOutofBounds(xCoord[1], yCoord[1], box) == 'true':
-                    (xCoord[1], yCoord[1]) = intersectBounds(xCoord, yCoord, zCoord, box, 1)
+                    (xCoordNew[1], yCoordNew[1]) = intersectBounds(xCoord, yCoord, zCoord, box, 1)
+            widthNew = np.sqrt(np.power(xCoordNew[0]-xCoordNew[1], 2) + np.power(yCoordNew[0]-yCoordNew[1], 2))
+            width = np.sqrt(np.power(xCoord[0]-xCoord[1],2) + np.power(yCoord[0]-yCoord[1],2))
+            ratio = widthNew / width
+            offSet = np.sqrt(np.power(xCoord[0]-xCoordNew[0],2) + np.power(yCoord[0]-yCoordNew[0],2)) / width
+            xCoord = xCoordNew
+            yCoord = yCoordNew
             if xCoord[0] == xCoord[1]:
                 xCoord[0] = xCoord[1] + 1
-            crossSections.append(CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1]));
+            crossSections.append( CrossSectionIntersections.output(xCoord,yCoord,zCoord,nPoints,model, [ratio, ratio], offSet));
         xCoord=[box.xmin,box.xmax]
         yCoord=[box.ymin,box.ymax]
         nPoints=60
