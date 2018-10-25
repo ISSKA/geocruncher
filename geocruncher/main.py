@@ -33,9 +33,9 @@ def run_geocruncher(args):
             yCoordNew=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
             zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
             if zCoord[0] < box.zmax or zCoord[0] > box.zmin or zCoord[1] > box.zmin or zCoord[1] < box.zmax: 
-                if isOutofBounds(xCoord[0], yCoord[0], box) == 'true':
+                if isOutofBounds(xCoord[0], yCoord[0], box) == True:
                     (xCoordNew[0], yCoordNew[0]) = intersectBounds(xCoord, yCoord, zCoord, box, 0)
-                if isOutofBounds(xCoord[1], yCoord[1], box) == 'true':
+                if isOutofBounds(xCoord[1], yCoord[1], box) == True:
                     (xCoordNew[1], yCoordNew[1]) = intersectBounds(xCoord, yCoord, zCoord, box, 1)
             widthNew = np.sqrt(np.power(xCoordNew[0]-xCoordNew[1], 2) + np.power(yCoordNew[0]-yCoordNew[1], 2))
             width = np.sqrt(np.power(xCoord[0]-xCoord[1],2) + np.power(yCoord[0]-yCoord[1],2))
@@ -56,9 +56,9 @@ def run_geocruncher(args):
 
 def isOutofBounds(xCoord, yCoord, box):
     if xCoord > box.xmax or xCoord < box.xmin or yCoord > box.ymax or yCoord < box.ymin:
-        return 'true'
+        return True
     else :
-        return 'false'
+        return False
 
 def intersectBounds(xCoord, yCoord, zCoord, box, index):
     slope = (yCoord[1] - yCoord[0]) /  (xCoord[1] - xCoord[0])
