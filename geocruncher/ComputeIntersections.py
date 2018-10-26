@@ -96,6 +96,8 @@ class MapIntersections:
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
+        yBoundaryList = yCoord[1]-(yBoundaryList - yCoord[0]) #coord conversions
+
         return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
 
 class CrossSectionIntersections:
