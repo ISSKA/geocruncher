@@ -9,9 +9,8 @@ import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder
 import json
+from .MeshGeneration import generate_volumes
 from pprint import pprint
-
-
 
 def main():
     run_geocruncher(sys.argv)
@@ -41,10 +40,13 @@ def run_geocruncher(args):
         sys.stdout.flush()
 
     if args[1] == 'meshes':
-        projectFile = args[2]
-        topographyFile = args[3]
+        """
+        Call: main.py meshes [num_samples] [geological_model_path] [surface_model_path] [out_dir]
+        """
+        num_samples = int(args[2])
+        shape = tuple(num_samples, num_samples, num_samples)
+        out_dir = args[5]
 
-        model = GeologicalModel(projectFile)
-        model.topography = txt_extract(topographyFile)
-        # TODO Run mesh calculation script
-        # TODO output files
+        generated_mesh_paths = generate_volumes(model, shape, out_dir)
+        # TODO do something useful with output files
+        print(generated_mesh_paths)
