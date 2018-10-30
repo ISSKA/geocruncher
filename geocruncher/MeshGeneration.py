@@ -35,6 +35,10 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
             (box.zmax - box.zmin) / (nz - 1),
         ]) + np.array([box.xmin, box.ymin, box.zmin])
 
+    def get_model_ranks(model):
+        num_formations = sum([ len(s.formations) for s in model.pile.all_series ])
+        return list(range(RANK_SKY + 1, num_formations + 1))
+
     nx, ny, nz = shape
     box = model.getbox()
     steps = (
@@ -46,21 +50,10 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
     points = np.stack(coordinates, axis=-1)
     points.shape = (-1, 3)
 
-    ranks = np.array([model.rank(P) for P in points])
-    ranks.shape = shape
+    ranks = get_model_ranks(model)
 
-    # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:
-    #rank_values = []
-    #for serie in model.pile.all_series:
-    #    for formation in serie.formations:
-    #        rank_values.append(formation)
-
-    rank_values = np.unique(ranks)
     bodies = []
-    for rank in rank_values:
-        if rank == RANK_SKY:
-            continue
-
+    for rank in ranks:
         # to close bodies, we put them in a slightly bigger grid
         extended_shape = tuple(n+2 for n in shape)
         indicator = np.zeros(extended_shape, dtype=np.float32)
