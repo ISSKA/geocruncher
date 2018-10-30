@@ -21,13 +21,7 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
     # Constants
     RANK_SKY = 0
 
-    def rescale(points, box, shape):
-        """
-        Parameters:
-            points: points to be scaled to fit the sample sizes
-            box: bounding box
-            shape: int tuple with sample sizes for x,y,z
-        """
+    def rescale_to_grid(points, box, shape):
         nx, ny, nz = shape
         return points * np.array([
             (box.xmax - box.xmin) / (nx - 1),
@@ -60,7 +54,7 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
         indicator[1:-1, 1:-1, 1:-1][ranks==rank] = 1
 
         verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent") # Gradient direction ensures normals point outwards
-        tsurf = CGAL.TSurf(rescale(verts, box, shape), faces)
+        tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
         bodies.append(tsurf)
 
     out_files = []
