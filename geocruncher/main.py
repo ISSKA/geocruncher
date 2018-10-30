@@ -44,7 +44,7 @@ def run_geocruncher(args):
         Call: main.py meshes [num_samples] [geological_model_path] [surface_model_path] [out_dir]
         """
         num_samples = int(args[2])
-        shape = tuple(num_samples, num_samples, num_samples)
+        shape = (num_samples, num_samples, num_samples)
         out_dir = args[5]
 
         generated_mesh_paths = generate_volumes(model, shape, out_dir)
