@@ -55,11 +55,11 @@ class MapIntersections:
             startIndex=index*nPoints+(nPoints-1)*index
             yBoundaryList[startIndex:startIndex+nPoints-1]=list(map(findIntersectionY,rankMatrix[index][1:nPoints],rankMatrix[index][0:nPoints-1],yMapRange[0:nPoints-1],yMapRange[1:nPoints],np.ones(nPoints)*xMapRange[index]))
             xBoundaryList[startIndex:startIndex+nPoints-1]= np.ones(nPoints-1)*xMapRange[index]
-            ranksBelowList[startIndex:startIndex+nPoints-1]=rankMatrix[index][0:nPoints-1]
+            ranksBelowList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
 
             xBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=list(map(findIntersectionX,rankMatrix[:][index],rankMatrix[:][index+1],np.ones(nPoints)*xMapRange[index],np.ones(nPoints)*xMapRange[index+1],yMapRange))
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=yMapRange
-            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(computeRank,x[:][index]+xStep/2,y[:][index]-yStep))
+            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))  
 
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],y[index]))).transpose()
@@ -136,11 +136,11 @@ class CrossSectionIntersections:
             startIndex=index*nPoints+(nPoints-1)*index
             yBoundaryList[startIndex:startIndex+nPoints-1]=list(map(findIntersectionY,rankMatrix[index][1:nPoints],rankMatrix[index][0:nPoints-1],zCrossSectionRange[0:nPoints-1],zCrossSectionRange[1:nPoints],np.ones(nPoints)*xCrossSectionRange[index]))
             xBoundaryList[startIndex:startIndex+nPoints-1]= np.ones(nPoints-1)*xCrossSectionRange[index]
-            ranksBelowList[startIndex:startIndex+nPoints-1]=rankMatrix[index][0:nPoints-1]
+            ranksBelowList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
 
             xBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=list(map(findIntersectionX,rankMatrix[:][index],rankMatrix[:][index+1],np.ones(nPoints)*xCrossSectionRange[index],np.ones(nPoints)*xCrossSectionRange[index+1],zCrossSectionRange))
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=zCrossSectionRange
-            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(computeRank,x[:][index]+xStep/2,z[:][index]-zStep))
+            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))
 
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],z[index]))).transpose()
@@ -180,8 +180,8 @@ class CrossSectionIntersections:
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
-        xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) #coord conversions
-        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))  #coord conversions
+        xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0]))#coord conversions
+        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0]))) #coord conversions
 
         return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
 
