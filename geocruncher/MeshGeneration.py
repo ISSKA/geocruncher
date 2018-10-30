@@ -18,6 +18,9 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
         list: path of each generated mesh.
     """
 
+    # Constants
+    RANK_SKY = 0
+
     def rescale(points, box, shape):
         """
         Parameters:
@@ -55,6 +58,9 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
     rank_values = np.unique(ranks)
     bodies = []
     for rank in rank_values:
+        if rank == RANK_SKY:
+            continue
+
         # to close bodies, we put them in a slightly bigger grid
         extended_shape = tuple(n+2 for n in shape)
         indicator = np.zeros(extended_shape, dtype=np.float32)
@@ -66,7 +72,6 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
     out_files = []
     for bi, body in enumerate(bodies):
-        # TODO Use unit name from column?
         name = 'body_rank_%d' % bi
         out_file = os.path.join(outDir, name + '.off')
         body.to_off(out_file)
