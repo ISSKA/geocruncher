@@ -18,6 +18,20 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
         list: path of each generated mesh.
     """
 
+    def rescale(points, box, shape):
+        """
+        Parameters:
+            points: points to be scaled to fit the sample sizes
+            box: bounding box
+            shape: int tuple with sample sizes for x,y,z
+        """
+        nx, ny, nz = shape
+        return points * np.array([
+            (box.xmax - box.xmin) / (nx - 1),
+            (box.ymax - box.ymin) / (ny - 1),
+            (box.zmax - box.zmin) / (nz - 1),
+        ]) + np.array([box.xmin, box.ymin, box.zmin])
+
     nx, ny, nz = shape
     box = model.getbox()
     steps = (
