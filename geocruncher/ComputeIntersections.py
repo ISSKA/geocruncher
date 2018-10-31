@@ -100,7 +100,7 @@ class MapIntersections:
 
 class CrossSectionIntersections:
 
-    def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
+    def output(xCoord,yCoord,zCoord,nPoints,model,imgSize, offSet):
 
         def computeRank(x,z):
             y=slope*(x-xCoord[0])+yCoord[0]
@@ -180,8 +180,8 @@ class CrossSectionIntersections:
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
-        xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0]))#coord conversions
-        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0]))) #coord conversions
+        xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) + offSet #coord conversions
+        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))#coord conversions
 
         return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
 
