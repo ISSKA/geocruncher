@@ -11,13 +11,13 @@ from gmlib.topography_reader import ImplicitDTM
 
 def txt_extract(file):
     # Original code uses file, but for minimum changing we use StringIO
-    
+
     f = open(file)#Modified
-    ncols =float(re.findall(r"\d+",f.readline())[0])
-    nrows =float(re.findall(r"\d+",f.readline())[0])
-    xllcorner =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
-    yllcorner =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
-    cellsize =float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    ncols = int(re.findall(r"\d+",f.readline())[0])
+    nrows = int(re.findall(r"\d+",f.readline())[0])
+    xllcorner = float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    yllcorner = float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    cellsize = float(re.findall(r"\d+\.?\d*",f.readline())[0])
     f.readline()
     zmap = []
     line = f.readline().strip().split()
