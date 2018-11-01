@@ -5,13 +5,13 @@ import json
 class GeocruncherJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Boundary):
-            return {'rankBelow': obj.rankBelow, 'points': obj.points}
+            return {'minimalRank': obj.minimalRank, 'points': obj.points}
         else:
             return json.JSONEncoder.default(self, obj)
 
 class Boundary:
-    def __init__(self, rankBelow, points):
-        self.rankBelow = rankBelow
+    def __init__(self, minimalRank, points):
+        self.minimalRank = minimalRank
         self.points = points
 
 
@@ -55,11 +55,11 @@ class MapIntersections:
             startIndex=index*nPoints+(nPoints-1)*index
             yBoundaryList[startIndex:startIndex+nPoints-1]=list(map(findIntersectionY,rankMatrix[index][1:nPoints],rankMatrix[index][0:nPoints-1],yMapRange[0:nPoints-1],yMapRange[1:nPoints],np.ones(nPoints)*xMapRange[index]))
             xBoundaryList[startIndex:startIndex+nPoints-1]= np.ones(nPoints-1)*xMapRange[index]
-            ranksBelowList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
+            minimalRanksList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
 
             xBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=list(map(findIntersectionX,rankMatrix[:][index],rankMatrix[:][index+1],np.ones(nPoints)*xMapRange[index],np.ones(nPoints)*xMapRange[index+1],yMapRange))
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=yMapRange
-            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))  
+            minimalRanksList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))  
 
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],y[index]))).transpose()
@@ -78,7 +78,7 @@ class MapIntersections:
         y, x = np.meshgrid(yMapRange, xMapRange)
 
         #x,y interpolation points
-        ranksBelowList=np.zeros((nPoints)*(nPoints-1)*2)
+        minimalRanksList=np.zeros((nPoints)*(nPoints-1)*2)
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
 
@@ -89,14 +89,14 @@ class MapIntersections:
 
 
         xBoundaryList= xBoundaryList[yBoundaryList!=-1]
-        ranksBelowList = ranksBelowList[yBoundaryList!=-1]
+        minimalRanksList = minimalRanksList[yBoundaryList!=-1]
         yBoundaryList = yBoundaryList[yBoundaryList!=-1]
 
-        ranksBelowList = ranksBelowList[xBoundaryList!=-1]
+        minimalRanksList = minimalRanksList[xBoundaryList!=-1]
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
-        return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
+        return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
 class CrossSectionIntersections:
 
@@ -136,11 +136,11 @@ class CrossSectionIntersections:
             startIndex=index*nPoints+(nPoints-1)*index
             yBoundaryList[startIndex:startIndex+nPoints-1]=list(map(findIntersectionY,rankMatrix[index][1:nPoints],rankMatrix[index][0:nPoints-1],zCrossSectionRange[0:nPoints-1],zCrossSectionRange[1:nPoints],np.ones(nPoints)*xCrossSectionRange[index]))
             xBoundaryList[startIndex:startIndex+nPoints-1]= np.ones(nPoints-1)*xCrossSectionRange[index]
-            ranksBelowList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
+            minimalRanksList[startIndex:startIndex+nPoints-1]=list(map(np.minimum,rankMatrix[index][0:nPoints-1], rankMatrix[index][1:nPoints]))
 
             xBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=list(map(findIntersectionX,rankMatrix[:][index],rankMatrix[:][index+1],np.ones(nPoints)*xCrossSectionRange[index],np.ones(nPoints)*xCrossSectionRange[index+1],zCrossSectionRange))
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=zCrossSectionRange
-            ranksBelowList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))
+            minimalRanksList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))
 
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],z[index]))).transpose()
@@ -162,7 +162,7 @@ class CrossSectionIntersections:
         z, x = np.meshgrid(zCrossSectionRange, xCrossSectionRange)
 
         #x,y interpolation points
-        ranksBelowList=np.zeros((nPoints)*(nPoints-1)*2)
+        minimalRanksList=np.zeros((nPoints)*(nPoints-1)*2)
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
 
@@ -173,29 +173,29 @@ class CrossSectionIntersections:
 
 
         xBoundaryList= xBoundaryList[yBoundaryList!=-1]
-        ranksBelowList = ranksBelowList[yBoundaryList!=-1]
+        minimalRanksList = minimalRanksList[yBoundaryList!=-1]
         yBoundaryList = yBoundaryList[yBoundaryList!=-1]
 
-        ranksBelowList = ranksBelowList[xBoundaryList!=-1]
+        minimalRanksList = minimalRanksList[xBoundaryList!=-1]
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
         xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) + offSet #coord conversions
         yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))#coord conversions
 
-        return computeBoundaries(ranksBelowList, xBoundaryList, yBoundaryList)
+        return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
 
 
 
-def computeBoundaries(ranksBelow, xs, ys):
+def computeBoundaries(minimalRanks, xs, ys):
     boundaries = dict()
-    for x, y, rBelow in zip(xs, ys, ranksBelow):
+    for x, y, rMinimal in zip(xs, ys, minimalRanks):
         p = {'x': x, 'y': y}
-        if rBelow in boundaries:
-            boundaries[rBelow].append(p)
+        if rMinimal in boundaries:
+            boundaries[rMinimal].append(p)
         else:
-            boundaries[rBelow] = [ p ]
+            boundaries[rMinimal] = [ p ]
 
     # TODO other unit
-    return [ Boundary(rBelow, ps) for rBelow, ps in boundaries.items() ]
+    return [ Boundary(rMinimal, ps) for rMinimal, ps in boundaries.items() ]
