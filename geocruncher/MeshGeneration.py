@@ -50,7 +50,7 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
     #        rank_values.append(formation)
 
     rank_values = np.unique(ranks)
-    bodies = []
+    meshes = {}
     for rank in rank_values:
         if rank == RANK_SKY:
             continue
@@ -62,13 +62,13 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
         verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent") # Gradient direction ensures normals point outwards
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
-        bodies.append(tsurf)
+        meshes[rank] = tsurf
 
     out_files = []
-    for bi, body in enumerate(bodies):
-        name = 'body_rank_%d' % bi
+    for rank, mesh in meshes.items():
+        name = 'rank_%d' % rank
         out_file = os.path.join(outDir, name + '.off')
-        body.to_off(out_file)
+        mesh.to_off(out_file)
         out_files.append(out_file)
 
     return out_files
