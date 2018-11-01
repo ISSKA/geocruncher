@@ -15,8 +15,8 @@ def txt_extract(file):
     f = open(file)#Modified
     ncols = int(re.findall(r"\d+",f.readline())[0])
     nrows = int(re.findall(r"\d+",f.readline())[0])
-    xllcorner = float(re.findall(r"-?\d+\.\d+",f.readline())[0])
-    yllcorner = float(re.findall(r"-?\d+\.\d+",f.readline())[0])
+    xllcorner = float(re.findall(r"-?\d+\.?\d+",f.readline())[0])
+    yllcorner = float(re.findall(r"-?\d+\.?\d+",f.readline())[0])
     cellsize = float(re.findall(r"\d+\.?\d*",f.readline())[0])
     f.readline()
     zmap = []
