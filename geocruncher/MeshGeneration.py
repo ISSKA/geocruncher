@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import json
 
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 from gmlib.GeologicalModel3D import GeologicalModel
@@ -64,11 +65,17 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
         meshes[rank] = tsurf
 
-    out_files = []
+    out_files = {}
     for rank, mesh in meshes.items():
         name = 'rank_%d' % rank
         out_file = os.path.join(outDir, name + '.off')
         mesh.to_off(out_file)
-        out_files.append(out_file)
+        if rank in out_files:
+            out_files[str(rank)].append(out_file)
+        else:
+            out_files[str(rank)] = [out_file]
+
+    with open(os.path.join(outDir, 'index.json'), 'w') as f:
+        json.dump(out_files, f, indent = 2)
 
     return out_files
