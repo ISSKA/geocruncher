@@ -6,7 +6,6 @@ class GeocruncherJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Boundary):
             return {'minimalRank': obj.minimalRank, 'points': obj.points}
-
         else:
             return json.JSONEncoder.default(self, obj)
 
@@ -26,10 +25,7 @@ class MapIntersections:
             evaluate_z = topography.evaluate_z
             ranks=model.rank
             return ranks([a,b,evaluate_z([a,b])])
-            
-        def findMin(a,b):
-            return np.minimum(a,b)
-            
+
         def findIntersectionY(rankUp,rankDown,y1,y2,x):
             if rankUp != rankDown:
                 while (abs(y1-y2)>(abs(yCoord[0]-yCoord[1])/1000)):
@@ -65,7 +61,6 @@ class MapIntersections:
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=yMapRange
             minimalRanksList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))  
 
-
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],y[index]))).transpose()
 
@@ -84,7 +79,6 @@ class MapIntersections:
 
         #x,y interpolation points
         minimalRanksList=np.zeros((nPoints)*(nPoints-1)*2)
-
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
 
@@ -112,10 +106,7 @@ class CrossSectionIntersections:
             y=slope*(x-xCoord[0])+yCoord[0]
             ranks=model.rank
             return ranks([x,y,z])
-            
-        def findMin(a,b):
-            return np.minimum(a,b)
-            
+
         def findIntersectionY(rankUp,rankDown,z1,z2,x):
             if rankUp != rankDown:
                 while (abs(z1-z2)>(abs(zCoord[0]-zCoord[1])/1000)):
@@ -151,7 +142,6 @@ class CrossSectionIntersections:
             yBoundaryList[startIndex+nPoints:startIndex+nPoints*2]=zCrossSectionRange
             minimalRanksList[startIndex+nPoints:startIndex+nPoints*2]=list(map(np.minimum,rankMatrix[:][index], rankMatrix[:][index+1]))
 
-
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],z[index]))).transpose()
 
@@ -173,7 +163,6 @@ class CrossSectionIntersections:
 
         #x,y interpolation points
         minimalRanksList=np.zeros((nPoints)*(nPoints-1)*2)
-
         yBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
         xBoundaryList=np.ones((nPoints)*(nPoints-1)*2)*(-1)
 
@@ -188,12 +177,11 @@ class CrossSectionIntersections:
         yBoundaryList = yBoundaryList[yBoundaryList!=-1]
 
         minimalRanksList = minimalRanksList[xBoundaryList!=-1]
-
         yBoundaryList = yBoundaryList[xBoundaryList!=-1]
         xBoundaryList= xBoundaryList[xBoundaryList!=-1]
 
         xBoundaryList=((xBoundaryList-(xCoord[0]))*(imgSize[1]))/((xCoord[1])-(xCoord[0])) + offSet #coord conversions
-        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0]))) #coord conversions
+        yBoundaryList = imgSize[0]-((yBoundaryList-(zCoord[0]))*(imgSize[0])/((zCoord[1])-(zCoord[0])))#coord conversions
 
         return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
@@ -203,7 +191,6 @@ class CrossSectionIntersections:
 def computeBoundaries(minimalRanks, xs, ys):
     boundaries = dict()
     for x, y, rMinimal in zip(xs, ys, minimalRanks):
-
         p = {'x': x, 'y': y}
         if rMinimal in boundaries:
             boundaries[rMinimal].append(p)
