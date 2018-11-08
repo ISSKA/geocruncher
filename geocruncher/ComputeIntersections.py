@@ -5,7 +5,7 @@ import json
 class GeocruncherJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Boundary):
-            return {'minimalRank': obj.rankBelow, 'points': obj.points}
+            return {'minimalRank': obj.minimalRank, 'points': obj.points}
 
         else:
             return json.JSONEncoder.default(self, obj)
