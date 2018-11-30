@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from .topography_reader import txt_extract
 import sys
 import re
@@ -9,9 +8,8 @@ import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder
 import json
+from .MeshGeneration import generate_volumes
 from pprint import pprint
-
-
 
 def main():
     run_geocruncher(sys.argv)
@@ -20,7 +18,7 @@ def run_geocruncher(args):
     model = GeologicalModel(args[3])
     model.topography = txt_extract(args[4])
     box = model.getbox()
-    
+
     if args[1] == 'all':
         with open(args[2]) as f:
             data = json.load(f)
@@ -32,7 +30,7 @@ def run_geocruncher(args):
             xCoordNew=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
             yCoordNew=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
             zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
-            if zCoord[0] < box.zmax or zCoord[0] > box.zmin or zCoord[1] > box.zmin or zCoord[1] < box.zmax: 
+            if zCoord[0] < box.zmax or zCoord[0] > box.zmin or zCoord[1] > box.zmin or zCoord[1] < box.zmax:
                 if isOutofBounds(xCoord[0], yCoord[0], box) == True:
                     (xCoordNew[0], yCoordNew[0]) = intersectBounds(xCoord, yCoord, zCoord, box, 0)
                 if isOutofBounds(xCoord[1], yCoord[1], box) == True:
@@ -53,6 +51,19 @@ def run_geocruncher(args):
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent = 2, cls=GeocruncherJsonEncoder)
         sys.stdout.flush()
+
+    if args[1] == 'meshes':
+        """
+        Call: main.py meshes [num_samples] [geological_model_path] [surface_model_path] [out_dir]
+        """
+        num_samples = int(args[2])
+        shape = (num_samples, num_samples, num_samples)
+        out_dir = args[5]
+
+        generated_mesh_paths = generate_volumes(model, shape, out_dir)
+        # TODO do something useful with output files
+        print(generated_mesh_paths)
+
 
 def isOutofBounds(xCoord, yCoord, box):
     if xCoord > box.xmax or xCoord < box.xmin or yCoord > box.ymax or yCoord < box.ymin:
