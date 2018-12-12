@@ -64,6 +64,23 @@ def run_geocruncher(args):
         # TODO do something useful with output files
         print(generated_mesh_paths)
 
+    if args[1] == 'surface':
+        nPoints=500
+        data = json.loads(args[2])
+        xCoord=np.array([data["start"]["x"], data["end"]["x"]])
+        yCoord=np.array([data["start"]["y"], data["end"]["y"]])
+        zCoord=np.array([data["minElevation"], data["maxElevation"]])  
+        xCoordinds = xCoord.argsort()
+        xCoord = xCoord[xCoordinds[::-1]]
+        yCoord = yCoord[xCoordinds[::-1]]
+        outputs = {'forSurface': CrossSectionSurface.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
+        (rank) = CrossSectionSurface.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
+        outputs = { 'rank': rank }
+        #import codecs
+        #json.dump(outputs,codecs.open('output.json', 'w', encoding='utf-8'), indent = 2, separators=(',', ': '))    
+        with open(args[5], 'w') as f:
+            json.dump(outputs, f, indent = 2, separators=(',', ': '))        
+        sys.stdout.flush()
 
 def isOutofBounds(xCoord, yCoord, box):
     if xCoord > box.xmax or xCoord < box.xmin or yCoord > box.ymax or yCoord < box.ymin:
