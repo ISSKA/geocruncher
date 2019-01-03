@@ -185,7 +185,7 @@ class CrossSectionIntersections:
 
         return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
-class CrossSectionSurface:
+class CrossSectionSlice:
 
     def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
 
