@@ -70,7 +70,7 @@ def run_geocruncher(args):
         xCoord=np.array([data["start"]["x"], data["end"]["x"]])
         yCoord=np.array([data["start"]["y"], data["end"]["y"]])
         zCoord=np.array([data["minElevation"], data["maxElevation"]])  
-        xCoordinds = xCoord.argsort()
+        xCoordinds = (-xCoord).argsort() #reverse order sort
         xCoord = xCoord[xCoordinds[::-1]]
         yCoord = yCoord[xCoordinds[::-1]]
         outputs = {'forSurface': CrossSectionSlice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
