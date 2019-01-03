@@ -73,8 +73,8 @@ def run_geocruncher(args):
         xCoordinds = xCoord.argsort()
         xCoord = xCoord[xCoordinds[::-1]]
         yCoord = yCoord[xCoordinds[::-1]]
-        outputs = {'forSurface': CrossSectionSurface.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
-        (rank) = CrossSectionSurface.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
+        outputs = {'forSurface': CrossSectionSlice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
+        (rank) = CrossSectionSlice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
         outputs = { 'rank': rank }
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent = 2, separators=(',', ': '))        
