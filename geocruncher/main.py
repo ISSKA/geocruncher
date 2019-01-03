@@ -6,7 +6,7 @@ import re
 import os
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, CrossSectionSlice
 import json
 from .MeshGeneration import generate_volumes
 from pprint import pprint
