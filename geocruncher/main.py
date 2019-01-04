@@ -6,7 +6,7 @@ import re
 import os
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, CrossSectionSlice
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
 import json
 from .MeshGeneration import generate_volumes
 from pprint import pprint
@@ -73,8 +73,8 @@ def run_geocruncher(args):
         xCoordinds = (-xCoord).argsort() #reverse order sort
         xCoord = xCoord[xCoordinds[::-1]]
         yCoord = yCoord[xCoordinds[::-1]]
-        outputs = {'forSurface': CrossSectionSlice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
-        (rank) = CrossSectionSlice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
+        outputs = {'forSurface': Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])}
+        (rank) = Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
         outputs = { 'rank': rank }
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent = 2, separators=(',', ': '))        
