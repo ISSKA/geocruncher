@@ -6,6 +6,7 @@ import os
 
 def test_geocruncher():
     main.run_geocruncher(['', 'all', 'tests/dummy_project/sections.json', 'tests/dummy_project/geocruncher_project.xml', 'tests/dummy_project/geocruncher_dem.asc', 'test_output.json'])
+    os.remove('test_output.json')
 
 def test_mesh_generation():
     base_dir = os.path.join(os.getcwd(), 'tests')
