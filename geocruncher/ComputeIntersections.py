@@ -204,16 +204,16 @@ class Slice:
         zImgRange=np.linspace(0,imgSize[0],nPoints)
 
         #x,y,z Coordinates expressed in real coordinates
-        xCrossSectionRange=np.linspace(xCoord[0],xCoord[1],nPoints)
-        zCrossSectionRange=np.linspace(zCoord[0],zCoord[1],nPoints)
+        xSliceRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+        zSliceRange=np.linspace(zCoord[0],zCoord[1],nPoints)
         length = np.sqrt(np.power(xCoord[1] - xCoord[0],2) + np.power(yCoord[1] - yCoord[0],2))
-        xyCrossSectionRange=np.linspace(0, length,nPoints)
-        #x, z = np.ogrid[xCoord[0]:xCoord[1]:nPoints , zCoord[0]:zCoord[1]:nPoints]
-        z, x = np.meshgrid(zCrossSectionRange, xCrossSectionRange)
+        xySliceRange=np.linspace(0, length,nPoints)
+        z, x = np.meshgrid(zSliceRange, xSliceRange)
 
         #Main computation loop
         rankMatrix=list((map(computeRankMatrix,(np.arange(0,nPoints)))))
         return rankMatrix
+
 
 def computeBoundaries(minimalRanks, xs, ys):
     boundaries = dict()
