@@ -8,3 +8,9 @@ To run the dummy project:
 ```
 python -m geocruncher all tests/dummy_project/sections.json tests/dummy_project/geocruncher_project.xml tests/dummy_project/geocruncher_dem.asc  out.json
 ```
+
+To run the tests:
+
+```
+python setup.py test
+```

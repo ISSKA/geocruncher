@@ -25,17 +25,12 @@ def test_mesh_generation():
 
 def test_slice():
     base_dir = os.path.join(os.getcwd(), 'tests')
-    slice_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_slice.json')
+    slice_file = os.path.join(base_dir, 'dummy_project', 'slice.json')
     project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     dem_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_dem.asc')
-    out_dir = os.path.join(base_dir, 'slice_out')
+    out_file = os.path.join(base_dir, 'slice_out.json')
 
-    shutil.rmtree(out_dir, ignore_errors=True)
-    os.mkdir(out_dir)
-    main.run_geocruncher(['', 'slice', slice_file, project_file, dem_file, out_dir])
+    main.run_geocruncher(['', 'slice', slice_file, project_file, dem_file, out_file])
 
-    out_files = os.listdir(out_dir)
-    num_mesh_files = len([f for f in out_files if f.lower().endswith('.off')])
-    shutil.rmtree(out_dir, ignore_errors=True)
+    os.remove(out_file)
 
-    assert num_mesh_files > 0
