@@ -67,13 +67,16 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
     out_files = {}
     for rank, mesh in meshes.items():
-        name = 'rank_%d' % rank
-        out_file = os.path.join(outDir, name + '.off')
-        mesh.to_off(out_file)
-        if rank in out_files:
-            out_files[str(rank)].append(out_file)
-        else:
-            out_files[str(rank)] = [out_file]
+        submesh_id = 0
+        for submesh in mesh.submeshes():
+            filename = 'rank_%d_%d.off' % (rank, submesh_id)
+            out_file = os.path.join(outDir, filename)
+            submesh.to_off(out_file)
+            submesh_id = submesh_id + 1
+            if rank in out_files:
+                out_files[str(rank)].append(out_file)
+            else:
+                out_files[str(rank)] = [out_file]
 
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
         json.dump(out_files, f, indent = 2)
