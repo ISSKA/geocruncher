@@ -65,18 +65,19 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'slice':
-        nPoints=500
+        nPoints=300
+        slices = []
         with open(args[2]) as f:
             data = json.load(f)
         for rect in data:
             xCoord=[rect["lowerLeft"]["x"], rect["upperRight"]["x"]]
             yCoord=[rect["lowerLeft"]["y"], rect["upperRight"]["y"]]
             zCoord=[rect["lowerLeft"]["z"], rect["upperRight"]["z"]]
-            outputs = {'forSurface': Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])} 
-            (rank) = Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])
-            outputs = { 'rank': rank }
-            with open(args[5], 'w') as f:
-                json.dump(outputs, f, indent = 2, separators=(',', ': '))  
+            slices.append({ 'values': Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])});
+        outputs = { 'slices': slices }
+        with open(args[5], 'w') as f:
+            json.dump(outputs, f, indent = 2, separators=(',', ': '))        
+        sys.stdout.flush()
 
 def isOutofBounds(xCoord, yCoord, box):
     if xCoord > box.xmax or xCoord < box.xmin or yCoord > box.ymax or yCoord < box.ymin:
