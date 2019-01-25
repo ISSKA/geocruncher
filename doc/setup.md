@@ -29,26 +29,28 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 2. To be able to run the python script you need to manually change some files within geoCruncher. 
 
-	Within __Main__.py change
+	Within __Main__.py change:
 
         from . import main
-to
+
+	to:
+
         import main
 
-and within Main.py change
+	and within Main.py change:
 
-       from topography_reader import txt_extract
-from ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
-from MeshGeneration import generate_volumes
+        from topography_reader import txt_extract
+        from ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
+        from MeshGeneration import generate_volumes
 
+	to:
 
-TO
         from .topography_reader import txt_extract
-from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
-from .MeshGeneration import generate_volumes
+        from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
+        from .MeshGeneration import generate_volumes
 
+	To run locally the . before imports needs to be deleted.
 
-(delete the points)
 ### numpy
 
 1. run the following key:
