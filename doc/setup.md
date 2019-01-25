@@ -63,6 +63,8 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 ### Eigen
 
+* INSTALL.md URL: https://github.com/libigl/eigen/blob/master/INSTALL
+
 1. Download the eigen3 library in tar.gz format at their website (http://eigen.tuxfamily.org/index.php?title=Main_Page) or using this link directely:
 	
         http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
@@ -114,6 +116,8 @@ From now on you can compute intersections, however to compute meshes you still n
         make install .
 
 ### Meshtools
+
+* INSTALL.md URL: https://gitlab.inria.fr/charms/MeshTools/blob/master/INSTALL.md
 
 1. run the following key to clone the gmlib repository:
 	
