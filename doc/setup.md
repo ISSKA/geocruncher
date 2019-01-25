@@ -21,6 +21,31 @@ To run geoCruncher need other libraries to be installed. The followings needs to
  
 ##  Setup with linux 
 
+### GeoCruncher
+
+1. run the following key to clone the gmlib repository:
+
+        git clone https://gitlab.inria.fr/gmlib/gmlib.git
+
+2. To be able to run the python script you need to manually change some files within geoCruncher. Within __Main__.py change
+
+        from main import main
+to
+       import main
+
+and withinMain.py change
+
+       from topography_reader import txt_extract
+import sys
+import re
+import os
+import numpy as np
+from GeologicalModel3D import GeologicalModel
+from ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
+import json
+from MeshGeneration import generate_volumes
+from pprint import pprint
+
 ### numpy
 
 1. run the following key:
