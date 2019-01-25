@@ -29,13 +29,13 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 2. Or for python3
 	
-	pip3 install numpy
+        pip3 install numpy
 
 ### Eigen
 
 1. Download the eigen3 library in tar.gz format at their website (http://eigen.tuxfamily.org/index.php?title=Main_Page) or using this link directely:
 	
-	http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
+        http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
 
 2. Create a folder named eigen-build.
 
@@ -43,23 +43,23 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 4. If the generation have been succesful, go to the eigen-build folder and run:
 	
-	make install .
+        make install .
 
 ### GmLib
 
 1. run the following key to clone the gmlib repository:
 
-	git clone https://gitlab.inria.fr/gmlib/gmlib.git
+        git clone https://gitlab.inria.fr/gmlib/gmlib.git
 
 2. You will need to enter your Gitlab INRIA username and password.
 
 3. Within your git repository run the following key:
 	
-	pip install -e .
+        pip install -e .
 
 Or for python3
 	
-	pip3 install -e .
+        pip3 install -e .
 
 From now on you can compute intersections, however to compute meshes you still need two package CGAL and Meshtools
 
@@ -67,7 +67,7 @@ From now on you can compute intersections, however to compute meshes you still n
 
 1. run the following key to clone the cgal repository:
 	
-	git clone https://github.com/CGAL/cgal.git
+        git clone https://github.com/CGAL/cgal.git
 
 2. Create a folder named cgal-build.
 
@@ -77,7 +77,7 @@ From now on you can compute intersections, however to compute meshes you still n
 
 5. If the generation have been succesful, go to the cgal-build folder and run:
 
-	make install .
+        make install .
 
 ### Meshtools
 
@@ -94,8 +94,8 @@ From now on you can compute intersections, however to compute meshes you still n
 	
 4. Within your git repository run the following key:
 	
-	pip install .
+        pip install .
 
 Or for python3
 	
-	pip3 install .
+        pip3 install .
