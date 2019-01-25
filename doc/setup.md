@@ -29,7 +29,7 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 2. To be able to run the python script you need to manually change some files within geoCruncher. 
 
-	Within __Main__.py change:
+	Within \_\_Main\_\_.py change:
 
         from . import main
 
