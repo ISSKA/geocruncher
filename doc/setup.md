@@ -19,9 +19,9 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 * CGAL >= 4.13
 * numpy
  
-### On Linux
+##  Setup with linux 
 
-## numpy
+### numpy
 
 1. run the following key:
 	
@@ -91,7 +91,6 @@ From now on you can compute intersections, however to compute meshes you still n
 	
 	export CGAL_DIR=/usr/local/lib/cmake/CGAL
 
-	
 4. Within your git repository run the following key:
 	
         pip install .
