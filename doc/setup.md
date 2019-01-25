@@ -28,13 +28,13 @@ To run geoCruncher need other libraries to be installed. The followings needs to
         pip install numpy
 
 2. Or for python3
-
+	
 	pip3 install numpy
 
 ### Eigen
 
 1. Download the eigen3 library in tar.gz format at their website (http://eigen.tuxfamily.org/index.php?title=Main_Page) or using this link directely:
-
+	
 	http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
 
 2. Create a folder named eigen-build.
@@ -42,7 +42,7 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 3. Run cmake-gui, select the original eigen folder for the source code and eigen-build to build binaries. Then configure and generate.
 
 4. If the generation have been succesful, go to the eigen-build folder and run:
-
+	
 	make install .
 
 ### GmLib
@@ -54,11 +54,11 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 2. You will need to enter your Gitlab INRIA username and password.
 
 3. Within your git repository run the following key:
-
+	
 	pip install -e .
 
 Or for python3
-
+	
 	pip3 install -e .
 
 From now on you can compute intersections, however to compute meshes you still need two package CGAL and Meshtools
@@ -66,7 +66,7 @@ From now on you can compute intersections, however to compute meshes you still n
 ### CGAL
 
 1. run the following key to clone the cgal repository:
-
+	
 	git clone https://github.com/CGAL/cgal.git
 
 2. Create a folder named cgal-build.
@@ -82,18 +82,20 @@ From now on you can compute intersections, however to compute meshes you still n
 ### Meshtools
 
 1. run the following key to clone the gmlib repository:
-
+	
 	git clone https://gitlab.inria.fr/charms/MeshTools.git
 
 2. You will need to enter your Gitlab INRIA username and password.
 
 3. Setup the path to your cgal location usually by runnning:
+	
+	export CGAL_DIR=/usr/local/lib/cmake/CGAL
 
 	
 4. Within your git repository run the following key:
-
+	
 	pip install .
 
 Or for python3
-
+	
 	pip3 install .
