@@ -21,7 +21,7 @@ To run geoCruncher need other libraries to be installed. The followings needs to
  
 ### On Linux
 
-### numpy
+## numpy
 
 1. run the following key:
 	
