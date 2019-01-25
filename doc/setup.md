@@ -77,6 +77,8 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 ### GmLib
 
+* INSTALL.md URL: https://gitlab.inria.fr/gmlib/gmlib/blob/master/INSTALL.md
+
 1. run the following key to clone the gmlib repository:
 
         git clone https://gitlab.inria.fr/gmlib/gmlib.git
@@ -94,6 +96,8 @@ Or for python3
 From now on you can compute intersections, however to compute meshes you still need two package CGAL and Meshtools
 
 ### CGAL
+
+* INSTALL.md URL: https://github.com/CGAL/cgal/blob/master/INSTALL.md
 
 1. run the following key to clone the cgal repository:
 	
