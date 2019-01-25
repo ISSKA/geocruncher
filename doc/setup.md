@@ -136,3 +136,19 @@ From now on you can compute intersections, however to compute meshes you still n
 Or for python3
 	
         pip3 install .
+
+##  Setup for windows
+
+
+The steps for windows are the same than for linux but some of the tools used and integrated within linux have to be installed for windows.
+
+### Additional Requirements for windows
+
+* Assure that pip (or pip3) have been installed
+* Install a make command for windows
+* Install cmake
+* Install a c++ compiler for cmake (VisualStudio usually)
+
+### Windows command
+
+To run many of the command lines you will have to use alternative prompts, for example a bash prompt is needed to execute the make command. Moreover you may have to start the prompt as an administrator.
