@@ -64,6 +64,11 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
         verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent") # Gradient direction ensures normals point outwards
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
+
+        # Repair mesh if there are border edges. Mesh must be closed.
+        if not tsurf.is_closed():
+            CGAL.fix_border_edges(tsurf)
+
         meshes[rank] = tsurf
 
     out_files = defaultdict(list)
