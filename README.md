@@ -34,7 +34,7 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 * Eigen
 * GmLib by brgm (Commit 2c7736a57906c48a8edfbc6348f0477512debbd6 or later)
-* MeshTools by brgm (Commit 20e68f3bcc0581cbc79affb6abc7b470fe0243fb or later)
+* MeshTools by brgm (Commit 5923bad641f5fe82622a0b33e73806177a0f4690 or later)
 * scikit-image >= 0.14.0
 * CGAL >= 4.13
 * numpy
