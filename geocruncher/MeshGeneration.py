@@ -25,11 +25,14 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
     def rescale_to_grid(points, box, shape):
         nx, ny, nz = shape
-        return points * np.array([
+        stepSize = np.array([
             (box.xmax - box.xmin) / (nx - 1),
             (box.ymax - box.ymin) / (ny - 1),
-            (box.zmax - box.zmin) / (nz - 1),
-        ]) + np.array([box.xmin, box.ymin, box.zmin])
+            (box.zmax - box.zmin) / (nz - 1)
+          ])
+        # The marching cubes uses an extended shape with a margin of one additional step on each side.
+        # Thus we need to shift the mesh by one step size.
+        return (points * stepSize) - stepSize + np.array([box.xmin, box.ymin, box.zmin])
 
     nx, ny, nz = shape
     box = model.getbox()
@@ -64,6 +67,11 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
 
         verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent") # Gradient direction ensures normals point outwards
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
+
+        # Repair mesh if there are border edges. Mesh must be closed.
+        if not tsurf.is_closed():
+            CGAL.fix_border_edges(tsurf)
+
         meshes[rank] = tsurf
 
     out_files = defaultdict(list)
