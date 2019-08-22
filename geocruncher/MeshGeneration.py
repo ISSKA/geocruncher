@@ -65,7 +65,9 @@ def generate_volumes(model: GeologicalModel, shape: (int,int,int), outDir: str):
         indicator = np.zeros(extended_shape, dtype=np.float32)
         indicator[1:-1, 1:-1, 1:-1][ranks==rank] = 1
 
-        verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent") # Gradient direction ensures normals point outwards
+        # Using the non-classic variant leads to holes in the meshes which CGAL cannot handle
+        # the classic variant seems to work better for us
+        verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent", use_classic=True) # Gradient direction ensures normals point outwards
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
 
         # Repair mesh if there are border edges. Mesh must be closed.
