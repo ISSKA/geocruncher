@@ -98,6 +98,7 @@ From now on you can compute intersections, however to compute meshes you still n
 
 ### CGAL
 
+The correct CGAL version can be read from the deployment configuration at https://github.com/ISSKA/viskar-ops/blob/develop/packages/CGAL.nix#L4 .
 On Ubuntu CGAL can be installed from the repositories: `sudo apt install libcgal13`. Fedora also offers the package.
 
 If it's not available for the operating system, it needs to be compiled:
