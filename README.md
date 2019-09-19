@@ -98,6 +98,10 @@ From now on you can compute intersections, however to compute meshes you still n
 
 ### CGAL
 
+On Ubuntu CGAL can be installed from the repositories: `sudo apt install libcgal13`. Fedora also offers the package.
+
+If it's not available for the operating system, it needs to be compiled:
+
 * INSTALL.md URL: https://github.com/CGAL/cgal/blob/master/INSTALL.md
 
 1. run the following key to clone the cgal repository:
