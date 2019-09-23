@@ -10,9 +10,15 @@ from .ComputeIntersections import CrossSectionIntersections, MapIntersections, G
 import json
 from .MeshGeneration import generate_volumes
 from pprint import pprint
+import logging
+logging.basicConfig(filename='geocruncher.log', level=logging.DEBUG, filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def main():
-    run_geocruncher(sys.argv)
+    try:
+        run_geocruncher(sys.argv)
+    except Exception as e:
+        logger.error(e)
 
 def run_geocruncher(args):
     model = GeologicalModel(args[3])
