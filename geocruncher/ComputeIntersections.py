@@ -120,10 +120,6 @@ class CrossSectionIntersections:
                 return(-1)
 
         def findIntersectionX(rankLeft,rankRight,x1,x2,z):
-            # Insure that x1 and x2 are rounded to avoid running into
-            # an infinite loop due to implicite rounding at 10^-7
-            x1=int(round(x1))
-            x2=int(round(x2))
             if rankLeft != rankRight:
                 while (abs(x1-x2)>(abs(xCoord[0]-xCoord[1])/1000)):
                     xMid=(x1+x2)/2
