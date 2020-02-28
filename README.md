@@ -141,6 +141,19 @@ Or for python3
 	
         pip3 install .
 
+#### Workaround in case of building trouble
+
+According to Simon, a minimum of GCC 6.3 is necessary to compile the library. In case your struggling with compiling errors, a workaround is to install the pre-build library in your python local environment. It can be found on our Hetzner server.
+
+1. Connect to the server and find the library (usually inside of a [python{version}/site-packages] folder)
+
+        # find / -name MeshTools
+
+2. From your local machine, run the following command to copy the related folder
+    scp -r root@{server IP}:{path-to-site-packages} .
+
+3. Merge this folder with the site-packages folder related to your local python environment
+
 ##  Setup for windows
 
 
