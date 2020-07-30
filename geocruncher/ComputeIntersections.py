@@ -185,6 +185,60 @@ class CrossSectionIntersections:
 
         return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
+class MapSlice:
+
+    def output(xCoord,yCoord,nPoints,model):
+
+        topography=model.topography
+
+        def computeRank(a,b):
+            evaluate_z = topography.evaluate_z
+            ranks=model.rank
+            return ranks([a,b,evaluate_z([a,b])])
+
+        def findIntersectionY(rankUp,rankDown,y1,y2,x):
+            if rankUp != rankDown:
+                while (abs(y1-y2)>(abs(yCoord[0]-yCoord[1])/1000)):
+                    yMid=(y1+y2)/2
+                    if computeRank(x,y1)==computeRank(x,yMid):
+                        y1=yMid
+                    else:
+                        y2=yMid
+                return ((y1+y2)/2)
+            else:
+                return(-1)
+
+        def findIntersectionX(rankLeft,rankRight,x1,x2,y):
+            if rankLeft != rankRight:
+                while (abs(x1-x2)>(abs(xCoord[0]-xCoord[1])/1000)):
+                    xMid=(x1+x2)/2
+                    if computeRank(x1,y)==computeRank(x2,y):
+                        x1=xMid
+                    else:
+                        x2=xMid
+                return ((x1+x2)/2)
+            else:
+                return(-1)
+
+        def computeRankMatrix(index):
+            return np.array(list(map(computeRank,x[index],y[index]))).transpose().tolist()
+
+        slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
+
+        xStep=(xCoord[1]-xCoord[0])/nPoints
+        yStep=(yCoord[1]-yCoord[0])/nPoints
+
+
+        #x,y,z Coordinates expressed in real coordinates
+        xMapRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+        yMapRange=np.linspace(yCoord[0],yCoord[1],nPoints)
+
+        #x, z = np.ogrid[xCoord[0]:xCoord[1]:nPoints , zCoord[0]:zCoord[1]:nPoints]
+        y, x = np.meshgrid(yMapRange, xMapRange)
+
+        rankMatrix=list((map(computeRankMatrix,(np.arange(0,nPoints)))))
+        return rankMatrix
+
 class Slice:
 
     def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
