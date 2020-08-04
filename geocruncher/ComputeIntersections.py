@@ -223,12 +223,6 @@ class MapSlice:
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],y[index]))).transpose().tolist()
 
-        slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
-
-        xStep=(xCoord[1]-xCoord[0])/nPoints
-        yStep=(yCoord[1]-yCoord[0])/nPoints
-
-
         #x,y,z Coordinates expressed in real coordinates
         xMapRange=np.linspace(xCoord[0],xCoord[1],nPoints)
         yMapRange=np.linspace(yCoord[0],yCoord[1],nPoints)
