@@ -196,30 +196,6 @@ class MapSlice:
             ranks=model.rank
             return ranks([a,b,evaluate_z([a,b])])
 
-        def findIntersectionY(rankUp,rankDown,y1,y2,x):
-            if rankUp != rankDown:
-                while (abs(y1-y2)>(abs(yCoord[0]-yCoord[1])/1000)):
-                    yMid=(y1+y2)/2
-                    if computeRank(x,y1)==computeRank(x,yMid):
-                        y1=yMid
-                    else:
-                        y2=yMid
-                return ((y1+y2)/2)
-            else:
-                return(-1)
-
-        def findIntersectionX(rankLeft,rankRight,x1,x2,y):
-            if rankLeft != rankRight:
-                while (abs(x1-x2)>(abs(xCoord[0]-xCoord[1])/1000)):
-                    xMid=(x1+x2)/2
-                    if computeRank(x1,y)==computeRank(x2,y):
-                        x1=xMid
-                    else:
-                        x2=xMid
-                return ((x1+x2)/2)
-            else:
-                return(-1)
-
         def computeRankMatrix(index):
             return np.array(list(map(computeRank,x[index],y[index]))).transpose().tolist()
 
