@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='geocruncher',
-    version='0.1.0',
+    version='0.3.1',
     description='A bridge between Gmlib and VK',
     packages=find_packages(exclude=['doc']),
     python_requires='>=3',
