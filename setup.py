@@ -9,7 +9,7 @@ setup(
     setup_requires=['pytest-runner'],
     install_requires=['numpy'],
     tests_require=['pytest'],
-#    scripts=['GeoCruncher/main.py']
+    #scripts=['GeoCruncher/main.py']
     entry_points='''
         [console_scripts]
         geocruncher=geocruncher.main:main
