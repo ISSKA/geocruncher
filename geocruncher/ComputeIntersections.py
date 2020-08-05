@@ -212,27 +212,30 @@ class MapSlice:
 class Slice:
 
     def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
-
-        def computeRank(x,z):
-            y=slope*(x-xCoord[0])+yCoord[0]
+        def computeRank(a,z):
             ranks=model.rank
-            return ranks([x,y,z])
+            if not isOnYAxis:
+                y=slope*(a-xCoord[0])+yCoord[0]
+                return ranks([a,y,z])
+            else:
+                return ranks([xCoord[0], a, z])
             
         def computeRankMatrix(index):
-            return np.array(list(map(computeRank,x[index],z[index]))).transpose().tolist()
-
-        slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
-
-        #x Coordinates expressed in pixels
-        xImgRange=np.linspace(0,imgSize[1],nPoints)
-        zImgRange=np.linspace(0,imgSize[0],nPoints)
-
-        #x,y,z Coordinates expressed in real coordinates
-        xSliceRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+            if not isOnYAxis:
+                return np.array(list(map(computeRank,x[index],z[index]))).transpose().tolist()
+            else:
+                return np.array(list(map(computeRank,y[index],z[index]))).transpose().tolist()
+        
         zSliceRange=np.linspace(zCoord[0],zCoord[1],nPoints)
-        length = np.sqrt(np.power(xCoord[1] - xCoord[0],2) + np.power(yCoord[1] - yCoord[0],2))
-        xySliceRange=np.linspace(0, length,nPoints)
-        z, x = np.meshgrid(zSliceRange, xSliceRange)
+
+        isOnYAxis = xCoord[0] == xCoord[1]
+        if not isOnYAxis:
+            slope=(yCoord[0]-yCoord[1])/(xCoord[0]-xCoord[1])
+            xSliceRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+            z, x = np.meshgrid(zSliceRange, xSliceRange)
+        else:
+            ySliceRange=np.linspace(yCoord[0],yCoord[1],nPoints)
+            z, y = np.meshgrid(zSliceRange, ySliceRange)
 
         #Main computation loop
         rankMatrix=list((map(computeRankMatrix,(np.arange(0,nPoints)))))
