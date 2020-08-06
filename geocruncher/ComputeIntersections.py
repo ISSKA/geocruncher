@@ -187,13 +187,9 @@ class CrossSectionIntersections:
 
 class MapSlice:
 
-    def output(xCoord,yCoord,nPoints,model):
-
-        topography=model.topography
+    def output(xCoord,yCoord,nPoints,ranks,evaluate_z):
 
         def computeRank(a,b):
-            evaluate_z = topography.evaluate_z
-            ranks=model.rank
             return ranks([a,b,evaluate_z([a,b])])
 
         def computeRankMatrix(index):
@@ -211,9 +207,8 @@ class MapSlice:
 
 class Slice:
 
-    def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):
+    def output(xCoord,yCoord,zCoord,nPoints,ranks,imgSize):
         def computeRank(a,z):
-            ranks=model.rank
             if not isOnYAxis:
                 y=slope*(a-xCoord[0])+yCoord[0]
                 return ranks([a,y,z])
