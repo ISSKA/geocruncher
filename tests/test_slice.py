@@ -1,6 +1,5 @@
 import pytest
 
-from mockito import when, mock, unstub
 import os
 
 from geocruncher.ComputeIntersections import Slice, MapSlice
