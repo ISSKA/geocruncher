@@ -185,6 +185,30 @@ class CrossSectionIntersections:
 
         return computeBoundaries(minimalRanksList, xBoundaryList, yBoundaryList)
 
+class MapSlice:
+
+    def output(xCoord,yCoord,nPoints,model):
+
+        topography=model.topography
+
+        def computeRank(a,b):
+            evaluate_z = topography.evaluate_z
+            ranks=model.rank
+            return ranks([a,b,evaluate_z([a,b])])
+
+        def computeRankMatrix(index):
+            return np.array(list(map(computeRank,x[index],y[index]))).transpose().tolist()
+
+        #x,y,z Coordinates expressed in real coordinates
+        xMapRange=np.linspace(xCoord[0],xCoord[1],nPoints)
+        yMapRange=np.linspace(yCoord[0],yCoord[1],nPoints)
+
+        #x, z = np.ogrid[xCoord[0]:xCoord[1]:nPoints , zCoord[0]:zCoord[1]:nPoints]
+        y, x = np.meshgrid(yMapRange, xMapRange)
+
+        rankMatrix=list((map(computeRankMatrix,(np.arange(0,nPoints)))))
+        return rankMatrix
+
 class Slice:
 
     def output(xCoord,yCoord,zCoord,nPoints,model,imgSize):

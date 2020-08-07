@@ -6,7 +6,7 @@ import re
 import os
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice
+from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice, MapSlice
 import json
 from .MeshGeneration import generate_volumes
 from pprint import pprint
@@ -65,7 +65,7 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'slice':
-        nPoints=300
+        nPoints=150
         slices = []
         with open(args[2]) as f:
             data = json.load(f)
@@ -75,8 +75,11 @@ def run_geocruncher(args):
             zCoord=[int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
             slices.append({ 'values': Slice.output(xCoord,yCoord,zCoord,nPoints,model, [1, 1])});
         outputs = { 'slices': slices }
+        xCoord=[box.xmin,box.xmax]
+        yCoord=[box.ymin,box.ymax]
+        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints, model)
         with open(args[5], 'w') as f:
-            json.dump(outputs, f, indent = 2, separators=(',', ': '))        
+            json.dump(outputs, f, indent = 2, separators=(',', ': '))
         sys.stdout.flush()
 
 def isOutofBounds(xCoord, yCoord, box):
