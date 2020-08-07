@@ -10,8 +10,6 @@ def test_sliceAroundYAxisTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    base_dir = os.path.join(os.getcwd(), 'tests')
-    project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     Slice.output([0, 0], [10, 29], [0, 19], 20, fakeRank, [1, 1])
     for y in range(10, 30):
         for z in range(0, 20):
@@ -22,8 +20,6 @@ def test_sliceForSlopOfOneTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    base_dir = os.path.join(os.getcwd(), 'tests')
-    project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     Slice.output([0, 19], [10, 29], [0, 19], 20, fakeRank, [1, 1])
     for xy in range(0, 20):
         for z in range(0, 20):
@@ -34,8 +30,6 @@ def test_sliceForSlopeOfZeroTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    base_dir = os.path.join(os.getcwd(), 'tests')
-    project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     Slice.output([0, 19], [10, 10], [0, 19], 20, fakeRank, [1, 1])
     for x in range(0, 20):
         for z in range(0, 20):
@@ -48,8 +42,6 @@ def test_mapSliceTestPointsRegularlyForFlatGround():
         return 0
     def fakeCalculateZ(xy):
         return 10
-    base_dir = os.path.join(os.getcwd(), 'tests')
-    project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     MapSlice.output([0, 19], [10, 29], 20, fakeRank, fakeCalculateZ)
     for x in range(0, 20):
         for y in range(10, 30):
@@ -62,8 +54,6 @@ def test_mapSliceTestPointsRegularlyForDescendingGroundX():
         return 0
     def fakeCalculateZ(xy):
         return 20 - xy[0]
-    base_dir = os.path.join(os.getcwd(), 'tests')
-    project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     MapSlice.output([0, 19], [10, 29], 20, fakeRank, fakeCalculateZ)
     for x in range(0, 20):
         for y in range(10, 30):
