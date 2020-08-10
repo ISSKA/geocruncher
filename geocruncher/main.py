@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import json
-import sys
-
 import numpy as np
+import sys
 from gmlib.GeologicalModel3D import GeologicalModel
 
 from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice, MapSlice
@@ -74,11 +73,11 @@ def run_geocruncher(args):
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            slices.append({'values': Slice.output(xCoord, yCoord, zCoord, nPoints, model, [1, 1])});
+            slices.append({'values': Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1])});
         outputs = {'slices': slices}
         xCoord = [box.xmin, box.xmax]
         yCoord = [box.ymin, box.ymax]
-        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints, model)
+        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z)
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
