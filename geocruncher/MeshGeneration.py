@@ -5,7 +5,6 @@ from collections import defaultdict
 import MeshTools.CGALWrappers as CGAL
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from skimage.measure import marching_cubes
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
 
