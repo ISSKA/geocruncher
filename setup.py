@@ -10,8 +10,7 @@ setup(
     python_requires='>=3',
     install_requires=['numpy'],
     tests_require=['pytest'],
-    cmdclass = {'test': PyTest},
-#    scripts=['GeoCruncher/main.py']
+    cmdclass={'test': PyTest},
     entry_points='''
         [console_scripts]
         geocruncher=geocruncher.main:main
