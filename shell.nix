@@ -2,4 +2,4 @@
 
 with nixpkgs;
 
-(python36.withPackages (ps: with ps; [ numpy pytest gmlib pytest pytestrunner scikitimage MeshTools ])).env
+(python36.withPackages (ps: with ps; [ numpy pytest gmlib pytest scikitimage MeshTools ])).env
