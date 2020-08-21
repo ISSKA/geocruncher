@@ -4,7 +4,7 @@ from runner_test import PyTest
 
 setup(
     name='geocruncher',
-    version='0.3.1',
+    version='0.3.2',
     description='A bridge between Gmlib and VK',
     packages=find_packages(exclude=['doc']),
     python_requires='>=3',

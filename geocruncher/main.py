@@ -67,8 +67,10 @@ def run_geocruncher(args):
     if args[1] == 'slice':
         nPoints = 150
         slices = []
+        # TODO we probably need additional data for gw-body etc.
         with open(args[2]) as f:
             data = json.load(f)
+            print(data)  # TODO not sure how this is logged?
         for rect in data:
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
