@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import json
-import numpy as np
 import sys
+
+import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 
 from .ComputeIntersections import CrossSectionIntersections, MapIntersections, GeocruncherJsonEncoder, Slice, MapSlice
@@ -65,21 +66,21 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'slice':
-        nPoints = 150
+        # nPoints = [150, 150]
+        nPoints = [5, 150]
         slices = []
         # TODO we probably need additional data for gw-body etc.
         with open(args[2]) as f:
             data = json.load(f)
-            print(data)  # TODO not sure how this is logged?
         for rect in data:
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            slices.append({'values': Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1])});
+            slices.append({'values': Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank)});
         outputs = {'slices': slices}
         xCoord = [box.xmin, box.xmax]
         yCoord = [box.ymin, box.ymax]
-        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z)
+        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints[1], model.rank, model.topography.evaluate_z)
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
