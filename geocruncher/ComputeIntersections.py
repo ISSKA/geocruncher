@@ -215,7 +215,17 @@ class MapSlice:
 
 class Slice:
     @staticmethod
-    def output(xCoord: List[int], yCoord: List[int], zCoord: List[int], nPoints: [int, int], ranks: Callable[[Any], Any]) -> List[object]:
+    def output(xCoord: List[int], yCoord: List[int], zCoord: List[int], nPoints: int, ranks: Callable[[Any], Any]) -> List[object]:
+        """
+        :param xCoord: the x coordinates of the [start,end] point
+        :param yCoord: the y coordinates of the [start,end] point
+        :param zCoord: the elevation range of the slice [bottom,top]
+        :param nPoints: the number of points to calculate
+        :param ranks: the rank callable
+        :return: a slice matrix
+        """
+        slope = 0
+
         def computeRank(a, z):
             if not isOnYAxis:
                 y = slope * (a - xCoord[0]) + yCoord[0]
@@ -229,19 +239,19 @@ class Slice:
             else:
                 return np.array(list(map(computeRank, y[index], z[index]))).transpose().tolist()
 
-        zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints[1])
-
+        # TODO probably add this to the model so we can change the min,max coordinates etc. -> not sure if we can filter the sky somehow?
+        zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints)
         isOnYAxis = xCoord[0] == xCoord[1]
         if not isOnYAxis:
             slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
-            xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints[0])
+            xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
             z, x = np.meshgrid(zSliceRange, xSliceRange)
         else:
-            ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints[0])
+            ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
             z, y = np.meshgrid(zSliceRange, ySliceRange)
 
         # Main computation loop
-        rankMatrix = list((map(computeRankMatrix, (np.arange(0, nPoints[0])))))
+        rankMatrix = list((map(computeRankMatrix, (np.arange(0, nPoints)))))
         return rankMatrix
 
 

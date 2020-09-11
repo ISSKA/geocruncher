@@ -1,7 +1,7 @@
 from geocruncher.ComputeIntersections import Slice, MapSlice
 
 
-# TODO probably also add a test here for the new slice fuction -> or integrate into the existing one?
+# TODO probably also add a test here for the new slice function -> or integrate into the existing one?
 
 def test_sliceAroundYAxisTestPointsRegularly():
     tested_points = []
@@ -10,7 +10,7 @@ def test_sliceAroundYAxisTestPointsRegularly():
         tested_points.append(l)
         return 0
 
-    Slice.output([0, 0], [10, 29], [0, 19], [20, 20], fakeRank)
+    Slice.output([0, 0], [10, 29], [0, 19], 20, fakeRank)
     for y in range(10, 30):
         for z in range(0, 20):
             assert [float(0), float(y), float(z)] in tested_points
@@ -23,7 +23,7 @@ def test_sliceForSlopOfOneTestPointsRegularly():
         tested_points.append(l)
         return 0
 
-    Slice.output([0, 19], [10, 29], [0, 19], [20, 20], fakeRank)
+    Slice.output([0, 19], [10, 29], [0, 19], 20, fakeRank)
     for xy in range(0, 20):
         for z in range(0, 20):
             assert [float(xy), float(10 + xy), float(z)] in tested_points
@@ -36,7 +36,7 @@ def test_sliceForSlopeOfZeroTestPointsRegularly():
         tested_points.append(l)
         return 0
 
-    Slice.output([0, 19], [10, 10], [0, 19], [20, 20], fakeRank)
+    Slice.output([0, 19], [10, 10], [0, 19], 20, fakeRank)
     for x in range(0, 20):
         for z in range(0, 20):
             assert [float(x), float(10), float(z)] in tested_points

@@ -66,8 +66,7 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'slice':
-        # nPoints = [150, 150]
-        nPoints = [5, 150]
+        nPoints = 150
         slices = []
         # TODO we probably need additional data for gw-body etc.
         with open(args[2]) as f:
@@ -80,7 +79,7 @@ def run_geocruncher(args):
         outputs = {'slices': slices}
         xCoord = [box.xmin, box.xmax]
         yCoord = [box.ymin, box.ymax]
-        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints[1], model.rank, model.topography.evaluate_z)
+        outputs['mapSlices'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z)
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
