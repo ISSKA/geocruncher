@@ -21,10 +21,12 @@ def run_geocruncher(args):
 
     if args[1] == 'meshes':
         """
-        Call: main.py meshes [num_samples] [geological_model_path] [surface_model_path] [out_dir]
+        Call: main.py meshes [resolution_path] [geological_model_path] [surface_model_path] [out_dir]
         """
-        num_samples = int(args[2])
-        shape = (num_samples, num_samples, num_samples)
+        # num_samples = int(args[2])
+        with open(args[2]) as f:
+            data = json.load(f)
+        shape = (data["x"], data["y"], data["z"])
         out_dir = args[5]
 
         generated_mesh_paths = generate_volumes(model, shape, out_dir)
