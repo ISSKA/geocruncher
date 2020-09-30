@@ -77,21 +77,34 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
         meshes[rank] = tsurf
 
-    out_files = {"mesh": defaultdict(list), "fault": defaultdict(list)}
+    out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
     for rank, mesh in meshes.items():
         filename = 'rank_%d.off' % rank
         out_file = os.path.join(outDir, filename)
         mesh.to_off(out_file)
         out_files["mesh"][str(rank)].append(out_file)
 
-    faults = tesselate_faults(box, (nx, ny, nz), model)
-    for name, fault in faults.items():
-        filename = 'fault_%s.off' % name
-        out_file = os.path.join(outDir, filename)
-        fault.to_off(out_file)
-        out_files["fault"][name].append(out_file)
+    with open(os.path.join(outDir, 'index.json'), 'w') as f:
+        json.dump(out_files, f, indent=2)
+
+    return out_files
+
+def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str):
+    out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
 
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
         json.dump(out_files, f, indent=2)
 
+    return out_files
+
+def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir: str):
+    box = model.getbox()
+    nx, ny, nz = shape
+    faults = tesselate_faults(box, (nx, ny, nz), model)
+    out_files = defaultdict(list)
+    for name, fault in faults.items():
+        filename = 'fault_%s.off' % name
+        out_file = os.path.join(outDir, filename)
+        fault.to_off(out_file)
+        out_files[name].append(out_file)
     return out_files
