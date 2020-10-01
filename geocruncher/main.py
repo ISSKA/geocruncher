@@ -6,7 +6,7 @@ import sys
 from gmlib.GeologicalModel3D import GeologicalModel
 
 from .ComputeIntersections import Slice, MapSlice
-from .MeshGeneration import generate_volumes
+from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
 
 
@@ -66,3 +66,11 @@ def run_geocruncher(args):
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
+
+    if args[1] == "faults":
+        with open(args[2]) as f:
+            data = json.load(f)
+        shape = (data["x"], data["y"], data["z"])
+        out_dir = args[5]
+
+        generated_mesh_paths = generate_faults(model, shape, out_dir)
