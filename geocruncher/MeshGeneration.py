@@ -103,8 +103,15 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     faults = tesselate_faults(box, (nx, ny, nz), model)
     out_files = defaultdict(list)
     for name, fault in faults.items():
-        filename = 'fault_%s.off' % name
-        out_file = os.path.join(outDir, filename)
-        fault.to_off(out_file)
-        out_files[name].append(out_file)
+        fault_data = model.faults_data[name]
+        if fault_data.infinite:
+            filename = 'fault_%s.off' % name
+            out_file = os.path.join(outDir, filename)
+            fault.to_off(out_file)
+            out_files[name].append(out_file)
+        else: # TODO fix finite faults with algorithm: https://gitlab.brgm.fr/brgm/modelisation-geologique/gmlib/-/issues/11
+            filename = 'fault_%s.off' % name
+            out_file = os.path.join(outDir, filename)
+            fault.to_off(out_file)
+            out_files[name].append(out_file)
     return out_files
