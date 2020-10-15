@@ -1,5 +1,6 @@
 import json
 import os
+import math
 from collections import defaultdict
 
 import MeshTools.CGALWrappers as CGAL
@@ -108,3 +109,34 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
         fault.to_off(out_file)
         out_files[name].append(out_file)
     return out_files
+
+def faults_intersections(xCoord, yCoord, zCoord, nPoints, model):
+    faults = tesselate_faults(model.getbox(), (nPoints, nPoints, nPoints), model)
+    vertices = [
+      [xCoord[0], yCoord[0], zCoord[0]], 
+      [xCoord[0], yCoord[0], zCoord[1]], 
+      [xCoord[1], yCoord[1], zCoord[0]], 
+      [xCoord[1], yCoord[1], zCoord[1]]]
+    triangles =  np.array([[0, 1, 2], [3, 2, 1]]) # Connect mesh as a rectangle
+    surface = CGAL.TSurf(
+      vertices,
+      triangles
+    )
+    fault_res = {}
+    for name, fault in faults.items():
+        for polyline in CGAL.intersection_curves(fault, surface):
+            if not name in fault_res:
+                fault_res[name] = []
+            for point in polyline:
+                el = str(point).split(" ")
+                xF = float(str(el[1]).replace(",", ""))
+                yF = float(str(el[3]).replace(",", ""))
+                zF = str(el[4]).replace(",", "").replace(")", "")
+                if not zF:
+                    zF = float(str(el[5]).replace(",", "").replace(")", ""))
+                else:
+                    zF = float(zF)
+                final_x = math.sqrt((xF - xCoord[0]) ** 2 + (yF - yCoord[0]) ** 2) / math.sqrt((xCoord[1] - xCoord[0]) ** 2 + (yCoord[1] - yCoord[0]) ** 2)
+                final_y = (zF - zCoord[0]) / (zCoord[1] - zCoord[0])
+                fault_res[name].append([final_x, final_y])
+    return fault_res
