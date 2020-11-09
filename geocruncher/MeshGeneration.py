@@ -127,16 +127,8 @@ def faults_intersections(xCoord, yCoord, zCoord, nPoints, model):
         for polyline in CGAL.intersection_curves(fault, surface):
             if not name in fault_res:
                 fault_res[name] = []
-            for point in polyline:
-                el = str(point).split(" ")
-                xF = float(str(el[1]).replace(",", ""))
-                yF = float(str(el[3]).replace(",", ""))
-                zF = str(el[4]).replace(",", "").replace(")", "")
-                if not zF:
-                    zF = float(str(el[5]).replace(",", "").replace(")", ""))
-                else:
-                    zF = float(zF)
-                final_x = math.sqrt((xF - xCoord[0]) ** 2 + (yF - yCoord[0]) ** 2) / math.sqrt((xCoord[1] - xCoord[0]) ** 2 + (yCoord[1] - yCoord[0]) ** 2)
-                final_y = (zF - zCoord[0]) / (zCoord[1] - zCoord[0])
+            for point in np.array(polyline, copy=False):
+                final_x = math.sqrt((point[0] - xCoord[0]) ** 2 + (point[1] - yCoord[0]) ** 2) / math.sqrt((xCoord[1] - xCoord[0]) ** 2 + (yCoord[1] - yCoord[0]) ** 2)
+                final_y = (point[2] - zCoord[0]) / (zCoord[1] - zCoord[0])
                 fault_res[name].append([final_x, final_y])
     return fault_res
