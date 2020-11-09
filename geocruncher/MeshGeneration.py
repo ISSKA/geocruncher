@@ -8,8 +8,7 @@ from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
-
-def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str):
+def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: (int, int, int) = None):
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
 
     Parameters:
@@ -36,7 +35,10 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         return (points * stepSize) - stepSize + np.array([box.xmin, box.ymin, box.zmin])
 
     nx, ny, nz = shape
-    box = model.getbox()
+    if optBox:
+        box = optBox
+    else:
+        box = model.getbox()
     steps = (
         np.linspace(box.xmin, box.xmax, nx),
         np.linspace(box.ymin, box.ymax, ny),
