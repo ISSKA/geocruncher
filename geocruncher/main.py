@@ -4,6 +4,7 @@ import json
 import numpy as np
 import sys
 from gmlib.GeologicalModel3D import GeologicalModel
+from gmlib.GeologicalModel3D import Box
 
 from .ComputeIntersections import Slice, MapSlice
 from .MeshGeneration import generate_volumes, generate_faults
@@ -26,11 +27,17 @@ def run_geocruncher(args):
         # num_samples = int(args[2])
         with open(args[2]) as f:
             data = json.load(f)
-        shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
+        shape = (int(data["resolution"]["x"]), int(data["resolution"]["y"]), int(data["resolution"]["z"]))
         out_dir = args[5]
 
-        if "box" in data:
-            generated_mesh_paths = generate_volumes(model, shape, out_dir, (data["box"]["x"], data["box"]["y"], data["box"]["z"]))
+        if "box" in data and data["box"]:
+            optBox = Box(xmin=int(data["box"]["xMin"]), 
+                ymin=int(data["box"]["yMin"]), 
+                zmin=int(data["box"]["zMin"]), 
+                xmax=int(data["box"]["xMax"]), 
+                ymax=int(data["box"]["yMax"]), 
+                zmax=int(data["box"]["zMax"]))
+            generated_mesh_paths = generate_volumes(model, shape, out_dir, optBox)
         else:
             generated_mesh_paths = generate_volumes(model, shape, out_dir)
         # TODO do something useful with output files

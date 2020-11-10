@@ -5,10 +5,11 @@ from collections import defaultdict
 import MeshTools.CGALWrappers as CGAL
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
+from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
-def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: (int, int, int) = None):
+def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
 
     Parameters:
