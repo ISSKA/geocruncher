@@ -31,12 +31,12 @@ def run_geocruncher(args):
         out_dir = args[5]
 
         if "box" in data and data["box"]:
-            optBox = Box(xmin=int(data["box"]["xMin"]), 
-                ymin=int(data["box"]["yMin"]), 
-                zmin=int(data["box"]["zMin"]), 
-                xmax=int(data["box"]["xMax"]), 
-                ymax=int(data["box"]["yMax"]), 
-                zmax=int(data["box"]["zMax"]))
+            optBox = Box(xmin=float(data["box"]["xMin"]), 
+                ymin=float(data["box"]["yMin"]), 
+                zmin=float(data["box"]["zMin"]), 
+                xmax=float(data["box"]["xMax"]), 
+                ymax=float(data["box"]["yMax"]), 
+                zmax=float(data["box"]["zMax"]))
             generated_mesh_paths = generate_volumes(model, shape, out_dir, optBox)
         else:
             generated_mesh_paths = generate_volumes(model, shape, out_dir)
