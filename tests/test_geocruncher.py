@@ -11,14 +11,14 @@ def test_geocruncher():
 
 def test_mesh_generation():
     base_dir = os.path.join(os.getcwd(), 'tests')
-    resolution_file = os.path.join(base_dir, 'dummy_project', 'resolution.json')
+    configuration_file = os.path.join(base_dir, 'dummy_project', 'configuration.json')
     project_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_project.xml')
     dem_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_dem.asc')
     out_dir = os.path.join(base_dir, 'meshes_out')
 
     shutil.rmtree(out_dir, ignore_errors=True)
     os.mkdir(out_dir)
-    main.run_geocruncher(['', 'meshes', resolution_file, project_file, dem_file, out_dir])
+    main.run_geocruncher(['', 'meshes', configuration_file, project_file, dem_file, out_dir])
 
     out_files = os.listdir(out_dir)
     num_mesh_files = len([f for f in out_files if f.lower().endswith('.off')])
