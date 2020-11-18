@@ -80,7 +80,7 @@ def run_geocruncher(args):
     if args[1] == "faults":
         with open(args[2]) as f:
             data = json.load(f)
-        shape = (data["x"], data["y"], data["z"])
+        shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
         out_dir = args[5]
 
         generated_mesh_paths = generate_faults(model, shape, out_dir)
