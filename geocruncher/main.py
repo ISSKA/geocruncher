@@ -43,21 +43,6 @@ def run_geocruncher(args):
         # TODO do something useful with output files
         print(generated_mesh_paths)
 
-    if args[1] == 'slice':
-        nPoints = 300
-        slices = []
-        with open(args[2]) as f:
-            data = json.load(f)
-        for rect in data:
-            xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
-            yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
-            zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            slices.append({'values': Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1])})
-        outputs = {'slices': slices}
-        with open(args[5], 'w') as f:
-            json.dump(outputs, f, indent=2, separators=(',', ': '))
-        sys.stdout.flush()
-
     if args[1] == 'intersections':
         crossSections = {}
         with open(args[2]) as f:
