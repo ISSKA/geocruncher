@@ -34,6 +34,6 @@ def test_slice():
     dem_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_dem.asc')
     out_file = os.path.join(base_dir, 'slice_out.json')
 
-    main.run_geocruncher(['', 'slice', slice_file, project_file, dem_file, out_file])
+    main.run_geocruncher(['', 'intersections', slice_file, project_file, dem_file, out_file])
 
-    os.remove(out_file)
+    # os.remove(out_file)
