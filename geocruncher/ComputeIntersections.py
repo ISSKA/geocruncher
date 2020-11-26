@@ -71,9 +71,6 @@ class FaultIntersection:
             points = list(map(lambda s: [xCoord[0], s[0], s[1]], el))
         output = {}
         for name, fault in model.faults.items():
-            output[name] = list(chunks(fault(points).tolist(), nPoints))
+            coloredPoints = np.array(np.array_split(fault(points), nPoints))
+            output[name] = coloredPoints.tolist()
         return output
-
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
