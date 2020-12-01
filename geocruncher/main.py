@@ -3,12 +3,14 @@
 import json
 import numpy as np
 import sys
+import os
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
 from .ComputeIntersections import Slice, MapSlice, FaultIntersection
 from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
+from .Interpolation import computeBezierCoefficients
 
 
 def main():
@@ -16,9 +18,10 @@ def main():
 
 
 def run_geocruncher(args):
-    model = GeologicalModel(args[3])
-    model.topography = txt_extract(args[4])
-    box = model.getbox()
+    if args[1] != "bezier_interpolation" and len(args) > 4 and os.path.exists(args[3]) and os.path.exists(args[4]):
+        model = GeologicalModel(args[3])
+        model.topography = txt_extract(args[4])
+        box = model.getbox()
 
     if args[1] == 'meshes':
         """
@@ -85,4 +88,17 @@ def run_geocruncher(args):
 
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
+        sys.stdout.flush()
+
+    if args[1] == "bezier_interpolation":
+        with open(args[2]) as f:
+            data = json.load(f)
+        points = np.array([[p["x"], p["y"], p["z"]] for p in data["points"]])
+        A, B = computeBezierCoefficients(points)
+        output = {}
+        output["A"] = A.tolist()
+        output["B"] = [b.tolist() for b in B]
+
+        with open(args[3], 'w') as f:
+            json.dump(output, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
