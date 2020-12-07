@@ -51,3 +51,26 @@ class Slice:
         # Main computation loop
         rankMatrix = list((map(computeRankMatrix, (np.arange(0, nPoints)))))
         return rankMatrix
+
+
+class FaultIntersection:
+
+    def output(xCoord, yCoord, zCoord, nPoints, model):
+        zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints)
+        isOnYAxis = xCoord[0] == xCoord[1]
+        if not isOnYAxis:
+            slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
+            xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
+            x, z = np.meshgrid(xSliceRange, zSliceRange)
+            el = np.array([x.flatten(), z.flatten()]).T
+            points = list(map(lambda s: [s[0], slope * (s[0] - xCoord[0]) + yCoord[0], s[1]], el))
+        else:
+            ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
+            y, z = np.meshgrid(ySliceRange, zSliceRange)
+            el = np.array([y.flatten(), z.flatten()]).T
+            points = list(map(lambda s: [xCoord[0], s[0], s[1]], el))
+        output = {}
+        for name, fault in model.faults.items():
+            coloredPoints = np.array(np.array_split(fault(points), nPoints))
+            output[name] = coloredPoints.tolist()
+        return output
