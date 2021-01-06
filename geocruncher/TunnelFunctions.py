@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.integrate as integrate
+import math
 
 def computeBezierCoefficients(points):
     """
@@ -29,3 +31,9 @@ def computeBezierCoefficients(points):
     B[n - 1] = (A[n - 1] + points[n]) / 2
 
     return A, B
+
+def computeArcLength(f, start, end):
+    return round(integrate.quad(_to_lambda(f), start, end)[0], 2)
+
+def _to_lambda(f):
+    return eval("lambda t:" + f, math.__dict__)

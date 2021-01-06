@@ -7,10 +7,10 @@ import os
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import Slice, MapSlice, FaultIntersection
-from .MeshGeneration import generate_volumes, generate_faults
-from .topography_reader import txt_extract
-from .Interpolation import computeBezierCoefficients
+from geocruncher.ComputeIntersections import Slice, MapSlice, FaultIntersection
+from geocruncher.MeshGeneration import generate_volumes, generate_faults
+from geocruncher.topography_reader import txt_extract
+from geocruncher.TunnelFunctions import computeBezierCoefficients, computeArcLength
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
 
 
 def run_geocruncher(args):
-    if args[1] != "bezier_interpolation" and len(args) > 4 and os.path.exists(args[3]) and os.path.exists(args[4]):
+    if args[1] != "bezier_interpolation" and args[1] != "arc_length" and len(args) > 4 and os.path.exists(args[3]) and os.path.exists(args[4]):
         model = GeologicalModel(args[3])
         model.topography = txt_extract(args[4])
         box = model.getbox()
@@ -102,3 +102,15 @@ def run_geocruncher(args):
         with open(args[3], 'w') as f:
             json.dump(output, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
+
+    if args[1] == "arc_length":
+        with open(args[2]) as f:
+            data = json.load(f)
+        output = {"results": []}
+        for f in data["functions"]:
+            output["results"].append(computeArcLength(f["function"], f["start"], f["end"]))
+            
+        with open(args[3], 'w') as f:
+            json.dump(output, f, indent=2, separators=(',', ': '))
+        sys.stdout.flush()
+
