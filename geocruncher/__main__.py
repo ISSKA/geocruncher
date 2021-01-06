@@ -1,3 +1,3 @@
-from geocruncher import main
+from . import main
 
 main.main()

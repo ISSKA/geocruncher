@@ -2,6 +2,10 @@ import numpy as np
 import scipy.integrate as integrate
 import math
 
+from sympy.parsing.sympy_parser import parse_expr
+from sympy import diff, symbols, sqrt
+from sympy.utilities.lambdify import lambdify
+
 def computeBezierCoefficients(points):
     """
     Compute Bezier interpolation coefficients
@@ -32,8 +36,10 @@ def computeBezierCoefficients(points):
 
     return A, B
 
-def computeArcLength(f, start, end):
-    return round(integrate.quad(_to_lambda(f), start, end)[0], 2)
-
-def _to_lambda(f):
-    return eval("lambda t:" + f, math.__dict__)
+def computeArcLength(fx, fy, fz, start, end):
+    t = symbols("t")
+    dfx = diff(parse_expr(fx.replace("^", "**")), t)
+    dfy = diff(parse_expr(fy.replace("^", "**")), t)
+    dfz = diff(parse_expr(fz.replace("^", "**")), t)
+    func = lambdify(t, sqrt(dfx**2 + dfy**2 + dfz**2))
+    return round(integrate.quad(func, start, end)[0], 2)
