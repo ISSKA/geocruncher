@@ -1,9 +1,11 @@
 import numpy as np
 import math
+import scipy.integrate as integrate
 
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols, sqrt, Integral, S
 from sympy.solvers.solveset import solvify
+from sympy.utilities.lambdify import lambdify
 
 def computeBezierCoefficients(points):
     """
@@ -40,9 +42,11 @@ def computeArcLength(fx, fy, fz, start, end):
     dfx = diff(parse_expr(fx.replace("^", "**")), t)
     dfy = diff(parse_expr(fy.replace("^", "**")), t)
     dfz = diff(parse_expr(fz.replace("^", "**")), t)
-    i = Integral(sqrt(dfx**2 + dfy**2 + dfz**2), (t, start, end))
-    # print(evaluateTMPosition(1, fx, fy, fz, start))
-    return round(float(i.evalf()), 2)
+    func = lambdify(t, sqrt(dfx**2 + dfy**2 + dfz**2))
+    return round(integrate.quad(func, start, end)[0], 2)
+    # i = Integral(sqrt(dfx**2 + dfy**2 + dfz**2), (t, start, end))
+    # # print(evaluateTMPosition(1, fx, fy, fz, start))
+    # return round(float(i.evalf()), 2)
 
 def evaluateTMPosition(dFromPoint, fx, fy, fz, start):
     t, a = symbols("t a")
