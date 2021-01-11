@@ -1,10 +1,10 @@
 import numpy as np
 import math
 import scipy.integrate as integrate
+from scipy.optimize import brentq
 
 from sympy.parsing.sympy_parser import parse_expr
-from sympy import diff, symbols, sqrt, Integral, S
-from sympy.solvers.solveset import solvify
+from sympy import diff, symbols, sqrt
 from sympy.utilities.lambdify import lambdify
 
 def computeBezierCoefficients(points):
@@ -44,19 +44,16 @@ def computeArcLength(fx, fy, fz, start, end):
     dfz = diff(parse_expr(fz.replace("^", "**")), t)
     func = lambdify(t, sqrt(dfx**2 + dfy**2 + dfz**2))
     return round(integrate.quad(func, start, end)[0], 2)
-    # i = Integral(sqrt(dfx**2 + dfy**2 + dfz**2), (t, start, end))
-    # # print(evaluateTMPosition(1, fx, fy, fz, start))
-    # return round(float(i.evalf()), 2)
 
 def evaluateTMPosition(dFromPoint, fx, fy, fz, start):
-    t, a = symbols("t a")
+    t = symbols("t")
     fx = parse_expr(fx.replace("^", "**"))
     dfx = diff(fx, t)
     fy = parse_expr(fy.replace("^", "**"))
     dfy = diff(fy, t)
     fz = parse_expr(fz.replace("^", "**"))
     dfz = diff(fz, t)
-    inte = Integral(sqrt(dfx**2 + dfy**2 + dfz**2), (t, start, a)).doit()
-    aValues = solvify(inte - dFromPoint, a, S.Reals)
-    aVal = [i for i in aValues if i >= 0 and i <= 1][0].evalf()
+    func = lambdify(t, sqrt(dfx**2 + dfy**2 + dfz**2))
+    aVal = brentq(lambda i: integrate.quad(func, start, i)[0] - dFromPoint, 0, 1)
     return (fx.subs(t, aVal), fy.subs(t, aVal), fz.subs(t, aVal))
+
