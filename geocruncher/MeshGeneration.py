@@ -2,7 +2,7 @@ import json
 import os
 from collections import defaultdict
 
-import MeshTools.CGALWrappers as CGAL
+import pycgal.core as CGAL
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box

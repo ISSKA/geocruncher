@@ -1,8 +1,8 @@
 # Mesh Generation
 
 ## Requirements
-* GmLib by brgm (Commit 2c7736a57906c48a8edfbc6348f0477512debbd6 or later)
-* MeshTools by brgm (Commit 20e68f3bcc0581cbc79affb6abc7b470fe0243fb or later)
+* GmLib by brgm (Commit f1cb0b6a5b08392e49d79368973b271935a23d8b or later)
+* pyCGAL by brgm (Commit 12f78468aca34b4703409d96fffb0b2981b216b6 or later)
 * scikit-image >= 0.14.0
 * CGAL >= 4.13
 * numpy

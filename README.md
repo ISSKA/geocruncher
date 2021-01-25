@@ -33,8 +33,8 @@ The source code for GeoCruncher is managed in a Git repository. To access the re
 To run geoCruncher need other libraries to be installed. The followings needs to be installed before running the python scripts:
 
 * Eigen
-* GmLib by brgm (Commit 2c7736a57906c48a8edfbc6348f0477512debbd6 or later)
-* MeshTools by brgm (Commit 5923bad641f5fe82622a0b33e73806177a0f4690 or later)
+* GmLib by brgm (Commit f1cb0b6a5b08392e49d79368973b271935a23d8b or later)
+* pyCGAL by brgm (Commit 12f78468aca34b4703409d96fffb0b2981b216b6 or later)
 * scikit-image >= 0.14.0
 * CGAL >= 4.13
 * numpy
@@ -78,13 +78,13 @@ To run geoCruncher need other libraries to be installed. The followings needs to
 
 ### GmLib
 
-* INSTALL.md URL: https://gitlab.inria.fr/gmlib/gmlib/blob/master/INSTALL.md
+* INSTALL.md URL: https://gitlab.brgm.fr/brgm/modelisation-geologique/gmlib/-/blob/v0.3/INSTALL.md
 
 1. run the following key to clone the gmlib repository:
 
-        git clone https://gitlab.inria.fr/gmlib/gmlib.git
+        git clone https://gitlab.brgm.fr/brgm/modelisation-geologique/gmlib.git
 
-2. You will need to enter your Gitlab INRIA username and password.
+2. You will need to enter your Gitlab BRGM username and password.
 
 3. Within your git repository run the following key:
 	
@@ -94,7 +94,7 @@ Or for python3
 	
         pip3 install -e .
 
-From now on you can compute intersections, however to compute meshes you still need two package CGAL and Meshtools
+From now on you can compute intersections, however to compute meshes you still need two package CGAL and pyCGAL
 
 ### CGAL
 
@@ -119,21 +119,14 @@ If it's not available for the operating system, it needs to be compiled:
 
         make install .
 
-### Meshtools
+### pyCGAL
 
-* INSTALL.md URL: https://gitlab.inria.fr/charms/MeshTools/blob/master/INSTALL.md
+1. Run the following key to clone the pyCGAL repository:
+        `git clone https://gitlab.brgm.fr/brgm/modelisation-geologique/pycgal.git`
 
-1. run the following key to clone the gmlib repository:
-	
-	git clone https://gitlab.inria.fr/charms/MeshTools.git
+2. You will need to enter your Gitlab BRGM username and password.
 
-2. You will need to enter your Gitlab INRIA username and password.
-
-3. Setup the path to your cgal location usually by runnning:
-	
-	export CGAL_DIR=/usr/local/lib/cmake/CGAL
-
-4. Within your git repository run the following key:
+3. Within your git repository run the following key:
 	
         pip install .
 
@@ -142,6 +135,8 @@ Or for python3
         pip3 install .
 
 #### Workaround in case of building trouble
+
+** Edit ** this may not work anymore, you will have to replace "MeshTools" by "pyCGAL" in the command below
 
 According to Simon, a minimum of GCC 6.3 is necessary to compile the library. In case your struggling with compiling errors, a workaround is to install the pre-build library in your python local environment. It can be found on our Hetzner server.
 
