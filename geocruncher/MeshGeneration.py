@@ -3,12 +3,12 @@ import os
 from collections import defaultdict
 
 import pycgal.core as CGAL
+from pycgal.Surface_mesh import Surface_mesh
+from pycgal.Polygon_mesh_processing import is_closed, stitch_borders
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
-from gmlib.tesselate import tesselate_faults
-from gmlib.tesselate import Tesselator
-from gmlib.tesselate import TopographyClipper
+from gmlib.tesselate import tesselate_faults, _remove_faces_on_side, Tesselator, TopographyClipper
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
@@ -74,11 +74,11 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         # Using the non-classic variant leads to holes in the meshes which CGAL cannot handle
         # the classic variant seems to work better for us
         verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent", use_classic=True)  # Gradient direction ensures normals point outwards
-        tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
+        tsurf = Surface_mesh(rescale_to_grid(verts, box, shape), faces)
 
         # Repair mesh if there are border edges. Mesh must be closed.
-        if not tsurf.is_closed():
-            CGAL.fix_border_edges(tsurf)
+        if not is_closed(tsurf):
+            stitch_borders(tsurf)
 
         meshes[rank] = tsurf
 
@@ -86,7 +86,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     for rank, mesh in meshes.items():
         filename = 'rank_%d.off' % rank
         out_file = os.path.join(outDir, filename)
-        mesh.to_off(out_file)
+        mesh.write_off(out_file)
         out_files["mesh"][str(rank)].append(out_file)
 
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
@@ -114,7 +114,7 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     for name, fault in faults.items():
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
-        fault.to_off(out_file)
+        fault.write_off(out_file)
         out_files[name].append(out_file)
     return out_files
 
@@ -150,11 +150,11 @@ class SmallBoxTesselator(Tesselator):
                     limit_surface = fault_tesselations[limit_name]
                     CGAL.corefine(surface, limit_surface)
                     limit_fault = model.faults[limit_name]
-                    limit_field_values = limit_fault(surface.face_centers())
-                    if np.mean(limit_fault(fault_points)) < 0:
-                        surface.remove_faces(limit_field_values > 0)
-                    else:
-                        surface.remove_faces(limit_field_values < 0)
+                    _remove_faces_on_side(
+                        surface,
+                        np.mean(limit_fault(fault_points)),
+                        limit_fault(surface.centroids()),
+                    )
                 except KeyError:
                     pass
         return fault_tesselations
