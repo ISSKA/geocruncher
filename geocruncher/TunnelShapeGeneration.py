@@ -32,6 +32,7 @@ def tunnel_to_meshes(functions, step, nb_vertices, xy_points, outFile):
             nb_series += 1
     triangles = _connect_vertices(nb_vertices, nb_series)
     CGAL.TSurf(vertices, np.array(triangles)).to_off(outFile)
+    return vertices
 
 def get_circle_segment(radius, nb_vertices):
     """Get a segment on the xy plane of a circle
@@ -49,17 +50,44 @@ def get_circle_segment(radius, nb_vertices):
         points.append(np.array([radius * math.cos(angle), radius * math.sin(angle), 0]))
     return points
 
+def get_rectangle_segment(width, height, nb_vertices):
+    """Get a segment on the xy plane of a rectangle
 
-def _project_points(normal, center, xy_points):
-    uNorm = normal / np.linalg.norm(normal)
-    rotMatrix = np.array([
-        [uNorm[1]**2 - uNorm[1]**2 * math.sqrt(1 - uNorm[2]**2) + math.sqrt(1 - uNorm[2]**2), uNorm[0] * uNorm[1] * (math.sqrt(1 - uNorm[2]**2) - 1), uNorm[0] * uNorm[2]],
-        [uNorm[0] * uNorm[1] * (math.sqrt(1 - uNorm[2]**2) - 1), uNorm[1]**2 * math.sqrt(1 - uNorm[2]**2) + uNorm[2]**2 * math.sqrt(1 - uNorm[2]**2) - uNorm[1]**2 - uNorm[2]**2 + 1, uNorm[1] * uNorm[2]],
-        [-uNorm[0] * uNorm[2], -uNorm[1] * uNorm[2], math.sqrt(1 - uNorm[2]**2)]
+    Args:
+        width (float): the width of the rectangle
+        height (float): the height of the rectangle
+        nb_vertices (int): number of vertices that will define the segment
+
+    Returns:
+        list((int, int, int)): the vertices that represent the segment on the xy plane
+    """
+    length = 2 * width + 2 * height
+    points = []
+    for i in range(nb_vertices): 
+        distance = length * i / nb_vertices
+        if distance < height:
+            points.append(np.array([-width / 2, distance - height / 2, 0]))
+        elif distance < height + width:
+            points.append(np.array([distance - height - width / 2, height / 2, 0]))
+        elif distance < 2 * height + width:
+            points.append(np.array([width / 2, 3 * height / 2 + width - distance, 0]))
+        else:
+            points.append(np.array([2 * height + 3 * width / 2 - distance, -height / 2, 0]))
+    return points
+
+def get_elliptic_segment(width, height, nb_vertices):
+    return None
+
+def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
+    u = normal / np.linalg.norm(normal)
+    rotMatrix = np.array([ # FIXME rotation matrix not working for every cases
+        [u[1]**2 - u[1]**2 * math.sqrt(1 - u[2]**2) + math.sqrt(1 - u[2]**2), u[0] * u[1] * (math.sqrt(1 - u[2]**2) - 1), u[0] * u[2]],
+        [u[0] * u[1] * (math.sqrt(1 - u[2]**2) - 1), u[1]**2 * math.sqrt(1 - u[2]**2) + u[2]**2 * math.sqrt(1 - u[2]**2) - u[1]**2 - u[2]**2 + 1, u[1] * u[2]],
+        [-u[0] * u[2], -u[1] * u[2], math.sqrt(1 - u[2]**2)]
     ])
     verts = []
     for p in xy_points:
-        verts.append((rotMatrix.dot(p) + center).tolist())
+        verts.append((rotMatrix.dot(p) + bottom).tolist())
     return verts
 
 def _connect_vertices(nb_vertices, nb_serie):
