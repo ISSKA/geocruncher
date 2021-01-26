@@ -3,6 +3,7 @@ import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import MeshTools.CGALWrappers as CGAL
+import scipy.integrate as integrate
 
 def tunnel_to_meshes(functions, step, nb_vertices, xy_points, outFile):
     """Generate a mesh for a tunnel
@@ -76,7 +77,28 @@ def get_rectangle_segment(width, height, nb_vertices):
     return points
 
 def get_elliptic_segment(width, height, nb_vertices):
-    return None
+    """Get a segment on the xy plane of an elliptic curve
+
+    Args:
+        width (float): the width of the rectangle
+        height (float): the height of the rectangle
+        nb_vertices (int): number of vertices that will define the segment
+
+    Returns:
+        list((int, int, int)): the vertices that represent the segment on the xy plane
+    """
+    a = width / 2
+    b = height
+    ellipse_length = 2 * integrate.quad(lambda t: math.sqrt(a**2 * math.cos(t)**2 + b**2 * math.sin(t)**2), 0, np.pi / 2)[0]
+    nb_vertices_ellipse = int((ellipse_length * nb_vertices) / (width + ellipse_length))
+    nb_vertices_width = nb_vertices - nb_vertices_ellipse
+    points = []
+    for i in range(nb_vertices_width):
+        distance = width * i / nb_vertices_width
+        points.append(np.array([width / 2 - distance, -height / 2, 0]))
+    for t in np.linspace(-np.pi / 2, np.pi / 2, nb_vertices_ellipse):
+        points.append(np.array([a * math.sin(t), b * math.cos(t) - height / 2, 0]))
+    return points
 
 def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
     u = normal / np.linalg.norm(normal)
