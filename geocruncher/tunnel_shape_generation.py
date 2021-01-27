@@ -2,16 +2,15 @@ import math
 import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
-import MeshTools.CGALWrappers as CGAL
 import scipy.integrate as integrate
+import MeshTools.CGALWrappers as CGAL
 
-def tunnel_to_meshes(functions, step, nb_vertices, xy_points, outFile):
+def tunnel_to_meshes(functions, step, xy_points, outFile):
     """Generate a mesh for a tunnel
 
     Args:
         functions (list((str, str, str))): the functions that define the tunnel (separated for x, y, z and for t between 0 and 1)
         step (float): size of a step between 0 and 1
-        nb_vertices (int): number of vertices that define a segment
         xy_points (list((int, int, int))): points representing a segment of the tunnel on the xy plane
         outFile (str): the file to output (off file)
     """
@@ -31,7 +30,7 @@ def tunnel_to_meshes(functions, step, nb_vertices, xy_points, outFile):
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
             nb_series += 1
-    triangles = _connect_vertices(nb_vertices, nb_series)
+    triangles = _connect_vertices(len(xy_points), nb_series)
     CGAL.TSurf(vertices, np.array(triangles)).to_off(outFile)
     return vertices
 
@@ -102,14 +101,16 @@ def get_elliptic_segment(width, height, nb_vertices):
 
 def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
     u = normal / np.linalg.norm(normal)
-    rotMatrix = np.array([ # FIXME rotation matrix not working for every cases
-        [u[1]**2 - u[1]**2 * math.sqrt(1 - u[2]**2) + math.sqrt(1 - u[2]**2), u[0] * u[1] * (math.sqrt(1 - u[2]**2) - 1), u[0] * u[2]],
-        [u[0] * u[1] * (math.sqrt(1 - u[2]**2) - 1), u[1]**2 * math.sqrt(1 - u[2]**2) + u[2]**2 * math.sqrt(1 - u[2]**2) - u[1]**2 - u[2]**2 + 1, u[1] * u[2]],
-        [-u[0] * u[2], -u[1] * u[2], math.sqrt(1 - u[2]**2)]
+    ax = np.cross(u, np.array([0, 0, 1]))
+    t = np.dot(u, np.array([0, 0, 1])) + np.pi / 2
+    rot_matrix = np.array([
+        [math.cos(t) + ax[0]**2 * (1 - math.cos(t)), ax[0] * ax[1] * (1 - math.cos(t)) - ax[2] * math.sin(t), ax[0] * ax[2] * (1 - math.cos(t)) + ax[1] * math.sin(t)],
+        [ax[1] * ax[0] * (1 - math.cos(t)) + ax[2] * math.sin(t), math.cos(t) + ax[1]**2 * (1 - math.cos(t)), ax[1] * ax[2] * (1 - math.cos(t)) - ax[0] * math.sin(t)],
+        [ax[2] * ax[0] * (1 - math.cos(t)) - ax[1] * math.sin(t), ax[2] * ax[1] * (1 - math.cos(t)) + ax[0] * math.sin(t), math.cos(t) + ax[2]**2 * (1 - math.cos(t))]
     ])
     verts = []
     for p in xy_points:
-        verts.append((rotMatrix.dot(p) + bottom).tolist())
+        verts.append((rot_matrix.dot(p) + bottom).tolist())
     return verts
 
 def _connect_vertices(nb_vertices, nb_serie):
