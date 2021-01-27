@@ -10,12 +10,26 @@ from gmlib.GeologicalModel3D import Box
 from .ComputeIntersections import Slice, MapSlice, FaultIntersection
 from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
+from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 
 def main():
     run_geocruncher(sys.argv)
 
 
 def run_geocruncher(args):
+    if args[1] == 'tunnel_meshes':
+        with open(args[2]) as f:
+            data = json.load(f)
+        plane_segment = {
+            "Circle": lambda t: get_circle_segment(t["radius"], data["nb_vertices"]),
+            "Rectangle": lambda t: get_rectangle_segment(t["width"], t["height"], data["nb_vertices"]),
+            "Elliptic": lambda t: get_elliptic_segment(t["width"], t["height"], data["nb_vertices"])
+        }
+        for tunnel in data["tunnels"]:
+            tunnel_to_meshes(tunnel["functions"], data["step"], plane_segment[tunnel["shape"]](tunnel), os.path.join(args[3], tunnel["name"] + ".off"))
+
+        return
+
     model = GeologicalModel(args[3])
     model.topography = txt_extract(args[4])
     box = model.getbox()
