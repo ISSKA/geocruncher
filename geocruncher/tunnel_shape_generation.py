@@ -99,19 +99,26 @@ def get_elliptic_segment(width, height, nb_vertices):
         points.append(np.array([a * math.sin(t), b * math.cos(t), 0]))
     return points
 
-def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
+def _project_points(normal, bottom, xy_points):
     u = normal / np.linalg.norm(normal)
-    ax = np.cross(u, np.array([0, 0, 1]))
-    t = math.acos(np.dot(u, np.array([0, 0, 1])))
-    rot_matrix = np.array([
-        [math.cos(t) + ax[0]**2 * (1 - math.cos(t)), ax[0] * ax[1] * (1 - math.cos(t)) - ax[2] * math.sin(t), ax[0] * ax[2] * (1 - math.cos(t)) + ax[1] * math.sin(t)],
-        [ax[1] * ax[0] * (1 - math.cos(t)) + ax[2] * math.sin(t), math.cos(t) + ax[1]**2 * (1 - math.cos(t)), ax[1] * ax[2] * (1 - math.cos(t)) - ax[0] * math.sin(t)],
-        [ax[2] * ax[0] * (1 - math.cos(t)) - ax[1] * math.sin(t), ax[2] * ax[1] * (1 - math.cos(t)) + ax[0] * math.sin(t), math.cos(t) + ax[2]**2 * (1 - math.cos(t))]
-    ])
+    axis = np.cross(u, np.array([0, 0, 1]))
+    to_plane_rotation = _rotation_matrix(axis / np.linalg.norm(axis), math.acos(-np.dot(u, np.array([0, 0, 1]))))
+    diff_axis = to_plane_rotation.dot(np.array([1, 0, 0]))
+    diff_axis[2] = 0
+    in_plane_rotation = _rotation_matrix(u, math.acos(np.dot(diff_axis / np.linalg.norm(diff_axis), np.array([1, 0, 0]))))
+    rotation_matrix = np.matmul(in_plane_rotation, to_plane_rotation)
     verts = []
     for p in xy_points:
-        verts.append((rot_matrix.dot(p) + bottom).tolist())
+        verts.append((rotation_matrix.dot(p) + bottom).tolist())
     return verts
+
+def _rotation_matrix(ax, t):
+    x, y, z = ax
+    return np.array([
+        [math.cos(t) + x**2 * (1 - math.cos(t)), x * y * (1 - math.cos(t)) - z * math.sin(t), x * z * (1 - math.cos(t)) + y * math.sin(t)],
+        [y * x * (1 - math.cos(t)) + z * math.sin(t), math.cos(t) + y**2 * (1 - math.cos(t)), y * z * (1 - math.cos(t)) - x * math.sin(t)],
+        [z * x * (1 - math.cos(t)) - y * math.sin(t), z * y * (1 - math.cos(t)) + x * math.sin(t), math.cos(t) + z**2 * (1 - math.cos(t))]
+    ])
 
 def _connect_vertices(nb_vertices, nb_serie):
     tri = []
