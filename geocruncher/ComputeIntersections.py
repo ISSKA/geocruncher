@@ -80,9 +80,9 @@ class MapFaultIntersection:
     def output(xCoord, yCoord, nPoints, model):
         xMapRange = np.linspace(xCoord[0], xCoord[1], nPoints)
         yMapRange = np.linspace(yCoord[0], yCoord[1], nPoints)
-        y, x = np.meshgrid(yMapRange, xMapRange)
-        el = np.array([y.flatten(), x.flatten()]).T
-        points = list(map(lambda s: [s[1], s[0], model.topography.evaluate_z([s[1], s[0]])], el))
+        x, y = np.meshgrid(xMapRange, yMapRange)
+        el = np.array([x.flatten(), y.flatten()]).T
+        points = list(map(lambda s: [s[0], s[1], model.topography.evaluate_z([s[0], s[1]])], el))
         output = {}
         for name, fault in model.faults.items():
             coloredPoints = np.array(np.array_split(fault(points), nPoints))
