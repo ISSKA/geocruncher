@@ -102,7 +102,7 @@ def get_elliptic_segment(width, height, nb_vertices):
 def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
     u = normal / np.linalg.norm(normal)
     ax = np.cross(u, np.array([0, 0, 1]))
-    t = np.dot(u, np.array([0, 0, 1])) + np.pi / 2
+    t = math.acos(np.dot(u, np.array([0, 0, 1])))
     rot_matrix = np.array([
         [math.cos(t) + ax[0]**2 * (1 - math.cos(t)), ax[0] * ax[1] * (1 - math.cos(t)) - ax[2] * math.sin(t), ax[0] * ax[2] * (1 - math.cos(t)) + ax[1] * math.sin(t)],
         [ax[1] * ax[0] * (1 - math.cos(t)) + ax[2] * math.sin(t), math.cos(t) + ax[1]**2 * (1 - math.cos(t)), ax[1] * ax[2] * (1 - math.cos(t)) - ax[0] * math.sin(t)],
