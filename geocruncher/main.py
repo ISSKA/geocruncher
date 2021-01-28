@@ -7,7 +7,7 @@ import os
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import Slice, MapSlice, FaultIntersection
+from .ComputeIntersections import MapFaultIntersection, Slice, MapSlice, FaultIntersection
 from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
 
@@ -81,7 +81,11 @@ def run_geocruncher(args):
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
             outputs[str(sectionId)] = FaultIntersection.output(xCoord, yCoord, zCoord, nPoints, model)
-        outputs = {'values': outputs}
+        outputs = {'forCrossSections': outputs}
+        if data["computeMap"]:
+            xCoord = [box.xmin, box.xmax]
+            yCoord = [box.ymin, box.ymax]
+            outputs['forMaps'] = MapFaultIntersection.output(xCoord, yCoord, nPoints, model)
 
         with open(args[5], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
