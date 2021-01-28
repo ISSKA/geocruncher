@@ -47,7 +47,7 @@ def get_circle_segment(radius, nb_vertices):
     points = []
     for i in range(nb_vertices): 
         angle = (math.pi*2) * i / nb_vertices 
-        points.append(np.array([radius * math.cos(angle), radius * math.sin(angle), 0]))
+        points.append(np.array([radius * math.cos(angle), radius * math.sin(angle) + radius, 0]))
     return points
 
 def get_rectangle_segment(width, height, nb_vertices):
@@ -66,13 +66,13 @@ def get_rectangle_segment(width, height, nb_vertices):
     for i in range(nb_vertices): 
         distance = length * i / nb_vertices
         if distance < height:
-            points.append(np.array([-width / 2, distance - height / 2, 0]))
+            points.append(np.array([-width / 2, distance, 0]))
         elif distance < height + width:
-            points.append(np.array([distance - height - width / 2, height / 2, 0]))
+            points.append(np.array([distance - height - width / 2, height, 0]))
         elif distance < 2 * height + width:
-            points.append(np.array([width / 2, 3 * height / 2 + width - distance, 0]))
+            points.append(np.array([width / 2, 2 * height + width - distance, 0]))
         else:
-            points.append(np.array([2 * height + 3 * width / 2 - distance, -height / 2, 0]))
+            points.append(np.array([2 * height + 3 * width / 2 - distance, 0, 0]))
     return points
 
 def get_elliptic_segment(width, height, nb_vertices):
@@ -94,9 +94,9 @@ def get_elliptic_segment(width, height, nb_vertices):
     points = []
     for i in range(nb_vertices_width):
         distance = width * i / nb_vertices_width
-        points.append(np.array([width / 2 - distance, -height / 2, 0]))
+        points.append(np.array([width / 2 - distance, 0, 0]))
     for t in np.linspace(-np.pi / 2, np.pi / 2, nb_vertices_ellipse):
-        points.append(np.array([a * math.sin(t), b * math.cos(t) - height / 2, 0]))
+        points.append(np.array([a * math.sin(t), b * math.cos(t), 0]))
     return points
 
 def _project_points(normal, bottom, xy_points): # TODO should not be centered at zero but the bottom should touch the 0 (translation before rotation)
