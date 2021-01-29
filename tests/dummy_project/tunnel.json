@@ -1,0 +1,44 @@
+{
+    "tunnels": [
+        {
+            "name": "circle_tunnel",
+            "shape": "Circle",
+            "radius": 10,
+            "functions": [
+                {
+                    "x": "10 * t",
+                    "y": "(t - 0.5)^2 + 120 * t",
+                    "z": "40"
+                }
+            ]
+        },
+        {
+            "name": "rectangle_tunnel",
+            "shape": "Rectangle",
+            "width": 20,
+            "height": 10,
+            "functions": [
+                {
+                    "x": "10 * t",
+                    "y": "(t - 0.5)^2 + 120 * t",
+                    "z": "40"
+                }
+            ]
+        },
+        {
+            "name": "elliptic_tunnel",
+            "shape": "Elliptic",
+            "width": 20,
+            "height": 10,
+            "functions": [
+                {
+                    "x": "10 * t",
+                    "y": "(t - 0.5)^2 + 120 * t",
+                    "z": "40"
+                }
+            ]
+        }
+    ],
+    "step": 0.1,
+    "nb_vertices": 200
+}
