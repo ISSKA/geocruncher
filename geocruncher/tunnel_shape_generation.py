@@ -5,7 +5,7 @@ from sympy import diff, symbols
 import scipy.integrate as integrate
 import MeshTools.CGALWrappers as CGAL
 
-def tunnel_to_meshes(functions, step, xy_points, outFile):
+def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd, outFile):
     """Generate a mesh for a tunnel
 
     Args:
@@ -17,14 +17,15 @@ def tunnel_to_meshes(functions, step, xy_points, outFile):
     vertices = []
     t = symbols("t")
     nb_series = 0
-    for f in functions:
+    for j in np.arange(idxStart if idxStart != -1 else 0, idxEnd + 1 if idxEnd != -1 else len(functions)):
+        f = functions[j]
         fx = parse_expr(f["x"].replace("^", "**"))
         dfx = diff(fx, t)
         fy = parse_expr(f["y"].replace("^", "**"))
         dfy = diff(fy, t)
         fz = parse_expr(f["z"].replace("^", "**"))
         dfz = diff(fz, t)
-        for i in np.arange(0.0, 1.0, step):
+        for i in np.arange(tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step):
             normal = np.array([float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))])
             bottom = np.array([float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))])
             for p in _project_points(normal, bottom, xy_points):

@@ -26,7 +26,7 @@ def run_geocruncher(args):
             "Elliptic": lambda t: get_elliptic_segment(t["width"], t["height"], data["nb_vertices"])
         }
         for tunnel in data["tunnels"]:
-            tunnel_to_meshes(tunnel["functions"], data["step"], plane_segment[tunnel["shape"]](tunnel), os.path.join(args[3], tunnel["name"] + ".off"))
+            tunnel_to_meshes(tunnel["functions"], data["step"], plane_segment[tunnel["shape"]](tunnel), data["idxStart"], data["tStart"], data["idxEnd"], data["tEnd"], os.path.join(args[3], tunnel["name"] + ".off"))
 
         return
 
