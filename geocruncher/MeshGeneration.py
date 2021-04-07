@@ -9,6 +9,7 @@ from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 from gmlib.tesselate import Tesselator
 from gmlib.tesselate import TopographyClipper
+from gmlib.architecture import from_GeoModeller, Evaluator
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
@@ -51,7 +52,9 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     points = np.stack(coordinates, axis=-1)
     points.shape = (-1, 3)
 
-    ranks = np.array([model.rank(P) for P in points])
+    cppmodel = from_GeoModeller(model)
+    evaluator = Evaluator(cppmodel)
+    ranks = evaluator(points) + 1
     ranks.shape = shape
 
     # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:
