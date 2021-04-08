@@ -66,7 +66,7 @@ def run_geocruncher(args):
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            crossSections[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1])
+            crossSections[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base")
         outputs = {'forCrossSections': crossSections}
         if data["computeMap"]:
           xCoord = [box.xmin, box.xmax]
