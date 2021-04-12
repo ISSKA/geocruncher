@@ -3,9 +3,9 @@ import numpy as np
 
 class MapSlice:
 
-    def output(xCoord, yCoord, nPoints, ranks, evaluate_z):
+    def output(xCoord, yCoord, nPoints, ranks, evaluate_z, isBase):
         def computeRank(a, b):
-            return ranks([a, b, evaluate_z([a, b])])
+            return ranks([a, b, evaluate_z([a, b])]) - 1 if isBase else ranks([a, b, evaluate_z([a, b])])
 
         def computeRankMatrix(index):
             return np.array(list(map(computeRank, x[index], y[index]))).transpose().tolist()
@@ -23,13 +23,13 @@ class MapSlice:
 
 class Slice:
 
-    def output(xCoord, yCoord, zCoord, nPoints, ranks, imgSize):
+    def output(xCoord, yCoord, zCoord, nPoints, ranks, imgSize, isBase):
         def computeRank(a, z):
             if not isOnYAxis:
                 y = slope * (a - xCoord[0]) + yCoord[0]
-                return ranks([a, y, z])
+                return ranks([a, y, z]) - 1 if isBase else ranks([a, y, z])
             else:
-                return ranks([xCoord[0], a, z])
+                return ranks([xCoord[0], a, z]) - 1 if isBase else ranks([xCoord[0], a, z])
 
         def computeRankMatrix(index):
             if not isOnYAxis:

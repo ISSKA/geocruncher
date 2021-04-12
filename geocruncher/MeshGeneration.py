@@ -68,6 +68,13 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     for rank in rank_values:
         if rank == RANK_SKY:
             continue
+        if model.pile.reference == "base":
+            if rank == 0:
+                rankId = len(rank_values) - 1
+            else:
+                rankId = rank - 1
+        else:
+            rankId = rank
 
         # to close bodies, we put them in a slightly bigger grid
         extended_shape = tuple(n + 2 for n in shape)
@@ -83,7 +90,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         if not tsurf.is_closed():
             CGAL.fix_border_edges(tsurf)
 
-        meshes[rank] = tsurf
+        meshes[rankId] = tsurf
 
     out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir, optBox)}
     for rank, mesh in meshes.items():
@@ -161,4 +168,3 @@ class SmallBoxTesselator(Tesselator):
                 except KeyError:
                     pass
         return fault_tesselations
-
