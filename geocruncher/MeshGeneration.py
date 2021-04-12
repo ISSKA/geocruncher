@@ -117,7 +117,7 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     for name, fault in faults.items():
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
-        fault.write_off(out_file)
+        fault.to_off(out_file)
         out_files[name].append(out_file)
     return out_files
 
@@ -161,3 +161,4 @@ class SmallBoxTesselator(Tesselator):
                 except KeyError:
                     pass
         return fault_tesselations
+
