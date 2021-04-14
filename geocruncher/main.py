@@ -20,10 +20,12 @@ def run_geocruncher(args):
     if args[1] == 'tunnel_meshes':
         with open(args[2]) as f:
             data = json.load(f)
+        # sub tunnel are a bit bigger to wrap main tunnel
+        subT = 1.05 if data["idxStart"] != -1 and data["idxEnd"] != -1 else 1.0
         plane_segment = {
-            "Circle": lambda t: get_circle_segment(t["radius"], data["nb_vertices"]),
-            "Rectangle": lambda t: get_rectangle_segment(t["width"], t["height"], data["nb_vertices"]),
-            "Elliptic": lambda t: get_elliptic_segment(t["width"], t["height"], data["nb_vertices"])
+            "Circle": lambda t: get_circle_segment(t["radius"] * subT, data["nb_vertices"]),
+            "Rectangle": lambda t: get_rectangle_segment(t["width"] * subT, t["height"] * subT, data["nb_vertices"]),
+            "Elliptic": lambda t: get_elliptic_segment(t["width"] * subT, t["height"] * subT, data["nb_vertices"])
         }
         for tunnel in data["tunnels"]:
             tunnel_to_meshes(tunnel["functions"], data["step"], plane_segment[tunnel["shape"]](tunnel), data["idxStart"], data["tStart"], data["idxEnd"], data["tEnd"], os.path.join(args[3], tunnel["name"] + ".off"))
