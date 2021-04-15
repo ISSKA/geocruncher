@@ -46,9 +46,9 @@ def get_circle_segment(radius, nb_vertices):
         list((int, int, int)): the vertices that represent the segment on the xy plane
     """
     points = []
-    for i in range(nb_vertices): 
+    for i in reversed(range(nb_vertices)):
         angle = (math.pi*2) * i / nb_vertices 
-        points.append(np.array([radius * math.cos(angle), radius * math.sin(angle) + radius, 0]))
+        points.append(np.array([-(radius * math.sin(angle) + radius), -(radius * math.cos(angle)), 0]))
     return points
 
 def get_rectangle_segment(width, height, nb_vertices):
