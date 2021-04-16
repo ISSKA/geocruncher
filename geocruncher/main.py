@@ -21,7 +21,7 @@ def run_geocruncher(args):
         with open(args[2]) as f:
             data = json.load(f)
         # sub tunnel are a bit bigger to wrap main tunnel
-        subT = 1.05 if data["idxStart"] != -1 and data["idxEnd"] != -1 else 1.0
+        subT = 1.10 if data["idxStart"] != -1 and data["idxEnd"] != -1 else 1.0
         plane_segment = {
             "Circle": lambda t: get_circle_segment(t["radius"] * subT, data["nb_vertices"]),
             "Rectangle": lambda t: get_rectangle_segment(t["width"] * subT, t["height"] * subT, data["nb_vertices"]),

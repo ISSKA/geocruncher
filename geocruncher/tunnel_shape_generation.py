@@ -101,10 +101,9 @@ def get_elliptic_segment(width, height, nb_vertices):
     return points
 
 def _project_points(normal, bottom, xy_points):
-    ANGLE_EPSILON = 0.00001
+    ANGLE_EPSILON = 0.01
     # axis vectors
     z = np.array([0, 0, 1])
-    y = np.array([0, 1, 0])
     x = np.array([1, 0, 0])
 
     u = normalize(normal)
