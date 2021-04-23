@@ -9,8 +9,8 @@ import pymeshfix
 
 
 def _compute_voxels(res, box, model, meshes_files, out_file, USE_HIGH_RES=True):
-    # args: [1] resolution [2] box 3d of the projet [3] model geologic of the project [4] list of filename of meshes [5] folder to create outpout file
-    # [6] write voxel indices to file default False, [7] use decimated mesh default True
+    # args: [1] resolution [2] box 3d of the projet [3] model geologic of the project [4] list of filename of meshes [5] output file
+    #[6] use high res mesh default True
     nx, ny, nz = res
     total_start = perf_counter()
 
@@ -30,7 +30,6 @@ def _compute_voxels(res, box, model, meshes_files, out_file, USE_HIGH_RES=True):
 
     # we transform the previous data into an array of 3D points
     # this could be vertices from an unstructured mesh or any other data
-    #xyz = np.hstack(np.reshape(coord, (-1, 1)) for coord in (x, y, z))
     xyz = np.stack((x, y, z), axis=-1)
     xyz.shape = (-1, 3)
 
@@ -42,14 +41,12 @@ def _compute_voxels(res, box, model, meshes_files, out_file, USE_HIGH_RES=True):
         mesh = mesh.extract_geometry()
         points = pv.PolyData(xyz)
 
-        insidePoints = None
         if not USE_HIGH_RES:
             decimated = mesh.decimate(0.9)
             fixer = pymeshfix.MeshFix(decimated)
             mesh = fixer.repair(joincomp=True, remove_smallest_components=False)
 
         insidePoints = points.select_enclosed_points(mesh, tolerance=0.00001)
-        print(len(insidePoints.threshold(0.5).points))
         gwb_tags = [max(newId, _id) for newId, _id in zip(insidePoints["SelectedPoints"] * gwb_id, gwb_tags)]
 
     t1_stop = perf_counter()
