@@ -11,7 +11,7 @@ import pymeshfix
 def _compute_voxels(res, box, model, meshes_files, out_file, USE_HIGH_RES=True):
     # args: [1] resolution [2] box 3d of the projet [3] model geologic of the project [4] list of filename of meshes [5] output file
     #[6] use high res mesh default True
-    nx, ny, nz = res
+    ny, nx, nz = res
     total_start = perf_counter()
 
     # we use numpy meshgrid to produce a regular grid
