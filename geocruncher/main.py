@@ -13,7 +13,6 @@ from .topography_reader import txt_extract
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import _compute_voxels
 
-
 def main():
     run_geocruncher(sys.argv)
 
@@ -122,6 +121,3 @@ def run_geocruncher(args):
                  zmax=float(data["box"]["zMax"]))
         meshes_files = [args[5] + "/" + f for f in os.listdir(args[5]) if f.endswith(".off")]
         _compute_voxels(shape, box, model, meshes_files, out_file)
-
-
-
