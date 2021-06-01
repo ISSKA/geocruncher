@@ -46,9 +46,9 @@ def get_circle_segment(radius, nb_vertices):
         list((int, int, int)): the vertices that represent the segment on the xy plane
     """
     points = []
-    for i in range(nb_vertices): 
+    for i in reversed(range(nb_vertices)):
         angle = (math.pi*2) * i / nb_vertices 
-        points.append(np.array([radius * math.cos(angle), radius * math.sin(angle) + radius, 0]))
+        points.append(np.array([-(radius * math.sin(angle) + radius), -(radius * math.cos(angle)), 0]))
     return points
 
 def get_rectangle_segment(width, height, nb_vertices):
@@ -67,13 +67,13 @@ def get_rectangle_segment(width, height, nb_vertices):
     for i in range(nb_vertices): 
         distance = length * i / nb_vertices
         if distance < height:
-            points.append(np.array([-width / 2, distance, 0]))
+            points.append(np.array([-distance, width / 2, 0]))
         elif distance < height + width:
-            points.append(np.array([distance - height - width / 2, height, 0]))
+            points.append(np.array([-height, -(distance - height - width / 2), 0]))
         elif distance < 2 * height + width:
-            points.append(np.array([width / 2, 2 * height + width - distance, 0]))
+            points.append(np.array([-(2 * height + width - distance), -width / 2, 0]))
         else:
-            points.append(np.array([2 * height + 3 * width / 2 - distance, 0, 0]))
+            points.append(np.array([0, -(2 * height + 3 * width / 2 - distance), 0]))
     return points
 
 def get_elliptic_segment(width, height, nb_vertices):
@@ -95,22 +95,37 @@ def get_elliptic_segment(width, height, nb_vertices):
     points = []
     for i in range(nb_vertices_width):
         distance = width * i / nb_vertices_width
-        points.append(np.array([width / 2 - distance, 0, 0]))
+        points.append(np.array([0, width / 2 - distance, 0]))
     for t in np.linspace(-np.pi / 2, np.pi / 2, nb_vertices_ellipse):
-        points.append(np.array([a * math.sin(t), b * math.cos(t), 0]))
+        points.append(np.array([-b * math.cos(t), -a * math.sin(t), 0]))
     return points
 
 def _project_points(normal, bottom, xy_points):
-    u = normal / np.linalg.norm(normal)
-    axis = np.cross(u, np.array([0, 0, 1]))
-    to_plane_rotation = _rotation_matrix(axis / np.linalg.norm(axis), math.acos(-np.dot(u, np.array([0, 0, 1]))))
-    diff_axis = to_plane_rotation.dot(np.array([1, 0, 0]))
-    diff_axis[2] = 0
-    in_plane_rotation = _rotation_matrix(u, math.acos(np.dot(diff_axis / np.linalg.norm(diff_axis), np.array([1, 0, 0]))))
-    rotation_matrix = np.matmul(in_plane_rotation, to_plane_rotation)
+    ANGLE_EPSILON = 0.01
+    # axis vectors
+    z = np.array([0, 0, 1])
+    x = np.array([1, 0, 0])
+
+    u = normalize(normal)
+    axis = np.cross(u, z)
+    angle = math.acos(-np.dot(u, z))
     verts = []
-    for p in xy_points:
-        verts.append((rotation_matrix.dot(p) + bottom).tolist())
+    if angle > ANGLE_EPSILON:
+        to_plane_rotation = _rotation_matrix(normalize(axis), angle)
+        diff_axis = to_plane_rotation.dot(z)
+        diff_axis[2] = 0
+        angle2 = math.acos(np.dot(normalize(diff_axis), x))
+        rotation_matrix = None
+        if angle2 > ANGLE_EPSILON:
+            in_plane_rotation = _rotation_matrix(u, angle2)
+            rotation_matrix = np.matmul(in_plane_rotation, to_plane_rotation)
+        else:
+            rotation_matrix = to_plane_rotation
+        for p in xy_points:
+            verts.append((rotation_matrix.dot(p) + bottom).tolist())
+    else:
+        for p in xy_points:
+            verts.append((p + bottom).tolist())
     return verts
 
 def _rotation_matrix(ax, t):
@@ -132,3 +147,7 @@ def _connect_vertices(nb_vertices, nb_serie):
         tri.append([curr_serie * nb_vertices, (curr_serie + 1) * nb_vertices - 1, (curr_serie + 1) * nb_vertices])
         tri.append([(curr_serie + 1) * nb_vertices - 1, (curr_serie + 2) * nb_vertices - 1, (curr_serie + 1) * nb_vertices])
     return tri
+
+
+def normalize(v):
+    return v / np.linalg.norm(v)
