@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.architecture import from_GeoModeller, Evaluator
+from gmlib.architecture import from_GeoModeller
 import pyvista as pv
 
 
