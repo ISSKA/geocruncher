@@ -8,7 +8,7 @@ import pyvista as pv
 
 def _compute_voxels(res, box, model, meshes_files, out_file):
     # args: [1] resolution [2] box 3d of the projet [3] model geologic of the project [4] list of filename of meshes [5] output file
-    ny, nx, nz = res
+    nx, ny, nz = res
 
     # we use numpy meshgrid to produce a regular grid
     # the output is a list containing a 3D array for each coordinate
