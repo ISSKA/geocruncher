@@ -11,6 +11,7 @@ from .ComputeIntersections import MapFaultIntersection, Slice, MapSlice, FaultIn
 from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
+from .voxel_computation import _compute_voxels
 
 def main():
     run_geocruncher(sys.argv)
@@ -107,4 +108,16 @@ def run_geocruncher(args):
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
 
-
+    if args[1] == "voxels":
+        with open(args[2]) as f:
+            data = json.load(f)
+        shape = (int(data["resolution"]["x"]), int(data["resolution"]["y"]), int(data["resolution"]["z"]))
+        out_file = args[6]
+        box = Box(xmin=float(data["box"]["xMin"]),
+                 ymin=float(data["box"]["yMin"]),
+                 zmin=float(data["box"]["zMin"]),
+                 xmax=float(data["box"]["xMax"]),
+                 ymax=float(data["box"]["yMax"]),
+                 zmax=float(data["box"]["zMax"]))
+        meshes_files = [args[5] + "/" + f for f in os.listdir(args[5]) if f.endswith(".off")]
+        _compute_voxels(shape, box, model, meshes_files, out_file)
