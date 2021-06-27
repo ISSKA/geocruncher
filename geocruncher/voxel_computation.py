@@ -2,8 +2,27 @@ import sys
 import os
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.architecture import from_GeoModeller
+from gmlib.architecture import from_GeoModeller, make_evaluator, grid
+from gmlib.utils.tools import BBox3
 import pyvista as pv
+
+# From gmlib v0.3.8, given a model you can ask its bounding box (model.bbox())
+# and then compute a grid from the box and a shape with grid(box, shape)
+# then pass the grid to the evaluator
+def _compute_voxels_ranks(res, model, box=None):
+    """"
+    :param res: resolution (supposed to be a tuple)
+    :param model: gmlib.GeologicalModel object
+    :param box: if not given will default to the bounding box of model 
+    """
+    if box is None:
+        box = model.bbox()
+    else:
+        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    cppmodel = from_GeoModeller(model)
+    topography = model.implicit_topography()
+    evaluator = make_evaluator(cppmodel, topography)
+    return  evaluator(grid(box, res, centered=True))
 
 
 def _compute_voxels(res, box, model, meshes_files, out_file):
