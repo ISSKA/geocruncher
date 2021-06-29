@@ -22,7 +22,7 @@ def _compute_voxels_ranks(res, model, box=None):
     cppmodel = from_GeoModeller(model)
     topography = model.implicit_topography()
     evaluator = make_evaluator(cppmodel, topography)
-    return  evaluator(grid(box, res, centered=True))
+    return evaluator(grid(box, res, centered=True))
 
 
 def _compute_voxels(res, box, model, meshes_files, out_file):
@@ -58,12 +58,12 @@ def _compute_voxels(res, box, model, meshes_files, out_file):
         insidePoints = points.select_enclosed_points(mesh, tolerance=0.00001)
         gwb_tags = [max(newId, _id) for newId, _id in zip(insidePoints["SelectedPoints"] * gwb_id, gwb_tags)]
 
-    ranks = list(map(lambda point:  model.rank(point, True), xyz))
+    # OLD working version
+    #ranks = list(map(lambda point:  model.rank(point, True), xyz))
 
     # More performant version but there is a bug with topography
-    # cppmodel = from_GeoModeller(model)
-    # evaluator = Evaluator(cppmodel)
-    # ranks = evaluator(xyz) + 1
+    ranks = _compute_voxels_ranks(res, model, box)
+    ranks = np.concatenate(ranks).ravel().tolist()
 
     ranks_tags = list(zip(ranks, gwb_tags))
 
