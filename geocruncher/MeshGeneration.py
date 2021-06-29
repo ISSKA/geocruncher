@@ -9,8 +9,26 @@ from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 from gmlib.tesselate import Tesselator
 from gmlib.tesselate import TopographyClipper
-from gmlib.architecture import from_GeoModeller, make_evaluator
+from gmlib.architecture import from_GeoModeller, make_evaluator, grid
+from gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes_lewiner as marching_cubes
+
+
+def _compute_ranks(res, model, box=None):
+    """"
+        :param res: resolution (supposed to be a tuple)
+        :param model: gmlib.GeologicalModel object
+        :param box: if not given will default to the bounding box of model
+        """
+    if box is None:
+        box = model.bbox()
+    else:
+        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    cppmodel = from_GeoModeller(model)
+    topography = model.implicit_topography()
+    evaluator = make_evaluator(cppmodel, topography)
+    return evaluator(grid(box, res, centered=True))
+
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
@@ -52,10 +70,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     points = np.stack(coordinates, axis=-1)
     points.shape = (-1, 3)
 
-    cppmodel = from_GeoModeller(model)
-    topography = model.implicit_topography() # <- NB: here we could use an alternate topography
-    evaluator = make_evaluator(cppmodel, topography)
-    ranks = evaluator(points)
+    ranks = _compute_ranks(shape, model, box)
     ranks.shape = shape
 
     # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:

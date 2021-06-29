@@ -6,6 +6,7 @@ from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 import pyvista as pv
 
+# Need to find the order to be used
 # From gmlib v0.3.8, given a model you can ask its bounding box (model.bbox())
 # and then compute a grid from the box and a shape with grid(box, shape)
 # then pass the grid to the evaluator
@@ -62,8 +63,13 @@ def _compute_voxels(res, box, model, meshes_files, out_file):
     #ranks = list(map(lambda point:  model.rank(point, True), xyz))
 
     # More performant version but there is a bug with topography
-    ranks = _compute_voxels_ranks(res, model, box)
-    ranks = np.concatenate(ranks).ravel().tolist()
+    cppmodel = from_GeoModeller(model)
+    topography = model.implicit_topography()  # <- NB: here we could use an alternate topography
+    evaluator = make_evaluator(cppmodel, topography)
+    ranks = evaluator(xyz)
+
+    #ranks = _compute_voxels_ranks(res, model, box)
+    ranks.shape = (-1)
 
     ranks_tags = list(zip(ranks, gwb_tags))
 
