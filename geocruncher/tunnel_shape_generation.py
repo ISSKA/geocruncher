@@ -115,8 +115,12 @@ def _project_points(normal, bottom, xy_points):
         diff_axis = to_plane_rotation.dot(z)
         diff_axis[2] = 0
         angle2 = math.acos(np.dot(normalize(diff_axis), x))
+        cond = angle2 > ANGLE_EPSILON
         rotation_matrix = None
-        if angle2 > ANGLE_EPSILON:
+        if normal[1] < 0:
+            angle2 *= -1
+            cond = -angle2 > ANGLE_EPSILON
+        if cond:
             in_plane_rotation = _rotation_matrix(u, angle2)
             rotation_matrix = np.matmul(in_plane_rotation, to_plane_rotation)
         else:
