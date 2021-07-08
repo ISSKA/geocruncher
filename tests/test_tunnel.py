@@ -22,5 +22,5 @@ def test_bottomPointsShouldHaveSameZ():
         verts = _project_points(normal, bottom, xy_points)
         zc = [v[2] for v in verts]
         d = max(zc) - min(zc)
-        assert np.std(zc) === 0, "Test failed for: the following setup: " + str({"difference": str(d), "length": str(
+        assert d < 0.3, "Test failed for: the following setup: " + str({"difference": str(d), "length": str(
             length), "nb_vertices": str(nb_vertices), "xy_points": str(xy_points), "normal": normal, "bottom": bottom, "verts": str(verts)})
