@@ -64,16 +64,33 @@ def get_rectangle_segment(width, height, nb_vertices):
     """
     length = 2 * width + 2 * height
     points = []
+    current_state = -1
     for i in range(nb_vertices): 
         distance = length * i / nb_vertices
         if distance < height:
-            points.append(np.array([-distance, width / 2, 0]))
+            if current_state == -1:
+                points.append(np.array([0, width/2, 0]))
+                current_state += 1
+            else:
+                points.append(np.array([-distance, width / 2, 0]))
         elif distance < height + width:
-            points.append(np.array([-height, -(distance - height - width / 2), 0]))
+            if current_state == 0:
+                points.append(np.array([-height, width/2, 0]))
+                current_state += 1
+            else:
+                points.append(np.array([-height, -(distance - height - width / 2), 0]))
         elif distance < 2 * height + width:
-            points.append(np.array([-(2 * height + width - distance), -width / 2, 0]))
+            if current_state == 1:
+                points.append(np.array([-height, -width/2, 0]))
+                current_state += 1
+            else:
+                points.append(np.array([-(2 * height + width - distance), -width / 2, 0]))
         else:
-            points.append(np.array([0, -(2 * height + 3 * width / 2 - distance), 0]))
+            if current_state == 2:
+                points.append(np.array([0, -width/2, 0]))
+                current_state += 1
+            else:
+                points.append(np.array([0, -(2 * height + 3 * width / 2 - distance), 0]))
     return points
 
 def get_elliptic_segment(width, height, nb_vertices):
