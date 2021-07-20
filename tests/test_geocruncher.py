@@ -5,7 +5,7 @@ import geocruncher.main as main
 
 
 def test_geocruncher():
-    main.run_geocruncher(['', 'intersections', 'tests/dummy_project/sections.json', 'tests/dummy_project/geocruncher_project.xml', 'tests/dummy_project/geocruncher_dem.asc', 'test_output.json'])
+    main.run_geocruncher(['', 'intersections', 'tests/dummy_project/sections.json', 'tests/dummy_project/geocruncher_project.xml', 'tests/dummy_project/geocruncher_dem.asc', '', 'test_output.json'])
     os.remove('test_output.json')
 
 
@@ -34,6 +34,6 @@ def test_slice():
     dem_file = os.path.join(base_dir, 'dummy_project', 'geocruncher_dem.asc')
     out_file = os.path.join(base_dir, 'slice_out.json')
 
-    main.run_geocruncher(['', 'intersections', slice_file, project_file, dem_file, out_file])
+    main.run_geocruncher(['', 'intersections', slice_file, project_file, dem_file, '', out_file])
 
     # os.remove(out_file)
