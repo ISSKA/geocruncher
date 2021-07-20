@@ -61,7 +61,8 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'intersections':
-        crossSections = {}
+        crossSections, drillholesLines, springsPoint, matrixGwb = {}, {}, {}, {}
+
         meshes_files = []
         with open(args[2]) as f:
             data = json.load(f)
@@ -72,9 +73,9 @@ def run_geocruncher(args):
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            crossSections[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base", data, meshes_files)
+            crossSections[str(sectionId)], drillholesLines[str(sectionId)], springsPoint[str(sectionId)], matrixGwb[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base", data, meshes_files)
 
-        outputs = {'forCrossSections': crossSections}
+        outputs = {'forCrossSections': crossSections, 'drillholes': drillholesLines, "springs": springsPoint, "matrixGwb": matrixGwb}
         if data["computeMap"]:
             xCoord = [box.xmin, box.xmax]
             yCoord = [box.ymin, box.ymax]
@@ -83,6 +84,10 @@ def run_geocruncher(args):
 
         with open(args[6], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
+            # print(json.dumps(outputs['drillholes']), file=sys.stderr)
+            # print(json.dumps(outputs['springs']), file=sys.stderr)
+            # print(json.dumps(outputs['matrixGwb']), file=sys.stderr)
+            sys.stderr.flush()
         sys.stdout.flush()
 
     if args[1] == "faults":
