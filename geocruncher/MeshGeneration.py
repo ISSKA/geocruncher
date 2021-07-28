@@ -6,7 +6,7 @@ import MeshTools.CGALWrappers as CGAL
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
-from gmlib.tesselate import tesselate_faults
+from gmlib.tesselate2 import tesselate_faults
 from gmlib.tesselate import Tesselator
 from gmlib.tesselate import TopographyClipper
 from gmlib.architecture import from_GeoModeller, make_evaluator, grid
