@@ -75,15 +75,12 @@ class Slice:
             n = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))  # normal of plane
             n = n / np.linalg.norm(n)
             q_proj = np.subtract(q, np.dot(np.subtract(q, p0), n) * n)
-            print(q_proj, file=sys.stderr)
             sys.stderr.flush()
-            return transformValue(p0, p1, q_proj)
+            return transformValue(p0, q_proj)
 
-        def transformValue(p0, p1, q):
-            # transform point in 2d; x, y has to be between 0 and 1
-            w = math.sqrt(math.pow(p1[0] - p0[0], 2) + math.pow(p1[1] - p0[1], 2))
-            h = p1[2] - p0[2]
-            return [math.sqrt(math.pow(q[0] - p0[0], 2) + math.pow(q[1] - p0[1], 2)) / w, q[2] / h]
+        def transformValue(p0, q):
+            # transform point in 2d; x, y
+            return [math.sqrt(math.pow(q[0] - p0[0], 2) + math.pow(q[1] - p0[1], 2)), q[2]]
 
         # we need a third point to create a plane
         thirdPoint = np.array([lowerLeft[0], lowerLeft[1], upperRight[2]])
@@ -95,14 +92,10 @@ class Slice:
             e_proj = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([line["end"]["x"], line["end"]["y"], line["end"]["z"]]))
             proj_line = [s_proj, e_proj]
             drillholesLine[dId] = proj_line
-            print(proj_line, file=sys.stderr)
-            sys.stderr.flush()
         for sId, p in springMap.items():
             sys.stderr.write("sIspring \r\n")
             p_proj = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([p["x"], p["y"], p["z"]]))
             springsPoint[sId] = p_proj
-            print(p_proj, file=sys.stderr)
-            sys.stderr.flush()
         # read all mesh files an test for every point if inside of gwb or not
         for gwb_Mesh in gwbMeshFiles:
             sys.stderr.write("mesh \r\n")
@@ -112,12 +105,9 @@ class Slice:
             points = pv.PolyData(rankMatrix)
             insidePoints = points.select_enclosed_points(mesh, tolerance=0.0001)
             matrixGwb.append(insidePoints["SelectedPoints"] * gwb_id)  # 0 if not in gwb else gwb_id
-            print(len(rankMatrix), file=sys.stderr)
-            print(len([p for p in insidePoints["SelectedPoints"] if p != 0]), file=sys.stderr)
-            sys.stderr.flush()
         # combine all gwb values into one matrix
         matrixGwbCombine = []
-        for idx in range(0, len(matrixGwb[0])):
+        for idx, val in enumerate(matrixGwb[0]):
             values = [values[idx] for values in matrixGwb if values[idx] > 0]
             matrixGwbCombine.append(int(values[0]) if len(values) > 0 else 0)  # we need to cast to int from int8 to be able to serialise in json
         return drillholesLine, springsPoint, matrixGwbCombine

@@ -84,10 +84,6 @@ def run_geocruncher(args):
 
         with open(args[6], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
-            # print(json.dumps(outputs['drillholes']), file=sys.stderr)
-            # print(json.dumps(outputs['springs']), file=sys.stderr)
-            # print(json.dumps(outputs['matrixGwb']), file=sys.stderr)
-            sys.stderr.flush()
         sys.stdout.flush()
 
     if args[1] == "faults":
