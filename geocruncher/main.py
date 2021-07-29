@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import numpy as np
 import sys
 import os
 from gmlib.GeologicalModel3D import GeologicalModel
@@ -80,7 +79,6 @@ def run_geocruncher(args):
             xCoord = [box.xmin, box.xmax]
             yCoord = [box.ymin, box.ymax]
             outputs['forMaps'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z, model.pile.reference == "base")
-
 
         with open(args[6], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))

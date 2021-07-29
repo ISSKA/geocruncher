@@ -75,7 +75,6 @@ class Slice:
             n = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))  # normal of plane
             n = n / np.linalg.norm(n)
             q_proj = np.subtract(q, np.dot(np.subtract(q, p0), n) * n)
-            sys.stderr.flush()
             return transformValue(p0, q_proj)
 
         def transformValue(p0, q):
@@ -83,6 +82,7 @@ class Slice:
             return [math.sqrt(math.pow(q[0] - p0[0], 2) + math.pow(q[1] - p0[1], 2)), q[2]]
 
         # we need a third point to create a plane
+        # and we know that the up point of cs are juste higher z and there is not vertical angle
         thirdPoint = np.array([lowerLeft[0], lowerLeft[1], upperRight[2]])
         matrixGwb = []
         drillholesLine = {}
@@ -93,12 +93,10 @@ class Slice:
             proj_line = [s_proj, e_proj]
             drillholesLine[dId] = proj_line
         for sId, p in springMap.items():
-            sys.stderr.write("sIspring \r\n")
             p_proj = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([p["x"], p["y"], p["z"]]))
             springsPoint[sId] = p_proj
         # read all mesh files an test for every point if inside of gwb or not
         for gwb_Mesh in gwbMeshFiles:
-            sys.stderr.write("mesh \r\n")
             gwb_id = int(gwb_Mesh.split("_")[1])
             mesh = pv.read(gwb_Mesh)
             mesh = mesh.extract_geometry()
