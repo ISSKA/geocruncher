@@ -105,9 +105,10 @@ class Slice:
             matrixGwb.append(insidePoints["SelectedPoints"] * gwb_id)  # 0 if not in gwb else gwb_id
         # combine all gwb values into one matrix
         matrixGwbCombine = []
-        for idx, val in enumerate(matrixGwb[0]):
-            values = [values[idx] for values in matrixGwb if values[idx] > 0]
-            matrixGwbCombine.append(int(values[0]) if len(values) > 0 else 0)  # we need to cast to int from int8 to be able to serialise in json
+        if len(matrixGwb) > 1:
+            for idx, val in enumerate(matrixGwb[0]):
+                values = [values[idx] for values in matrixGwb if values[idx] > 0]
+                matrixGwbCombine.append(int(values[0]) if len(values) > 0 else 0)  # we need to cast to int from int8 to be able to serialise in json
         return drillholesLine, springsPoint, matrixGwbCombine
 
 
