@@ -10,7 +10,7 @@ def test_sliceAroundYAxisTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    Slice.output([0, 0], [10, 29], [0, 19], 20, fakeRank, [1, 1], False, [], [])
+    Slice.output([0, 0], [10, 29], [0, 19], 20, fakeRank, [1, 1], False, [], [], 0)
     for y in range(10, 30):
         for z in range(0, 20):
             assert [float(0), float(y), float(z)] in tested_points
@@ -20,7 +20,7 @@ def test_sliceForSlopOfOneTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    Slice.output([0, 19], [10, 29], [0, 19], 20, fakeRank, [1, 1], False, [], [])
+    Slice.output([0, 19], [10, 29], [0, 19], 20, fakeRank, [1, 1], False, [], [], 0)
     for xy in range(0, 20):
         for z in range(0, 20):
             assert [float(xy), float(10 + xy), float(z)] in tested_points
@@ -30,7 +30,7 @@ def test_sliceForSlopeOfZeroTestPointsRegularly():
     def fakeRank(l):
         tested_points.append(l)
         return 0
-    Slice.output([0, 19], [10, 10], [0, 19], 20, fakeRank, [1, 1], False, [], [])
+    Slice.output([0, 19], [10, 10], [0, 19], 20, fakeRank, [1, 1], False, [], [], 0)
     for x in range(0, 20):
         for z in range(0, 20):
             assert [float(x), float(10), float(z)] in tested_points

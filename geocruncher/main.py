@@ -12,6 +12,8 @@ from .topography_reader import txt_extract
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import _compute_voxels
 
+RATIO_MAX_DIST_PROJ = 0.2
+
 def main():
     run_geocruncher(sys.argv)
 
@@ -72,7 +74,8 @@ def run_geocruncher(args):
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            crossSections[str(sectionId)], drillholesLines[str(sectionId)], springsPoint[str(sectionId)], matrixGwb[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base", data, meshes_files)
+            maxDistProj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
+            crossSections[str(sectionId)], drillholesLines[str(sectionId)], springsPoint[str(sectionId)], matrixGwb[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base", data, meshes_files, maxDistProj)
 
         outputs = {'forCrossSections': crossSections, 'drillholes': drillholesLines, "springs": springsPoint, "matrixGwb": matrixGwb}
         if data["computeMap"]:
