@@ -151,7 +151,10 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     for name, fault in faults.items():
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
-        fault.to_off(out_file)
+
+        off_mesh = generate_off(*fault.as_arrays())
+        with open(out_file,'w',encoding='utf8') as f:
+            f.write(off_mesh)
         out_files[name].append(out_file)
     return out_files
 
