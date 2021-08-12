@@ -3,7 +3,7 @@ import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
-import MeshTools.CGALWrappers as CGAL
+from .MeshGeneration import generate_off
 
 def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd, outFile):
     """Generate a mesh for a tunnel
@@ -32,7 +32,9 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd,
                 vertices.append(p)
             nb_series += 1
     triangles = _connect_vertices(len(xy_points), nb_series)
-    CGAL.TSurf(vertices, np.array(triangles)).to_off(outFile)
+    off_mesh = generate_off(vertices, np.array(triangles))
+    with open(outFile,'w',encoding='utf8') as f:
+        f.write(off_mesh)
     return vertices
 
 def get_circle_segment(radius, nb_vertices):
