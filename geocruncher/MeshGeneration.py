@@ -13,6 +13,7 @@ from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
+
 def generate_off(verts, faces, precision=3):
     """Generates a valid OFF string from the given verts and faces.
 
@@ -34,11 +35,14 @@ def generate_off(verts, faces, precision=3):
     v = '\n'.join([' '.join([str(round(float(position), precision)) for position in vertex]) for vertex in verts])
     f = '\n'.join([' '.join([str(len(face)), *(str(int(index)) for index in face)]) for face in faces])
 
+    # print(str(faces))
+    # print(str(faces[0]))
+
     return "OFF\n{num_verts} {num_faces} 0\n{vertices}\n{faces}\n".format(
         num_verts=num_verts,
         num_faces=num_faces,
         vertices=v,
-        faces = f)
+        faces=f)
 
 
 def _compute_ranks(res, model, box=None):
@@ -141,7 +145,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         out_file = os.path.join(outDir, filename)
 
         off_mesh = generate_off(*mesh.as_arrays())
-        with open(out_file,'w',encoding='utf8') as f:
+        with open(out_file, 'w', encoding='utf8') as f:
             f.write(off_mesh)
         out_files["mesh"][str(rank)].append(out_file)
 
@@ -150,6 +154,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
     return out_files
 
+
 def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str):
     out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
 
@@ -157,6 +162,7 @@ def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str)
         json.dump(out_files, f, indent=2)
 
     return out_files
+
 
 def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     nx, ny, nz = shape
@@ -171,11 +177,13 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
 
-        off_mesh = generate_off(*fault.as_arrays())
-        with open(out_file,'w',encoding='utf8') as f:
+        fault_arr = fault.as_arrays()
+        off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
+        with open(out_file, 'w', encoding='utf8') as f:
             f.write(off_mesh)
         out_files[name].append(out_file)
     return out_files
+
 
 # Here we override tesselate faults method to take the SmallBoxTesselator
 # which will just try/catch fault to meshes method, so that we do not 
