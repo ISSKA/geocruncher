@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import numpy as np
 import sys
 import os
 from gmlib.GeologicalModel3D import GeologicalModel
@@ -12,6 +11,8 @@ from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import _compute_voxels
+
+RATIO_MAX_DIST_PROJ = 0.2
 
 def main():
     run_geocruncher(sys.argv)
@@ -61,21 +62,28 @@ def run_geocruncher(args):
         print(generated_mesh_paths)
 
     if args[1] == 'intersections':
-        crossSections = {}
+        crossSections, drillholesLines, springsPoint, matrixGwb = {}, {}, {}, {}
+
+        meshes_files = []
         with open(args[2]) as f:
             data = json.load(f)
+        if "springs" in data or "drillholes" in data:
+            meshes_files = [args[5] + "/" + f for f in os.listdir(args[5]) if f.endswith(".off")]
         nPoints = data["resolution"]
         for sectionId, rect in data["toCompute"].items():
             xCoord = [int(round(rect["lowerLeft"]["x"])), int(round(rect["upperRight"]["x"]))]
             yCoord = [int(round(rect["lowerLeft"]["y"])), int(round(rect["upperRight"]["y"]))]
             zCoord = [int(round(rect["lowerLeft"]["z"])), int(round(rect["upperRight"]["z"]))]
-            crossSections[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base")
-        outputs = {'forCrossSections': crossSections}
+            maxDistProj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
+            crossSections[str(sectionId)], drillholesLines[str(sectionId)], springsPoint[str(sectionId)], matrixGwb[str(sectionId)] = Slice.output(xCoord, yCoord, zCoord, nPoints, model.rank, [1, 1], model.pile.reference == "base", data, meshes_files, maxDistProj)
+
+        outputs = {'forCrossSections': crossSections, 'drillholes': drillholesLines, "springs": springsPoint, "matrixGwb": matrixGwb}
         if data["computeMap"]:
-          xCoord = [box.xmin, box.xmax]
-          yCoord = [box.ymin, box.ymax]
-          outputs['forMaps'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z, model.pile.reference == "base")
-        with open(args[5], 'w') as f:
+            xCoord = [box.xmin, box.xmax]
+            yCoord = [box.ymin, box.ymax]
+            outputs['forMaps'] = MapSlice.output(xCoord, yCoord, nPoints, model.rank, model.topography.evaluate_z, model.pile.reference == "base")
+
+        with open(args[6], 'w') as f:
             json.dump(outputs, f, indent=2, separators=(',', ': '))
         sys.stdout.flush()
 
@@ -86,7 +94,6 @@ def run_geocruncher(args):
         out_dir = args[5]
 
         generated_mesh_paths = generate_faults(model, shape, out_dir)
-
 
     if args[1] == "faults_intersections":
         outputs = {}

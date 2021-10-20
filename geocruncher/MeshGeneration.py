@@ -13,6 +13,33 @@ from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
+def generate_off(verts, faces, precision=3):
+    """Generates a valid OFF string from the given verts and faces.
+
+    Parameters:
+        verts: (V, 3) array
+            Spatial coordinates for V unique mesh vertices. Coordinate order
+            must be (x, y, z).
+        faces: (F, N) array
+            Define F unique faces of N size via referencing vertex indices from ``verts``.
+        precision: int
+            How many decimals to keep when writing vertex position. Defaults to 3.
+
+    Returns:
+        str: A valid OFF string.
+    """
+    # Implementation reference: https://en.wikipedia.org/wiki/OFF_(file_format)#Composition
+    num_verts = len(verts)
+    num_faces = len(faces)
+    v = '\n'.join([' '.join([str(round(float(position), precision)) for position in vertex]) for vertex in verts])
+    f = '\n'.join([' '.join([str(len(face)), *(str(int(index)) for index in face)]) for face in faces])
+
+    return "OFF\n{num_verts} {num_faces} 0\n{vertices}\n{faces}\n".format(
+        num_verts=num_verts,
+        num_faces=num_faces,
+        vertices=v,
+        faces = f)
+
 
 def _compute_ranks(res, model, box=None):
     """"
@@ -112,7 +139,10 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     for rank, mesh in meshes.items():
         filename = 'rank_%d.off' % rank
         out_file = os.path.join(outDir, filename)
-        mesh.to_off(out_file)
+
+        off_mesh = generate_off(*mesh.as_arrays())
+        with open(out_file,'w',encoding='utf8') as f:
+            f.write(off_mesh)
         out_files["mesh"][str(rank)].append(out_file)
 
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
@@ -140,7 +170,10 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     for name, fault in faults.items():
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
-        fault.write_off(out_file)
+
+        off_mesh = generate_off(*fault.as_arrays())
+        with open(out_file,'w',encoding='utf8') as f:
+            f.write(off_mesh)
         out_files[name].append(out_file)
     return out_files
 
