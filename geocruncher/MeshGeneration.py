@@ -9,7 +9,7 @@ from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 from gmlib.tesselate import Tesselator
 from gmlib.tesselate import TopographyClipper
-from skimage.measure import marching_cubes_lewiner as marching_cubes
+from skimage.measure import marching_cubes
 
 def generate_off(verts, faces, precision=3):
     """Generates a valid OFF string from the given verts and faces.
@@ -107,7 +107,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
         # Using the non-classic variant leads to holes in the meshes which CGAL cannot handle
         # the classic variant seems to work better for us
-        verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent", use_classic=True)  # Gradient direction ensures normals point outwards
+        verts, faces, normals, values = marching_cubes(indicator, level=0.5, gradient_direction="ascent", method="lorensen")  # Gradient direction ensures normals point outwards
         tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
 
         # Repair mesh if there are border edges. Mesh must be closed.
