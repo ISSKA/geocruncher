@@ -4,11 +4,13 @@ from collections import defaultdict
 
 import MeshTools.CGALWrappers as CGAL
 import numpy as np
+
+import gmlib
+assert gmlib.__version__ >= "0.3.11"
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
-from gmlib.tesselate import Tesselator
-from gmlib.tesselate import TopographyClipper
+
 from skimage.measure import marching_cubes
 
 def generate_off(verts, faces, precision=3):
@@ -141,61 +143,16 @@ def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str)
 
 def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     nx, ny, nz = shape
-    if optBox:
-        box = optBox
-        faults = tesselate_faults_smaller(box, (nx, ny, nz), model)
-    else:
-        box = model.getbox()
-        faults = tesselate_faults(box, (nx, ny, nz), model)
+    box = optBox or model.getbox()
+    faults = tesselate_faults(box, (nx, ny, nz), model)
     out_files = defaultdict(list)
     for name, fault in faults.items():
-        filename = 'fault_%s.off' % name
-        out_file = os.path.join(outDir, filename)
-
-        fault_arr = fault.as_arrays()
-        off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
-        with open(out_file,'w',encoding='utf8') as f:
-            f.write(off_mesh)
-        out_files[name].append(out_file)
+        if not fault.is_empty():
+            filename = 'fault_%s.off' % name
+            out_file = os.path.join(outDir, filename)
+            fault_arr = fault.as_arrays()
+            off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
+            with open(out_file,'w',encoding='utf8') as f:
+                f.write(off_mesh)
+            out_files[name].append(out_file)
     return out_files
-
-# Here we override tesselate faults method to take the SmallBoxTesselator
-# which will just try/catch fault to meshes method, so that we do not 
-# get an error if the fault is outside the smaller box
-def tesselate_faults_smaller(box, shape, model, clip_topography=True):
-    tesselator = SmallBoxTesselator(box, shape)
-    topography = (
-        TopographyClipper(model.topography, tesselator.tesselate_topography(model))
-        if clip_topography
-        else None
-    )
-    return tesselator.tesselate_faults(model, topography)
-
-
-class SmallBoxTesselator(Tesselator):
-    def tesselate_faults(self, model, topography=None):
-        fault_tesselations = {}
-        for name, field in model.faults.items():
-            try:
-                fault_tesselations[name] = self(field, 0)
-            except ValueError:
-                pass
-        for name, surface in fault_tesselations.items():
-            if topography:
-                surface = topography.clip(surface)
-            data = model.faults_data[name]
-            assert len(data.potential_data.interfaces) == 1
-            fault_points = data.potential_data.interfaces[0]
-            for limit_name in data.stops_on:
-                try:
-                    limit_surface = fault_tesselations[limit_name]
-                    CGAL.corefine(surface, limit_surface)
-                    limit_fault = model.faults[limit_name]
-                    limit_field_values = limit_fault(surface.face_centers())
-                    if np.mean(limit_fault(fault_points)) < 0:
-                        surface.remove_faces(limit_field_values > 0)
-                    else:
-                        surface.remove_faces(limit_field_values < 0)
-                except KeyError:
-                    pass
-        return fault_tesselations
