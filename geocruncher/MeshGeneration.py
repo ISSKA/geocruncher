@@ -6,12 +6,14 @@ import MeshTools.CGALWrappers as CGAL
 import numpy as np
 
 import gmlib
+
 assert gmlib.__version__ >= "0.3.11"
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 
 from skimage.measure import marching_cubes
+
 
 def generate_off(verts, faces, precision=3):
     """Generates a valid OFF string from the given verts and faces.
@@ -38,7 +40,8 @@ def generate_off(verts, faces, precision=3):
         num_verts=num_verts,
         num_faces=num_faces,
         vertices=v,
-        faces = f)
+        faces=f)
+
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
@@ -124,7 +127,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         out_file = os.path.join(outDir, filename)
 
         off_mesh = generate_off(*mesh.as_arrays())
-        with open(out_file,'w',encoding='utf8') as f:
+        with open(out_file, 'w', encoding='utf8') as f:
             f.write(off_mesh)
         out_files["mesh"][str(rank)].append(out_file)
 
@@ -133,6 +136,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
     return out_files
 
+
 def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str):
     out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
 
@@ -140,6 +144,7 @@ def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str)
         json.dump(out_files, f, indent=2)
 
     return out_files
+
 
 def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     nx, ny, nz = shape
@@ -152,7 +157,7 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
             out_file = os.path.join(outDir, filename)
             fault_arr = fault.as_arrays()
             off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
-            with open(out_file,'w',encoding='utf8') as f:
+            with open(out_file, 'w', encoding='utf8') as f:
                 f.write(off_mesh)
             out_files[name].append(out_file)
     return out_files
