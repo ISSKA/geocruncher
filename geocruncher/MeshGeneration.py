@@ -14,22 +14,6 @@ from gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes_lewiner as marching_cubes
 
 
-def _compute_ranks(res, model, box=None):
-    """"
-        :param res: resolution (supposed to be a tuple)
-        :param model: gmlib.GeologicalModel object
-        :param box: if not given will default to the bounding box of model
-        """
-    if box is None:
-        box = model.bbox()
-    else:
-        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
-    cppmodel = from_GeoModeller(model)
-    topography = model.implicit_topography()
-    evaluator = make_evaluator(cppmodel, topography)
-    return evaluator(grid(box, res, centered=True))
-
-
 def generate_off(verts, faces, precision=3):
     """Generates a valid OFF string from the given verts and faces.
 
@@ -51,11 +35,31 @@ def generate_off(verts, faces, precision=3):
     v = '\n'.join([' '.join([str(round(float(position), precision)) for position in vertex]) for vertex in verts])
     f = '\n'.join([' '.join([str(len(face)), *(str(int(index)) for index in face)]) for face in faces])
 
+    # print(str(faces))
+    # print(str(faces[0]))
+
     return "OFF\n{num_verts} {num_faces} 0\n{vertices}\n{faces}\n".format(
         num_verts=num_verts,
         num_faces=num_faces,
         vertices=v,
-        faces = f)
+        faces=f)
+
+
+def _compute_ranks(res, model, box=None):
+    """"
+        :param res: resolution (supposed to be a tuple)
+        :param model: gmlib.GeologicalModel object
+        :param box: if not given will default to the bounding box of model
+        """
+    if box is None:
+        box = model.bbox()
+    else:
+        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    cppmodel = from_GeoModeller(model)
+    topography = model.implicit_topography()
+    evaluator = make_evaluator(cppmodel, topography)
+    return evaluator(grid(box, res, centered=True))
+
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
@@ -97,7 +101,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
     points = np.stack(coordinates, axis=-1)
     points.shape = (-1, 3)
 
-    ranks = np.array([model.rank(P) for P in points])
+    ranks = _compute_ranks(shape, model, box)
     ranks.shape = shape
 
     # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:
@@ -141,7 +145,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         out_file = os.path.join(outDir, filename)
 
         off_mesh = generate_off(*mesh.as_arrays())
-        with open(out_file,'w',encoding='utf8') as f:
+        with open(out_file, 'w', encoding='utf8') as f:
             f.write(off_mesh)
         out_files["mesh"][str(rank)].append(out_file)
 
@@ -150,6 +154,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
     return out_files
 
+
 def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str):
     out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
 
@@ -157,6 +162,7 @@ def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str)
         json.dump(out_files, f, indent=2)
 
     return out_files
+
 
 def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir: str, optBox: Box = None):
     nx, ny, nz = shape
@@ -170,9 +176,14 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     for name, fault in faults.items():
         filename = 'fault_%s.off' % name
         out_file = os.path.join(outDir, filename)
-        fault.to_off(out_file)
+
+        fault_arr = fault.as_arrays()
+        off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
+        with open(out_file, 'w', encoding='utf8') as f:
+            f.write(off_mesh)
         out_files[name].append(out_file)
     return out_files
+
 
 # Here we override tesselate faults method to take the SmallBoxTesselator
 # which will just try/catch fault to meshes method, so that we do not 
