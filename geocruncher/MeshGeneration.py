@@ -12,9 +12,6 @@ from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes
-from gmlib.tesselate2 import tesselate_faults
-from gmlib.tesselate import Tesselator
-from gmlib.tesselate import TopographyClipper
 from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 
@@ -159,7 +156,6 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
 def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str):
     out_files = {"mesh": defaultdict(list), "fault": generate_faults_files(model, shape, outDir)}
-
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
         json.dump(out_files, f, indent=2)
 
