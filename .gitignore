@@ -102,3 +102,4 @@ ENV/
 
 .idea
 *.iml
+tests/slice_out.json

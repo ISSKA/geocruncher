@@ -47,7 +47,6 @@ def run_geocruncher(args):
             data = json.load(f)
         shape = (int(data["resolution"]["x"]), int(data["resolution"]["y"]), int(data["resolution"]["z"]))
         out_dir = args[5]
-
         if "box" in data and data["box"]:
             optBox = Box(xmin=float(data["box"]["xMin"]), 
                 ymin=float(data["box"]["yMin"]), 
