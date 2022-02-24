@@ -120,7 +120,7 @@ class Slice:
 
 class FaultIntersection:
 
-    def output(xCoord, yCoord, zCoord, nPoints, model):
+    def old_vertical_grid(xCoord, yCoord, zCoord, nPoints):
         zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints)
         isOnYAxis = xCoord[0] == xCoord[1]
         if not isOnYAxis:
@@ -134,6 +134,34 @@ class FaultIntersection:
             y, z = np.meshgrid(ySliceRange, zSliceRange)
             el = np.array([y.flatten(), z.flatten()]).T
             points = list(map(lambda s: [xCoord[0], s[0], s[1]], el))
+        return points
+
+    # TODO: could be factorized and reused elsewhere
+    def vertical_grid(A, B, nu, nv):
+        """
+        :param A: *lower left* corner (3D)
+        :param B: *upper right* corner (3D)
+        :param nu: number of points along horizontal axis
+        :param nv: number of points along vertival axis
+        """
+        points = np.repeat(A[None,:],nu,axis=0)
+        points = np.repeat(points[None,:],nv,axis=0)
+        AB = B - A
+        points[...,:2]+=(np.linspace(0,1,nu)[:, None]*AB[:2])[None, :]
+        points[...,2]+=(np.linspace(0,1,nv)*AB[2])[:, None]
+        points.shape = -1, 3 # to have the same point order
+        return points
+
+    def new_vertical_grid(xCoord, yCoord, zCoord, nPoints):
+        return FaultIntersection.vertical_grid(
+            np.array([xCoord[0], yCoord[0], zCoord[0]], dtype="d"), # maybe dtype="d" is too much...
+            np.array([xCoord[1], yCoord[1], zCoord[1]], dtype="d"),
+            nPoints, nPoints,
+        )
+
+    def output(xCoord, yCoord, zCoord, nPoints, model):
+        #points = FaultIntersection.old_vertical_grid(xCoord, yCoord, zCoord, nPoints)
+        points = FaultIntersection.new_vertical_grid(xCoord, yCoord, zCoord, nPoints)
         output = {}
         for name, fault in model.faults.items():
             coloredPoints = np.array(np.array_split(fault(points), nPoints))
