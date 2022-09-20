@@ -79,7 +79,7 @@ class Slice:
             if np.linalg.norm(np.subtract(q, q_proj)) < maxDistProj:
                 return (transformValue(p0, q_proj), True)
             else:
-                return (0, False)
+                return (transformValue(p0, q_proj), False)
 
         def transformValue(p0, q):
             # transform point in 2d; x, y
