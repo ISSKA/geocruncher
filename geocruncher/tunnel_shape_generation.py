@@ -4,6 +4,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
 from .MeshGeneration import generate_off
+from .profiler import profile
 
 def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd, outFile):
     """Generate a mesh for a tunnel
@@ -17,6 +18,8 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd,
     vertices = []
     t = symbols("t")
     nb_series = 0
+    # NOTE: the 3 above lines are timed with the next profile on first loop iteration, but not subsequent
+    # to avoid that, we would need to profile right here. but since these 3 lines are insignificant, we don't
     for j in np.arange(idxStart if idxStart != -1 else 0, idxEnd + 1 if idxEnd != -1 else len(functions)):
         f = functions[j]
         fx = parse_expr(f["x"].replace("^", "**"))
@@ -25,16 +28,22 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd,
         dfy = diff(fy, t)
         fz = parse_expr(f["z"].replace("^", "**"))
         dfz = diff(fz, t)
+        profile("sympy_parse_diff_function")
         for i in np.arange(tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step):
             normal = np.array([float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))])
             bottom = np.array([float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))])
+            profile("interpolate_function")
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
             nb_series += 1
+            profile("project_points")
     triangles = _connect_vertices(len(xy_points), nb_series)
+    profile("connect_vertices")
     off_mesh = generate_off(vertices, np.array(triangles))
+    profile("generate_off")
     with open(outFile,'w',encoding='utf8') as f:
         f.write(off_mesh)
+    profile("write_output")
     return vertices
 
 def get_circle_segment(radius, nb_vertices):
