@@ -163,6 +163,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         filename = 'rank_%d.off' % rank
         out_file = os.path.join(outDir, filename)
 
+        # FIXME @lopez use pycgal on next line
         off_mesh = generate_off(*mesh.as_arrays())
 
         get_current_profiler().profile('generate_off')
