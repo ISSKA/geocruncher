@@ -35,8 +35,8 @@ PROFILER_TUNNEL_MESHES_V1 = VkProfilerSettings(
 PROFILER_MESHES_V1 = VkProfilerSettings(
     1,
     'meshes',
-    ['load_model', 'setup', 'grid', 'ranks', 'volume', 'marching_cubes',
-        't_surf', 'faults', 'generate_off', 'write_output'],
+    ['load_model', 'setup', 'grid', 'ranks', 'volume',
+        'marching_cubes', 'faults', 'generate_off', 'write_output'],
     ['start_time', 'num_series', 'num_units', 'num_faults', 'num_interfaces', 'num_foliations', 'resolution'])
 PROFILER_INTERSECTIONS_V1 = VkProfilerSettings(
     1,

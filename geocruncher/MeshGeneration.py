@@ -3,11 +3,6 @@ import json
 import os
 from collections import defaultdict
 
-# FIXME @lopez use pycgal on next lines
-# start of solution below...
-# from pycgal.Surface_mesh import Surface_mesh
-# from pycgal.Polygon_mesh_processing import stitch_borders
-import MeshTools.CGALWrappers as CGAL
 import numpy as np
 
 import gmlib
@@ -119,35 +114,18 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         else:
             rankId = rank
 
-        indicator = np.zeros(extended_shape, dtype=np.float32)
-        indicator[1:-1, 1:-1, 1:-1][ranks == rank] = 1
+        volume = np.zeros(extended_shape, dtype=np.float32)
+        volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
 
         get_current_profiler().profile('volume')
 
-        # Using the non-classic variant leads to holes in the meshes which CGAL cannot handle
-        # the classic variant seems to work better for us
-        # Gradient direction ensures normals point outwards
-        verts, faces, normals, values = marching_cubes(
-            indicator, level=0.5, gradient_direction="ascent", method="lorensen")
-
+        # Using the lewiner variant leads to holes in the meshes which CGAL cannot handle
+        # (Produces an error when reading the OFF in geo-algo/VK-Aquifers)
+        # Gradient direction ensures normals point outwards. Otherwise, aquifers computation will be incorrect
+        verts, faces = marching_cubes(
+            volume, level=0.5, gradient_direction='ascent', method='lorensen')[:2]
+        meshes[rankId] = (rescale_to_grid(verts, box, shape), faces)
         get_current_profiler().profile('marching_cubes')
-
-        # FIXME @lopez use pycgal on next line
-        # possible solution below
-        # tsurf = Surface_mesh(rescale_to_grid(verts, box, shape), faces)
-        tsurf = CGAL.TSurf(rescale_to_grid(verts, box, shape), faces)
-
-        # Repair mesh if there are border edges. Mesh must be closed.
-        # FIXME @lopez use pycgal on next line
-        if not tsurf.is_closed():
-            # FIXME @lopez use pycgal on next line
-            # half solution below, but "fix_border_edges" seems to do more than just call CGAL stitch_borders in MeshTools
-            # it also checks if half edges are borders and "refines holes" ?
-            # stitch_borders(tsurf)
-            CGAL.fix_border_edges(tsurf)
-
-        meshes[rankId] = tsurf
-        get_current_profiler().profile('t_surf')
 
     out_files = {"mesh": defaultdict(list), "fault": defaultdict(list)}
 
@@ -165,7 +143,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
         # FIXME @lopez use pycgal on next line to extract verts and faces
         # we have our own "off" generation for now, because of precision issues with the CGAL implementation. Do not replace that for now
-        off_mesh = generate_off(*mesh.as_arrays())
+        off_mesh = generate_off(*mesh)
 
         get_current_profiler().profile('generate_off')
 
