@@ -11,17 +11,14 @@ from .MeshGeneration import generate_volumes, generate_faults
 from .topography_reader import txt_extract
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import _compute_voxels
-from .profiler import init_profiler, profile, set_profiler_metadata, save_profiler_results, PROFILES
+from .profiler import VkProfiler, PROFILES, set_current_profiler, get_current_profiler
+
 
 RATIO_MAX_DIST_PROJ = 0.2
 
 
 def main():
-    # initialize profiler for the chosen computation type
-    init_profiler(PROFILES[sys.argv[1]])
     run_geocruncher(sys.argv)
-    save_profiler_results()
-
 
 def run_geocruncher(args):
     if args[1] == 'tunnel_meshes':
@@ -34,30 +31,54 @@ def run_geocruncher(args):
             "Rectangle": lambda t: get_rectangle_segment(t["width"] * subT, t["height"] * subT, data["nb_vertices"]),
             "Elliptic": lambda t: get_elliptic_segment(t["width"] * subT, t["height"] * subT, data["nb_vertices"])
         }
-        set_profiler_metadata(
-            "is_sub_tunnel", data["idxStart"] != -1 and data["idxEnd"] != -1)
-        set_profiler_metadata("step_size", data["step"])
-        profile("read_input")
         for tunnel in data["tunnels"]:
+            # profile each tunnel separatly
+            set_current_profiler(VkProfiler(PROFILES[sys.argv[1]]))
+            get_current_profiler()\
+                .set_profiler_metadata('shape', tunnel["shape"])\
+                .set_profiler_metadata('num_waypoints', len(tunnel["functions"]) + 1)
             tunnel_to_meshes(tunnel["functions"], data["step"], plane_segment[tunnel["shape"]](
                 tunnel), data["idxStart"], data["tStart"], data["idxEnd"], data["tEnd"], os.path.join(args[3], tunnel["name"] + ".off"))
+            # write profiler result before moving on to the next tunnel
+            get_current_profiler().save_profiler_results()
 
         return
+
+    set_current_profiler(VkProfiler(PROFILES[sys.argv[1]]))
 
     model = GeologicalModel(args[3])
     model.topography = txt_extract(args[4])
     box = model.getbox()
 
+    get_current_profiler().profile('load_model')
+
     if args[1] == 'meshes':
         """
         Call: main.py meshes [configuration_path] [geological_model_path] [surface_model_path] [out_dir]
         """
-        # num_samples = int(args[2])
         with open(args[2]) as f:
             data = json.load(f)
         shape = (int(data["resolution"]["x"]), int(
             data["resolution"]["y"]), int(data["resolution"]["z"]))
         out_dir = args[5]
+
+        # divide interfaces by 2, because they are lines made of 2 points
+        num_unit_interfaces = len(
+            [a for s in model.pile.all_series for i in s.potential_data.interfaces for a in i]) / 2
+        num_unit_foliations = len([
+            l for s in model.pile.all_series for l in s.potential_data.gradients.locations])
+        num_fault_interfaces = len(
+            [a for f in model.faults_data.values() for i in f.potential_data.interfaces for a in i]) / 2
+        num_fault_foliations = len([
+            l for f in model.faults_data.values() for l in f.potential_data.gradients.locations])
+        # remove 1 from nbformations because it always includes the dummy
+        get_current_profiler()\
+            .set_profiler_metadata('num_series', len(model.pile.all_series))\
+            .set_profiler_metadata('num_units', model.nbformations() - 1)\
+            .set_profiler_metadata('num_faults', len(model.faults.items()))\
+            .set_profiler_metadata('num_interfaces', num_unit_interfaces + num_fault_interfaces)\
+            .set_profiler_metadata('num_foliations', num_unit_foliations + num_fault_foliations)\
+            .set_profiler_metadata('resolution', shape[0] * shape[1] * shape[2])
 
         if "box" in data and data["box"]:
             optBox = Box(xmin=float(data["box"]["xMin"]),
@@ -69,9 +90,7 @@ def run_geocruncher(args):
             generated_mesh_paths = generate_volumes(
                 model, shape, out_dir, optBox)
         else:
-            generated_mesh_paths = generate_volumes(model, shape, out_dir)
-        # TODO do something useful with output files
-        print(generated_mesh_paths)
+            generated_mesh_paths = generate_volumes(model, shape, out_dir, box)
 
     if args[1] == 'intersections':
         crossSections, drillholesLines, springsPoint, matrixGwb = {}, {}, {}, {}
@@ -156,3 +175,5 @@ def run_geocruncher(args):
         meshes_files = [args[5] + "/" +
                         f for f in os.listdir(args[5]) if f.endswith(".off")]
         _compute_voxels(shape, box, model, meshes_files, out_file)
+
+    get_current_profiler().save_profiler_results()

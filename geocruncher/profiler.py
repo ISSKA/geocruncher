@@ -2,8 +2,18 @@ from typing import NamedTuple, List
 import time
 import datetime
 
+import cProfile
+import pstats
+import io
+from pstats import SortKey
+import json
 
-class ProfilerSettings(NamedTuple):
+pr = cProfile.Profile()
+
+# Profiles
+
+
+class VkProfilerSettings(NamedTuple):
     # version of the profiler
     version: int
     # name of the type of computation
@@ -16,37 +26,39 @@ class ProfilerSettings(NamedTuple):
 
 # if the profiling characteristics change, make a new version.
 # the code will then append the stats to an appropriate CSV file, not mixing between versions
-PROFILER_TUNNEL_MESHES_V1 = ProfilerSettings(
+PROFILER_TUNNEL_MESHES_V1 = VkProfilerSettings(
     1,
     'tunnel_meshes',
-    ['read_input', 'sympy_parse_diff_function', 'interpolate_function',
+    ['sympy_parse_diff_function', 'interpolate_function',
         'project_points', 'connect_vertices', 'generate_off', 'write_output'],
-    ['start_time', 'is_sub_tunnel', 'step_size'])
-PROFILER_MESHES_V1 = ProfilerSettings(
+    ['start_time', 'num_waypoints', 'shape'])
+PROFILER_MESHES_V1 = VkProfilerSettings(
     1,
     'meshes',
-    ['init', 'step 2'],
-    ['start_time'])
-PROFILER_INTERSECTIONS_V1 = ProfilerSettings(
+    ['load_model', 'setup', 'grid', 'ranks', 'volume', 'marching_cubes',
+        't_surf', 'faults', 'generate_off', 'write_output'],
+    ['start_time', 'num_series', 'num_units', 'num_faults', 'num_interfaces', 'num_foliations', 'resolution'])
+PROFILER_INTERSECTIONS_V1 = VkProfilerSettings(
     1,
     'intersections',
-    ['init', 'step 2'],
+    ['load_model', 'step 2'],
     ['start_time'])
-PROFILER_FAULTS_V1 = ProfilerSettings(
+PROFILER_FAULTS_V1 = VkProfilerSettings(
     1,
     'faults',
-    ['init', 'step 2'],
+    ['load_model', 'step 2'],
     ['start_time'])
-PROFILER_FAULTS_INTERSECTIONS_V1 = ProfilerSettings(
+PROFILER_FAULTS_INTERSECTIONS_V1 = VkProfilerSettings(
     1,
     'faults_intersections',
-    ['init', 'step 2'],
+    ['load_model', 'step 2'],
     ['start_time'])
-PROFILER_VOXELS_V1 = ProfilerSettings(
+PROFILER_VOXELS_V1 = VkProfilerSettings(
     1,
     'voxels',
-    ['init', 'step 2'],
+    ['load_model', 'step 2'],
     ['start_time'])
+DUMMY_PROFILER = VkProfilerSettings(1, 'dummy', [], [])
 
 
 # all profiles indexes by the computation type
@@ -60,71 +72,107 @@ PROFILES = dict({
     'voxels': PROFILER_VOXELS_V1
 })
 
-
-# profiler is not init as long as the settings are None
-_settings = None
-# dictionnary where each step's name maps to the total fractional seconds spent on that step
-_steps = dict()
-_metadata = dict()
-_last_profiled = None
+# Profiler class
 
 
-def init_profiler(settings: ProfilerSettings):
-    """Init the profiler. To be called once at the beginning of the geocruncher process"""
-    global _settings, _steps, _last_profiled, _metadata
-    # set the start time, to calculate relative durations
-    _last_profiled = time.process_time()
-    _settings = settings
-    # make the dictionnary with a default value for each step
-    _steps = dict([[step, 0] for step in _settings.steps])
-    # make the dictionnary with a default value for each metadata
-    _metadata = dict([[meta, None] for meta in _settings.metadata])
+class VkProfiler():
+    def __init__(self, settings: VkProfilerSettings):
 
-    # set the metadata that's on every computation
-    set_profiler_metadata("start_time", datetime.datetime.utcnow().isoformat())
+        # set the start time, to calculate relative durations
+        self._last_profiled = time.process_time()
+        self._settings = settings
+        # dictionnary where each step's name maps to the total fractional seconds spent on that step
+        # make the dictionnary with a default value for each step
+        self._steps = dict(
+            [[step, {'profile': list(), 'time': 0}] for step in settings.steps])
+        # make the dictionnary with a default value for each metadata
+        self._metadata = dict([[meta, None] for meta in settings.metadata])
 
+        # set the metadata that's on every computation
+        self.set_profiler_metadata(
+            'start_time', datetime.datetime.utcnow().isoformat())
+        pr.enable()
 
-def profile(step: str):
-    """Profile a step by name. To be called when the step in question is done.
-    Also works inside loops (total time per step gets summed up). For loops, it is recommanded to also profile just before entering, and at the end of every iteration, so the first profile in the loop is consistant"""
-    global _steps, _last_profiled
-    if _settings is not None and step in _steps:
-        now = time.process_time()
-        # add for the step the difference between now and the last profiled time
-        # since we add, the profile function works in loops. on each loop iteration, the step's time will be increased
-        _steps[step] += now - _last_profiled
-        _last_profiled = now
+    def profile(self, step: str):
+        """Profile a step by name. To be called when the step in question is done.
+        Also works inside loops (total time per step gets summed up). For loops, it is recommanded to profile just before entering, and at the end of every iteration, so the first profile in the loop is consistant"""
+        if step in self._steps:
+            now = time.process_time()
 
+            # TODO: WIP extracting stats from cProfile
+            # stop tracking previous step
+            pr.disable()
+            # s = io.StringIO()
+            # pr.create_stats()
+            # ps = pstats.Stats(pr).sort_stats(
+            #     SortKey.TIME, SortKey.NAME)
+            # ps.print_stats(15)
+            # ps.get_stats_profile()
 
-def set_profiler_metadata(metadata: str, value):
-    global _metadata
-    if metadata in _metadata:
-        _metadata[metadata] = value
+            # file_path = "/home/build/geocruncher-profiling/cprofile.txt"
+            # with open(file_path, "w+", encoding="utf8") as f:
+            #     f.write(step + "\n\n")
+            #     f.write(str(pr.stats))
 
+            # add for the step the difference between now and the last profiled time
+            # since we add, the profile function works in loops. on each loop iteration, the step's time will be increased
+            self._steps[step]['time'] += now - self._last_profiled
+            self._last_profiled = now
+            # start tracking next step
+            pr.enable()
+        return self
 
-def save_profiler_results():
-    """For now, make a JSON file for each profiling"""
-    global _steps, _settings
-    if _settings is not None:
+    def set_profiler_metadata(self, metadata: str, value):
+        if metadata in self._metadata:
+            self._metadata[metadata] = value
+        return self
+
+    def save_profiler_results(self):
+        """For now, make a JSON file for each profiling"""
+        # make sure profiling is stopped
+        pr.disable()
+
+        # TODO: make path configurable
         file_path = "/home/build/geocruncher-profiling/" + \
-            _settings.computation + "_v" + str(_settings.version) + ".csv"
+            self._settings.computation + "_v" + \
+            str(self._settings.version) + ".csv"
         # if the file doesn't exist, we need to write the header. otherwise, just the new line
         with open(file_path, "a+", encoding="utf8") as f:
             f.seek(0)
             if len(f.read()) == 0:
                 # file was just created. append header
-                f.write(_get_csv_header(_settings))
-            f.write(_get_csv_line(_metadata, _steps))
+                f.write(_get_csv_header(self._settings))
+            f.write(_get_csv_line(self._metadata, self._steps))
+        return self
+
+# Utilities
 
 
-def _get_csv_header(settings: ProfilerSettings, separator=';'):
+def _get_csv_header(settings: VkProfilerSettings, separator=';'):
     return separator.join(settings.metadata) + separator + separator.join(settings.steps) + '\n'
 
 
 def _get_csv_line(metadata: dict, steps: dict, separator=';'):
-    return separator.join(str(x) for x in metadata.values()) + separator + separator.join(_s_to_ms(x) for x in steps.values()) + '\n'
+    return separator.join(str(x) for x in metadata.values()) + separator + separator.join(_s_to_ms(x['time']) for x in steps.values()) + '\n'
 
 
 def _s_to_ms(s: float) -> str:
     """format seconds to millisecond string with 5 decimals"""
     return '%.5f' % (s * 1000)
+
+# Global reference
+
+
+# In order for any code to be able to profile code with the current profiler
+# a reference to the current profiler is kept here
+# make a default dummy profiler, so code doesn't crash if no profiler was initialized
+_global_profiler = VkProfiler(DUMMY_PROFILER)
+
+
+def set_current_profiler(profiler: VkProfiler):
+    global _global_profiler
+    _global_profiler = profiler
+
+
+def get_current_profiler():
+    return _global_profiler
