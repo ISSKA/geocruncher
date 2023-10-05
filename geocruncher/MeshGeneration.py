@@ -1,4 +1,4 @@
-from .profiler import get_current_profiler
+from .profiler.profiler import get_current_profiler
 import json
 import os
 from collections import defaultdict
@@ -72,8 +72,6 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
 
     nx, ny, nz = shape
 
-    get_current_profiler().profile('setup')
-
     steps = (
         np.linspace(box.xmin, box.xmax, nx),
         np.linspace(box.ymin, box.ymax, ny),
@@ -135,8 +133,6 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), outDir: str
         # FIXME: the "setup code" is very similar to our setup above (grid). It could be deduplicated
         out_files['fault'] = generate_faults_files(model, shape, outDir, box)
 
-    get_current_profiler().profile('faults')
-
     for rank, mesh in meshes.items():
         filename = 'rank_%d.off' % rank
         out_file = os.path.join(outDir, filename)
@@ -168,6 +164,8 @@ def generate_faults(model: GeologicalModel, shape: (int, int, int), outDir: str)
     with open(os.path.join(outDir, 'index.json'), 'w') as f:
         json.dump(out_files, f, indent=2)
 
+    get_current_profiler().profile('write_output')
+
     return out_files
 
 
@@ -175,6 +173,9 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
     nx, ny, nz = shape
     box = optBox or model.getbox()
     faults = tesselate_faults(box, (nx, ny, nz), model)
+
+    get_current_profiler().profile('tesselate_faults')
+
     out_files = defaultdict(list)
     for name, fault in faults.items():
         if not fault.is_empty():
@@ -182,7 +183,12 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), outDir
             out_file = os.path.join(outDir, filename)
             fault_arr = fault.as_arrays()
             off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
+
+            get_current_profiler().profile('generate_off')
+
             with open(out_file, 'w', encoding='utf8') as f:
                 f.write(off_mesh)
             out_files[name].append(out_file)
+
+            get_current_profiler().profile('write_output')
     return out_files

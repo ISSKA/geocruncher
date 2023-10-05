@@ -4,7 +4,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
 from .MeshGeneration import generate_off
-from .profiler import get_current_profiler
+from .profiler.profiler import get_current_profiler
 
 def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd, outFile):
     """Generate a mesh for a tunnel
