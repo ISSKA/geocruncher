@@ -81,16 +81,17 @@ class VkProfiler():
         # make sure profiling is stopped
         self._pr.disable()
 
-        file_name = self._settings.computation + \
-            "_v" + str(self._settings.version) + ".csv"
-        file_path = _profiler_output_folder.joinpath(file_name)
-        # if the file doesn't exist, we need to write the header. otherwise, just the new line
-        with open(file_path, "a+", encoding="utf8") as f:
-            f.seek(0)
-            if len(f.read()) == 0:
-                # file was just created. append header
-                f.write(_get_csv_header(self._settings))
-            f.write(_get_csv_line(self._metadata, self._steps))
+        if _is_profiling_enabled:
+            file_name = self._settings.computation + \
+                "_v" + str(self._settings.version) + ".csv"
+            file_path = _profiler_output_folder.joinpath(file_name)
+            # if the file doesn't exist, we need to write the header. otherwise, just the new line
+            with open(file_path, "a+", encoding="utf8") as f:
+                f.seek(0)
+                if len(f.read()) == 0:
+                    # file was just created. append header
+                    f.write(_get_csv_header(self._settings))
+                f.write(_get_csv_line(self._metadata, self._steps))
         return self
 
 # Globals

@@ -129,8 +129,8 @@ def run_geocruncher(computation: str, args: list[str]):
             .set_profiler_metadata('resolution', nPoints)\
             .set_profiler_metadata('num_sections', len(data["toCompute"].items()))\
             .set_profiler_metadata('compute_map', data["computeMap"])\
-            .set_profiler_metadata('num_springs', len(data["springs"]) if data["springs"] else 0)\
-            .set_profiler_metadata('num_drillholes', len(data["drillholes"]) if data["drillholes"] else 0)\
+            .set_profiler_metadata('num_springs', len(data["springs"]) if "springs" in data else 0)\
+            .set_profiler_metadata('num_drillholes', len(data["drillholes"]) if "drillholes" in data else 0)\
             .set_profiler_metadata('num_gwb_parts', len(meshes_files))\
             .profile('load_model')
 

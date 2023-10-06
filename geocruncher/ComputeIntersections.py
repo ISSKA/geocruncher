@@ -54,19 +54,19 @@ class Slice:
         # impact of setup code above is insignificant, so we don't profile it in any specific step
 
         if not isOnYAxis:
+            slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
+            xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
+            z, x = np.meshgrid(zSliceRange, xSliceRange)
             if "springs" in data or "drillholes" in data or meshes_files:
-                slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
-                xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
-                z, x = np.meshgrid(zSliceRange, xSliceRange)
                 # we add a constant y to every 2d point
                 y = [slope * (p - xCoord[0]) + yCoord[0] for p in x]
                 xyz = np.stack((x, y, z), axis=-1)
                 xyz.shape = (-1, 3)
                 drillholesLine, springsPoint, matrixGwb = Slice.ouputHydroLayer(np.array([xCoord[0], yCoord[0], zCoord[0]]), np.array([xCoord[1], yCoord[1], zCoord[1]]), xyz, data["springs"], data["drillholes"], meshes_files, maxDistProj)
         else:
+            ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
+            z, y = np.meshgrid(zSliceRange, ySliceRange)
             if "springs" in data or "drillholes" in data or meshes_files:
-                ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
-                z, y = np.meshgrid(zSliceRange, ySliceRange)
                 # we add a constant x to every 2d point
                 xyz = np.stack((np.ones_like(y) * xCoord[0], y, z), axis=-1)
                 xyz.shape = (-1, 3)
