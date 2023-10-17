@@ -33,10 +33,10 @@ class MetadataHelpers:
         if unit:
             # divide interfaces by 2, because they are lines made of 2 points
             num_unit_interfaces = len(
-                [a for s in model.pile.all_series for i in s.potential_data.interfaces for a in i]) / 2
+                [a for s in model.pile.all_series if s.potential_data is not None for i in s.potential_data.interfaces for a in i]) / 2
         if fault:
             num_fault_interfaces = len(
-                [a for f in model.faults_data.values() for i in f.potential_data.interfaces for a in i]) / 2
+                [a for f in model.faults_data.values() if f.potential_data is not None for i in f.potential_data.interfaces for a in i]) / 2
 
         return num_unit_interfaces + num_fault_interfaces
 
@@ -46,9 +46,9 @@ class MetadataHelpers:
         if unit:
             # divide interfaces by 2, because they are lines made of 2 points
             num_unit_foliations = len([
-                l for s in model.pile.all_series for l in s.potential_data.gradients.locations])
+                l for s in model.pile.all_series if s.potential_data is not None for l in s.potential_data.gradients.locations])
         if fault:
             num_fault_foliations = len([
-                l for f in model.faults_data.values() for l in f.potential_data.gradients.locations])
+                l for f in model.faults_data.values() if f.potential_data is not None for l in f.potential_data.gradients.locations])
 
         return num_unit_foliations + num_fault_foliations
