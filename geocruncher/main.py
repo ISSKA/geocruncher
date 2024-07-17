@@ -83,7 +83,7 @@ def run_geocruncher(computation: str, args: list[str]):
             json.dump(generated_meshes_paths, f, indent=2)
 
     if computation == 'intersections':
-        # Call: main.py intersections [configuration_path] [geological_model_path] [surface_model_path] [meshes_folder] [out_dir]
+        # Call: main.py intersections [configuration_path] [geological_model_path] [surface_model_path] [meshes_folder] [out_file]
         # Inside meshes_folder, GWB meshes have the following syntax: f"mesh_{id}_{subID}.off"
         with open(args[2], encoding='utf8') as f:
             data = json.load(f)
@@ -133,7 +133,7 @@ def run_geocruncher(computation: str, args: list[str]):
             json.dump(generated_meshes_paths, f, indent=2)
 
     if computation == 'faults_intersections':
-        # Call: main.py faults_intersections [configuration_path] [geological_model_path] [surface_model_path] [out_dir]
+        # Call: main.py faults_intersections [configuration_path] [geological_model_path] [surface_model_path] [out_file]
         with open(args[2], encoding='utf8') as f:
             data = json.load(f)
         with open(args[3], 'rb') as f:
