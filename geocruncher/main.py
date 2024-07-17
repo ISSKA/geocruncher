@@ -17,7 +17,7 @@ def main():
     # It would be interresting to convert everything to argparse, to make it more robust, and take advantage of the error handling / help messages
     parser = argparse.ArgumentParser(
         prog='Geocruncher',
-        description="A small wrapper for the gmlib library. Intended as a stand-alone executable reading input data from files.",
+        description="Computation package mostly using BRGM technologies. It can be used both as a standalone executable reading inputs from files and writing outputs to files, or as a python module.",
         epilog="Stable command line arguments are still WIP. Currently, flag arguments must be passed last, and not everything is documented above."
     )
     parser.add_argument('computation', choices=[
