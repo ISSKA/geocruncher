@@ -14,19 +14,24 @@ class VkProfilerSettings(NamedTuple):
 
 class MetadataHelpers:
     """Static functions that help gather metadata for the profiling"""
+    @staticmethod
     def num_series(model) -> int:
         return len(model.pile.all_series)
 
+    @staticmethod
     def num_units(model) -> int:
         # remove 1 from nbformations because it always includes the dummy
         return model.nbformations() - 1
 
+    @staticmethod
     def num_finite_faults(model) -> int:
         return len([x for name, x in model.faults_data.items() if not x.infinite])
 
+    @staticmethod
     def num_infinite_faults(model) -> int:
         return len([x for name, x in model.faults_data.items() if x.infinite])
 
+    @staticmethod
     def num_interfaces(model, unit=True, fault=True) -> int:
         num_unit_interfaces = 0
         num_fault_interfaces = 0
@@ -40,6 +45,7 @@ class MetadataHelpers:
 
         return num_unit_interfaces + num_fault_interfaces
 
+    @staticmethod
     def num_foliations(model, unit=True, fault=True) -> int:
         num_unit_foliations = 0
         num_fault_foliations = 0
