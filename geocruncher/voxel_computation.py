@@ -6,7 +6,6 @@ from gmlib.GeologicalModel3D import GeologicalModel, Box
 
 from .profiler.profiler import get_current_profiler
 
-
 class Voxels:
     @staticmethod
     def output(model: GeologicalModel, shape: (int, int, int), box: Box, gwb_meshes: dict[str, list[str]]) -> str:
@@ -69,3 +68,4 @@ rank gwb_id\n\
 {data}"
         get_current_profiler().profile('generate_vox')
         return vox
+

@@ -3,8 +3,9 @@ import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 from gmlib.tesselate import tesselate_faults
-
 from skimage.measure import marching_cubes
+from gmlib.architecture import from_GeoModeller, make_evaluator, grid
+from gmlib.utils.tools import BBox3
 
 from .profiler.profiler import get_current_profiler
 
@@ -38,6 +39,22 @@ def generate_off(verts, faces, precision=3):
     return f"OFF\n{num_verts} {num_faces} 0\n{v}\n{f}\n"
 
 
+def _compute_ranks(res, model, box=None):
+    """"
+        :param res: resolution (supposed to be a tuple)
+        :param model: gmlib.GeologicalModel object
+        :param box: if not given will default to the bounding box of model
+        """
+    if box is None:
+        box = model.bbox()
+    else:
+        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    cppmodel = from_GeoModeller(model)
+    topography = model.implicit_topography()
+    evaluator = make_evaluator(cppmodel, topography)
+    return evaluator(grid(box, res, centered=True))
+
+
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -> {"mesh": dict[str, str], "fault": dict[str, str]}:
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
 
@@ -68,7 +85,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
 
     get_current_profiler().profile('grid')
 
-    ranks = np.array([model.rank(P) for P in points])
+    ranks = _compute_ranks(shape, model, box)
     ranks.shape = shape
 
     # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:
