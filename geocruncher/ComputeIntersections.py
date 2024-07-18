@@ -1,10 +1,10 @@
-import json
 import math
 
 import numpy as np
 import pyvista as pv
-import sys
-import os
+import meshio
+from io import StringIO
+
 
 from .profiler.profiler import get_current_profiler
 
@@ -31,8 +31,8 @@ class MapSlice:
 
 
 class Slice:
-
-    def output(xCoord, yCoord, zCoord, nPoints, ranks, imgSize, isBase, data, meshes_files, maxDistProj):
+    @staticmethod
+    def output(xCoord, yCoord, zCoord, nPoints, ranks, imgSize, isBase, data, gwb_meshes: dict[str, list[str]], maxDistProj):
         def computeRank(a, z):
             if not isOnYAxis:
                 y = slope * (a - xCoord[0]) + yCoord[0]
@@ -57,27 +57,30 @@ class Slice:
             slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
             xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
             z, x = np.meshgrid(zSliceRange, xSliceRange)
-            if "springs" in data or "drillholes" in data or meshes_files:
+            if "springs" in data or "drillholes" in data or gwb_meshes:
                 # we add a constant y to every 2d point
                 y = [slope * (p - xCoord[0]) + yCoord[0] for p in x]
                 xyz = np.stack((x, y, z), axis=-1)
                 xyz.shape = (-1, 3)
-                drillholesLine, springsPoint, matrixGwb = Slice.ouputHydroLayer(np.array([xCoord[0], yCoord[0], zCoord[0]]), np.array([xCoord[1], yCoord[1], zCoord[1]]), xyz, data["springs"], data["drillholes"], meshes_files, maxDistProj)
+                drillholesLine, springsPoint, matrixGwb = Slice.ouputHydroLayer(np.array([xCoord[0], yCoord[0], zCoord[0]]), np.array(
+                    [xCoord[1], yCoord[1], zCoord[1]]), xyz, data["springs"], data["drillholes"], gwb_meshes, maxDistProj)
         else:
             ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
             z, y = np.meshgrid(zSliceRange, ySliceRange)
-            if "springs" in data or "drillholes" in data or meshes_files:
+            if "springs" in data or "drillholes" in data or gwb_meshes:
                 # we add a constant x to every 2d point
                 xyz = np.stack((np.ones_like(y) * xCoord[0], y, z), axis=-1)
                 xyz.shape = (-1, 3)
-                drillholesLine, springsPoint, matrixGwb = Slice.ouputHydroLayer(np.array([xCoord[0], yCoord[0], zCoord[0]]), np.array([xCoord[1], yCoord[1], zCoord[1]]), xyz, data["springs"], data["drillholes"], meshes_files, maxDistProj)
+                drillholesLine, springsPoint, matrixGwb = Slice.ouputHydroLayer(np.array([xCoord[0], yCoord[0], zCoord[0]]), np.array(
+                    [xCoord[1], yCoord[1], zCoord[1]]), xyz, data["springs"], data["drillholes"], gwb_meshes, maxDistProj)
 
         # Main computation loop
         rankMatrix = list((map(computeRankMatrix, (np.arange(0, nPoints)))))
         get_current_profiler().profile('sections_ranks')
         return rankMatrix, drillholesLine, springsPoint, matrixGwb
 
-    def ouputHydroLayer(lowerLeft, upperRight, rankMatrix, springMap, drillholeMap, gwbMeshFiles, maxDistProj):
+    @staticmethod
+    def ouputHydroLayer(lowerLeft, upperRight, rankMatrix, springMap, drillholeMap, gwb_meshes: dict[str, list[str]], maxDistProj):
         def projPointOnPlane(p0, p1, p2, q):
             # https://stackoverflow.com/a/8944143
             n = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))  # normal of plane
@@ -112,13 +115,15 @@ class Slice:
                 springsPoint[sId] = p_proj
         get_current_profiler().profile('hydro_project_springs')
         # read all mesh files an test for every point if inside of gwb or not
-        for gwb_Mesh in gwbMeshFiles:
-            gwb_id = int(gwb_Mesh.split("_")[1])
-            mesh = pv.read(gwb_Mesh)
-            mesh = mesh.extract_geometry()
-            points = pv.PolyData(rankMatrix)
-            insidePoints = points.select_enclosed_points(mesh, tolerance=0.00001)
-            matrixGwb.append(insidePoints["SelectedPoints"] * gwb_id)  # 0 if not in gwb else gwb_id
+        for gwb_id, meshes in gwb_meshes.items():
+            for mesh_str in meshes:
+                mesh = pv.from_meshio(meshio.read(
+                    StringIO(mesh_str), "off")).extract_geometry()
+                points = pv.PolyData(rankMatrix)
+                inside_points = points.select_enclosed_points(
+                    mesh, tolerance=0.00001)
+                # 0 if not in gwb else gwb_id
+                matrixGwb.append(inside_points["SelectedPoints"] * int(gwb_id))
         get_current_profiler().profile('hydro_test_inside_gwbs')
         # combine all gwb values into one matrix
         matrixGwbCombine = []
@@ -132,6 +137,7 @@ class Slice:
 
 class FaultIntersection:
 
+    @staticmethod
     def output(xCoord, yCoord, zCoord, nPoints, model):
         zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints)
         isOnYAxis = xCoord[0] == xCoord[1]
@@ -156,6 +162,7 @@ class FaultIntersection:
 
 class MapFaultIntersection:
 
+    @staticmethod
     def output(xCoord, yCoord, nPoints, model):
         xMapRange = np.linspace(xCoord[0], xCoord[1], nPoints)
         yMapRange = np.linspace(yCoord[0], yCoord[1], nPoints)

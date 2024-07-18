@@ -4,12 +4,12 @@ import time
 import datetime
 
 from .util import VkProfilerSettings
-from .settings.tunnel_meshes import PROFILER_TUNNEL_MESHES_V1
-from .settings.meshes import PROFILER_MESHES_V1
-from .settings.intersections import PROFILER_INTERSECTIONS_V1
-from .settings.faults import PROFILER_FAULTS_V1
-from .settings.faults_intersections import PROFILER_FAULTS_INTERSECTIONS_V1
-from .settings.voxels import PROFILER_VOXELS_V1
+from .settings.tunnel_meshes import PROFILER_TUNNEL_MESHES_V2
+from .settings.meshes import PROFILER_MESHES_V2
+from .settings.intersections import PROFILER_INTERSECTIONS_V2
+from .settings.faults import PROFILER_FAULTS_V2
+from .settings.faults_intersections import PROFILER_FAULTS_INTERSECTIONS_V2
+from .settings.voxels import PROFILER_VOXELS_V2
 
 
 def _get_csv_header(settings: VkProfilerSettings, separator=';'):
@@ -114,12 +114,12 @@ _global_profiler = VkProfiler(VkProfilerSettings(1, 'dummy', [], []))
 # all profiles indexed by the computation type
 # if a new version of a profiler is made, change the key here to automatically choose the new one in main
 PROFILES = dict({
-    'tunnel_meshes': PROFILER_TUNNEL_MESHES_V1,
-    'meshes': PROFILER_MESHES_V1,
-    'intersections': PROFILER_INTERSECTIONS_V1,
-    'faults': PROFILER_FAULTS_V1,
-    'faults_intersections': PROFILER_FAULTS_INTERSECTIONS_V1,
-    'voxels': PROFILER_VOXELS_V1
+    'tunnel_meshes': PROFILER_TUNNEL_MESHES_V2,
+    'meshes': PROFILER_MESHES_V2,
+    'intersections': PROFILER_INTERSECTIONS_V2,
+    'faults': PROFILER_FAULTS_V2,
+    'faults_intersections': PROFILER_FAULTS_INTERSECTIONS_V2,
+    'voxels': PROFILER_VOXELS_V2
 })
 
 

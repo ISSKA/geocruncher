@@ -1,171 +1,71 @@
-GeoCruncher
-===========
+# Geocruncher
 
-A small wrapper for the gmlib library. Intended as a stand-alone executable reading input data from files.
+Python 3.9 computation package capable of:
+- Tunnel mesh computation
+- Geological unit / fault mesh computation
+- Geological unit / fault intersection computation
+- Geological mesh to voxel computation
 
-To run the dummy project:
+Most computations use the BRGM's technologies under the hood. This package is intended as a bridge between GMLIB (and other libraries) and the [VisualKarsys webservice](https://visualkarsys.com).
 
+It can be used both as a standalone executable reading inputs from files and writing outputs to files, or as a python module (Work In Progress).
+
+It posesses an optional integrated Profiler, used in production by the VisualKarsys team to estimate computation times and identify key areas where speed should be improved. 
+
+## Installation
+
+Follow these steps to run Geocruncher
+
+**1) Install a python environment manager like [Miniconda](https://docs.anaconda.com/miniconda/)**
+
+```bash
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm -rf ~/miniconda3/miniconda.sh
+~/miniconda3/bin/conda init bash
 ```
-python -m geocruncher intersections tests/dummy_project/sections.json tests/dummy_project/geocruncher_project.xml tests/dummy_project/geocruncher_dem.asc  out.json
+
+**2) Create an environment for Geocruncher**
+
+```bash
+conda create -n viskar39 python=3.9
+conda activate viskar39
 ```
 
-To run the tests:
+**2) Install Geocruncher dependencies**
 
+If you are part of the VisualKarsys team, please refer to the [build.Dockerfile](https://github.com/ISSKA/VISKAR/blob/develop/src/docker/build.Dockerfile) to see the required packages, and follow the [VisualKarsys Geocruncher Documentation](https://github.com/ISSKA/VISKAR/blob/develop/doc/backend/geocruncher.md) to understand how to build the libraries.
+
+Geocruncher requires gmlib >=0.3.17, MeshTools main@5a02671, pycgal >=0.3.14 and vtkwriters >=0.0.10.
+
+vtkwriters is publicly available [here](https://github.com/BRGM/vtkwriters), however, the other 3 libraries are private. Please inquire with [BRGM](https://gitlab.brgm.fr) for access.
+
+The rest of the dependencies are standard python modules, and can be installed with pip.
+```bash
+pip install lxml scipy sympy pybind11 pyyaml meshio pyvista scikit-image verstr numpy pillow
+pip install dist/vtkwriters*.whl
+pip install dist/gmlib*.whl
+pip install dist/MeshTools*.whl
+pip install dist/pycgal*.whl
 ```
-python setup.py test
+
+## Dummy Project
+
+A dummy project is provided in order to test the installation. For example, to run the dummy computation of intersections, execute the following:
+```bash
+python -m geocruncher intersections tests/dummy_project/sections.json tests/dummy_project/geocruncher_project.xml tests/dummy_project/geocruncher_dem.asc tests/dummy_project out.json
 ```
 
+A more helpful command line argument validation system is being worked on. You can already run geocruncher with `-h` or `--help` to get basic help. Note that:
+- validation of parameters specific to each computation doesn't exist for now
+- additional flags (such as for profiling) must always come last
 
-Development Setup
-=================
+In the meantime, you can find out what arguments are requiered and in which order by looking at the `main.run_geocruncher` function. Below each computation type, a comment indicates the list of parameters requiered.
 
-GeoCruncher developement setup
-===============================
+## Development
 
-## Version control
+If using Visual Studio Code, the last step is to tell it which Python version to use. With a Python file open, at the bottom right, click on the Python version. In the dropdown, choose the Python version from the conda environment.
 
-The source code for GeoCruncher is managed in a Git repository. To access the repository, you can use the Git command line, or alternatively a UI such as [SourceTree](http://sourcetreeapp.com).
-* Repository URL: https://github.com/ISSKA/geocruncher
-* Check out the **develop** branch before continuing.
-
-## Requirements
-
-To run geoCruncher need other libraries to be installed. The followings needs to be installed before running the python scripts:
-
-* Eigen
-* GmLib by brgm (Commit 2c7736a57906c48a8edfbc6348f0477512debbd6 or later)
-* MeshTools by brgm (Commit 5923bad641f5fe82622a0b33e73806177a0f4690 or later)
-* scikit-image >= 0.14.0
-* CGAL >= 4.13
-* numpy
- 
-##  Setup with linux 
-
-### Geocruncher
-
-1. run the following key to clone the geocruncher repository:
-
-        git clone https://github.com/ISSKA/geocruncher.git
-
-2. To be able to run the python script you need to manually change some files within geoCruncher. 
-
-
-### numpy
-
-1. run the following key:
-	
-        pip install numpy
-
-2. Or for python3
-	
-        pip3 install numpy
-
-### Eigen
-
-* INSTALL.md URL: https://github.com/libigl/eigen/blob/master/INSTALL
-
-1. Download the eigen3 library in tar.gz format at their website (http://eigen.tuxfamily.org/index.php?title=Main_Page) or using this link directely:
-	
-        http://bitbucket.org/eigen/eigen/get/3.3.7.tar.gz
-
-2. Create a folder named eigen-build.
-
-3. Run cmake-gui, select the original eigen folder for the source code and eigen-build to build binaries. Then configure and generate.
-
-4. If the generation have been succesful, go to the eigen-build folder and run:
-	
-        make install .
-
-### GmLib
-
-* INSTALL.md URL: https://gitlab.inria.fr/gmlib/gmlib/blob/master/INSTALL.md
-
-1. run the following key to clone the gmlib repository:
-
-        git clone https://gitlab.inria.fr/gmlib/gmlib.git
-
-2. You will need to enter your Gitlab INRIA username and password.
-
-3. Within your git repository run the following key:
-	
-        pip install -e .
-
-Or for python3
-	
-        pip3 install -e .
-
-From now on you can compute intersections, however to compute meshes you still need two package CGAL and Meshtools
-
-### CGAL
-
-The correct CGAL version can be read from the deployment configuration at https://github.com/ISSKA/viskar-ops/blob/develop/packages/CGAL.nix#L4 .
-On Ubuntu CGAL can be installed from the repositories: `sudo apt install libcgal13`. Fedora also offers the package.
-
-If it's not available for the operating system, it needs to be compiled:
-
-* INSTALL.md URL: https://github.com/CGAL/cgal/blob/master/INSTALL.md
-
-1. run the following key to clone the cgal repository:
-	
-        git clone https://github.com/CGAL/cgal.git
-
-2. Create a folder named cgal-build.
-
-3. Run cmake-gui, select the original cgal folder for the source code and cgal-build to build binaries. Then configure and generate.
-
-4. Tick yes for CGAL_HEADER_ONLY and CGAL_DEV_MODE options.
-
-5. If the generation have been succesful, go to the cgal-build folder and run:
-
-        make install .
-
-### Meshtools
-
-* INSTALL.md URL: https://gitlab.inria.fr/charms/MeshTools/blob/master/INSTALL.md
-
-1. run the following key to clone the gmlib repository:
-	
-	git clone https://gitlab.inria.fr/charms/MeshTools.git
-
-2. You will need to enter your Gitlab INRIA username and password.
-
-3. Setup the path to your cgal location usually by runnning:
-	
-	export CGAL_DIR=/usr/local/lib/cmake/CGAL
-
-4. Within your git repository run the following key:
-	
-        pip install .
-
-Or for python3
-	
-        pip3 install .
-
-#### Workaround in case of building trouble
-
-According to Simon, a minimum of GCC 6.3 is necessary to compile the library. In case your struggling with compiling errors, a workaround is to install the pre-build library in your python local environment. It can be found on our Hetzner server.
-
-1. Connect to the server and find the library (usually inside of a [python{version}/site-packages] folder)
-
-        # find / -name MeshTools
-
-2. From your local machine, run the following command to copy the related folder
-    scp -r root@{server IP}:{path-to-site-packages} .
-
-3. Merge this folder with the site-packages folder related to your local python environment
-
-##  Setup for windows
-
-
-The steps for windows are the same than for linux but some of the tools used and integrated within linux have to be installed for windows.
-
-### Additional Requirements for windows
-
-* Assure that pip (or pip3) have been installed
-* Install a make command for windows
-* Install cmake
-* Install a c++ compiler for cmake (VisualStudio usually)
-
-### Windows command
-
-To run many of the command lines you will have to use alternative prompts, for example a bash prompt is needed to execute the make command. Moreover you may have to start the prompt as an administrator.
+Autocompletion will now work as expected.
+Recommanded extensions: `ms-python.python`, `ms-python.pylint` and `ms-python.autopep8`
