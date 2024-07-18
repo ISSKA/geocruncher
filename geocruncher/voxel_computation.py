@@ -6,6 +6,8 @@ from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 import pyvista as pv
 
+from .profiler.profiler import get_current_profiler
+
 # Need to find the order to be used
 # From gmlib v0.3.8, given a model you can ask its bounding box (model.bbox())
 # and then compute a grid from the box and a shape with grid(box, shape)
@@ -49,20 +51,21 @@ def _compute_voxels(res, box, model, meshes_files, out_file):
     xyz = np.stack((x, y, z), axis=-1)
     xyz.shape = (-1, 3)
 
+    get_current_profiler().profile('grid')
+
     gwb_tags = [0] * xyz.shape[0]
     for mesh_file in meshes_files:
         gwb_id = int(mesh_file.split("_")[1])
         mesh = pv.read(mesh_file)
         mesh = mesh.extract_geometry()
         points = pv.PolyData(xyz)
+        get_current_profiler().profile('read_gwbs')
 
         insidePoints = points.select_enclosed_points(mesh, tolerance=0.00001)
         gwb_tags = [max(newId, _id) for newId, _id in zip(insidePoints["SelectedPoints"] * gwb_id, gwb_tags)]
+        get_current_profiler().profile('test_inside_gwbs')
 
-    # OLD working version
-    #ranks = list(map(lambda point:  model.rank(point, True), xyz))
 
-    # More performant version but there is a bug with topography
     cppmodel = from_GeoModeller(model)
     topography = model.implicit_topography()  # <- NB: here we could use an alternate topography
     evaluator = make_evaluator(cppmodel, topography)
@@ -70,6 +73,7 @@ def _compute_voxels(res, box, model, meshes_files, out_file):
 
     #ranks = _compute_voxels_ranks(res, model, box)
     ranks.shape = (-1)
+    get_current_profiler().profile('ranks')
 
     ranks_tags = list(zip(ranks, gwb_tags))
 
@@ -79,9 +83,13 @@ def _compute_voxels(res, box, model, meshes_files, out_file):
 
     data = ''.join([(str(r_t[0]) + ' ' + str(r_t[1]) + '\n') for r_t in ranks_tags])
 
+    get_current_profiler().profile('generate_vox')
+
     with open(out_file, 'w') as outfile:
         outfile.write('XMIN={0} XMAX={1} YMIN={2} YMAX={3} ZMIN={4} ZMAX={5}'
                       .format(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax))
         outfile.write(' NUMBERX={0} NUMBERY={1} NUMBERZ={2} NOVALUE={3}\n'.format(nx, ny, nz, 0))
         outfile.write('rank gwb_id\n')
         outfile.write(data)
+
+    get_current_profiler().profile('write_output')
