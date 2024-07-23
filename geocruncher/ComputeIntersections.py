@@ -7,6 +7,7 @@ from io import StringIO
 
 
 from .profiler.profiler import get_current_profiler
+from .off import read_off
 
 class MapSlice:
 
@@ -117,8 +118,7 @@ class Slice:
         # read all mesh files an test for every point if inside of gwb or not
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_str in meshes:
-                mesh = pv.from_meshio(meshio.read(
-                    StringIO(mesh_str), "off")).extract_geometry()
+                mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
                 points = pv.PolyData(rankMatrix)
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)

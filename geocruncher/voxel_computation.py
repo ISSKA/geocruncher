@@ -5,6 +5,7 @@ import meshio
 from gmlib.GeologicalModel3D import GeologicalModel, Box
 
 from .profiler.profiler import get_current_profiler
+from .off import read_off
 
 class Voxels:
     @staticmethod
@@ -33,15 +34,14 @@ class Voxels:
         gwb_tags = [0] * xyz.shape[0]
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_str in meshes:
-                mesh = pv.from_meshio(meshio.read(
-                    StringIO(mesh_str), "off")).extract_geometry()
+                mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
                 points = pv.PolyData(xyz)
                 get_current_profiler().profile('read_gwbs')
 
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)
                 gwb_tags = [max(new_id, _id) for new_id, _id in zip(
-                    inside_points["SelectedPoints"] * int(gwb_id), gwb_tags)]
+                    inside_points['SelectedPoints'] * int(gwb_id), gwb_tags)]
                 get_current_profiler().profile('test_inside_gwbs')
 
         ranks = list(map(lambda point:  model.rank(point, True), xyz))
@@ -62,10 +62,9 @@ class Voxels:
         data = ''.join([(str(r_t[0]) + ' ' + str(r_t[1]) + '\n')
                        for r_t in ranks_tags])
         vox = f"\
-XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} ZMAX={box.zmax}\
+XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} ZMAX={box.zmax} \
 NUMBERX={shape[0]} NUMBERY={shape[1]} NUMBERZ={shape[2]} NOVALUE=0\n\
 rank gwb_id\n\
 {data}"
         get_current_profiler().profile('generate_vox')
         return vox
-

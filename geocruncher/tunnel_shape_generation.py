@@ -3,7 +3,7 @@ import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
-from .MeshGeneration import generate_off
+from .off import generate_off
 from .profiler.profiler import get_current_profiler
 
 def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> str:

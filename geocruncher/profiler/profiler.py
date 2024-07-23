@@ -5,7 +5,7 @@ import datetime
 
 from .util import VkProfilerSettings
 from .settings.tunnel_meshes import PROFILER_TUNNEL_MESHES_V2
-from .settings.meshes import PROFILER_MESHES_V2
+from .settings.meshes import PROFILER_MESHES_V3
 from .settings.intersections import PROFILER_INTERSECTIONS_V2
 from .settings.faults import PROFILER_FAULTS_V2
 from .settings.faults_intersections import PROFILER_FAULTS_INTERSECTIONS_V2
@@ -115,7 +115,7 @@ _global_profiler = VkProfiler(VkProfilerSettings(1, 'dummy', [], []))
 # if a new version of a profiler is made, change the key here to automatically choose the new one in main
 PROFILES = dict({
     'tunnel_meshes': PROFILER_TUNNEL_MESHES_V2,
-    'meshes': PROFILER_MESHES_V2,
+    'meshes': PROFILER_MESHES_V3,
     'intersections': PROFILER_INTERSECTIONS_V2,
     'faults': PROFILER_FAULTS_V2,
     'faults_intersections': PROFILER_FAULTS_INTERSECTIONS_V2,

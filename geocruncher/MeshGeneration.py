@@ -8,43 +8,18 @@ from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 
 from .profiler.profiler import get_current_profiler
+from .off import generate_off
 
 # Constants
 RANK_SKY = 0
 
 
-def generate_off(verts, faces, precision=3):
-    """Generates a valid OFF string from the given verts and faces.
-
-    Parameters:
-        verts: (V, 3) array
-            Spatial coordinates for V unique mesh vertices. Coordinate order
-            must be (x, y, z).
-        faces: (F, N) array
-            Define F unique faces of N size via referencing vertex indices from ``verts``.
-        precision: int
-            How many decimals to keep when writing vertex position. Defaults to 3.
-
-    Returns:
-        str: A valid OFF string.
-    """
-    # Implementation reference: https://en.wikipedia.org/wiki/OFF_(file_format)#Composition
-    num_verts = len(verts)
-    num_faces = len(faces)
-    v = '\n'.join([' '.join([str(round(float(position), precision))
-                             for position in vertex]) for vertex in verts])
-    f = '\n'.join([' '.join([str(len(face)), *(str(int(index))
-                                               for index in face)]) for face in faces])
-
-    return f"OFF\n{num_verts} {num_faces} 0\n{v}\n{f}\n"
-
-
-def _compute_ranks(res, model, box=None):
+def compute_ranks(res: (int, int, int), model: GeologicalModel, box: Box = None):
     """"
-        :param res: resolution (supposed to be a tuple)
-        :param model: gmlib.GeologicalModel object
-        :param box: if not given will default to the bounding box of model
-        """
+    :param res: resolution (supposed to be a tuple)
+    :param model: gmlib.GeologicalModel object
+    :param box: if not given will default to the bounding box of model
+    """
     if box is None:
         box = model.bbox()
     else:
@@ -52,7 +27,18 @@ def _compute_ranks(res, model, box=None):
     cppmodel = from_GeoModeller(model)
     topography = model.implicit_topography()
     evaluator = make_evaluator(cppmodel, topography)
-    return evaluator(grid(box, res, centered=True))
+    return evaluator(grid(box, res))
+
+
+def rescale_to_grid(verts, box: Box, shape: (int, int, int)):
+    step_size = np.array([
+        (box.xmax - box.xmin) / (shape[0] - 1),
+        (box.ymax - box.ymin) / (shape[1] - 1),
+        (box.zmax - box.zmin) / (shape[2] - 1)
+    ])
+    # The marching cubes uses an extended shape with a margin of one additional step on each side.
+    # Thus we need to shift the mesh by one step size.
+    return (verts * step_size) - step_size + np.array([box.xmin, box.ymin, box.zmin])
 
 
 def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -> {"mesh": dict[str, str], "fault": dict[str, str]}:
@@ -63,32 +49,12 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
         shape: Number of samples for marching cubes (x,y,z)
         box: Custom box
     """
-
-    def rescale_to_grid(points, box, shape):
-        step_size = np.array([
-            (box.xmax - box.xmin) / (shape[0] - 1),
-            (box.ymax - box.ymin) / (shape[1] - 1),
-            (box.zmax - box.zmin) / (shape[2] - 1)
-        ])
-        # The marching cubes uses an extended shape with a margin of one additional step on each side.
-        # Thus we need to shift the mesh by one step size.
-        return (points * step_size) - step_size + np.array([box.xmin, box.ymin, box.zmin])
-
-    steps = (
-        np.linspace(box.xmin, box.xmax, shape[0]),
-        np.linspace(box.ymin, box.ymax, shape[1]),
-        np.linspace(box.zmin, box.zmax, shape[2]),
-    )
-    coordinates = np.meshgrid(*steps, indexing='ij')
-    points = np.stack(coordinates, axis=-1)
-    points.shape = (-1, 3)
-
-    get_current_profiler().profile('grid')
-
-    ranks = _compute_ranks(shape, model, box)
+    ranks = compute_ranks(shape, model, box)
     ranks.shape = shape
 
     # FIXME: it would be cheaper to retrieve the ranks from the stratigraphy. Something like:
+    # That is true, the current method becomes longer the higher the resolution, while this one is fast and consistant,
+    # except we get names, not numbers. TBD if we can get the rank number from this
     # rank_values = []
     # for serie in model.pile.all_series:
     #    for formation in serie.formations:
@@ -136,7 +102,6 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
     if len(model.faults.items()) > 0:
         # don't waste time generating faults if there are none
         # the setup for the generation takes a considerable amount of time, even if there is nothing to generate
-        # FIXME: the "setup code" is very similar to our setup above (grid). It could be deduplicated
         out_files['fault'] = generate_faults_files(model, shape, box)
 
     return out_files
