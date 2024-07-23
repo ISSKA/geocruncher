@@ -3,20 +3,22 @@ import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
-from .MeshGeneration import generate_off
+from .off import generate_off
+from .profiler.profiler import get_current_profiler
 
-def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd, outFile):
+def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> str:
     """Generate a mesh for a tunnel
 
     Args:
         functions (list((str, str, str))): the functions that define the tunnel (separated for x, y, z and for t between 0 and 1)
         step (float): size of a step between 0 and 1
         xy_points (list((int, int, int))): points representing a segment of the tunnel on the xy plane
-        outFile (str): the file to output (off file)
     """
     vertices = []
     t = symbols("t")
     nb_series = 0
+    # NOTE: the 3 above lines are timed with the next profile on first loop iteration, but not subsequent
+    # to avoid that, we would need to profile right here. but since these 3 lines are insignificant, we don't
     for j in np.arange(idxStart if idxStart != -1 else 0, idxEnd + 1 if idxEnd != -1 else len(functions)):
         f = functions[j]
         fx = parse_expr(f["x"].replace("^", "**"))
@@ -25,17 +27,20 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd,
         dfy = diff(fy, t)
         fz = parse_expr(f["z"].replace("^", "**"))
         dfz = diff(fz, t)
+        get_current_profiler().profile("sympy_parse_diff_function")
         for i in np.arange(tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step):
             normal = np.array([float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))])
             bottom = np.array([float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))])
+            get_current_profiler().profile("interpolate_function")
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
             nb_series += 1
+            get_current_profiler().profile("project_points")
     triangles = _connect_vertices(len(xy_points), nb_series)
+    get_current_profiler().profile("connect_vertices")
     off_mesh = generate_off(vertices, np.array(triangles))
-    with open(outFile,'w',encoding='utf8') as f:
-        f.write(off_mesh)
-    return vertices
+    get_current_profiler().profile("generate_off")
+    return off_mesh
 
 def get_circle_segment(radius, nb_vertices):
     """Get a segment on the xy plane of a circle
