@@ -145,14 +145,15 @@ class FaultIntersection:
         :param nu: number of points along horizontal axis
         :param nv: number of points along vertival axis
         """
-        points = np.repeat(A[None,:],nu,axis=0)
-        points = np.repeat(points[None,:],nv,axis=0)
+        points = np.repeat(A[None, :], nu, axis=0)
+        points = np.repeat(points[None, :], nv, axis=0)
         AB = B - A
-        points[...,:2]+=(np.linspace(0,1,nu)[:, None]*AB[:2])[None, :]
-        points[...,2]+=(np.linspace(0,1,nv)*AB[2])[:, None]
-        points.shape = -1, 3 # to have the same point order
+        points[..., :2] += (np.linspace(0, 1, nu)[:, None]*AB[:2])[None, :]
+        points[..., 2] += (np.linspace(0, 1, nv)*AB[2])[:, None]
+        points.shape = -1, 3  # to have the same point order
         return points
 
+    @staticmethod
     def new_vertical_grid(xCoord, yCoord, zCoord, nPoints):
         # TODO: modify input data to correspond to new format
         return FaultIntersection.vertical_grid(
@@ -161,6 +162,7 @@ class FaultIntersection:
             nPoints, nPoints,
         )
 
+    @staticmethod
     def output(xCoord, yCoord, zCoord, nPoints, model):
         points = FaultIntersection.new_vertical_grid(xCoord, yCoord, zCoord, nPoints)
         get_current_profiler().profile('sections_grid')
