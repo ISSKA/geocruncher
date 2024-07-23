@@ -138,20 +138,33 @@ class Slice:
 class FaultIntersection:
 
     @staticmethod
+    def vertical_grid(A, B, nu, nv):
+        """
+        :param A: *lower left* corner (3D)
+        :param B: *upper right* corner (3D)
+        :param nu: number of points along horizontal axis
+        :param nv: number of points along vertival axis
+        """
+        points = np.repeat(A[None, :], nu, axis=0)
+        points = np.repeat(points[None, :], nv, axis=0)
+        AB = B - A
+        points[..., :2] += (np.linspace(0, 1, nu)[:, None]*AB[:2])[None, :]
+        points[..., 2] += (np.linspace(0, 1, nv)*AB[2])[:, None]
+        points.shape = -1, 3  # to have the same point order
+        return points
+
+    @staticmethod
+    def new_vertical_grid(xCoord, yCoord, zCoord, nPoints):
+        # TODO: modify input data to correspond to new format
+        return FaultIntersection.vertical_grid(
+            np.array([xCoord[0], yCoord[0], zCoord[0]], dtype="d"), # maybe dtype="d" (double precision) is too much
+            np.array([xCoord[1], yCoord[1], zCoord[1]], dtype="d"),
+            nPoints, nPoints,
+        )
+
+    @staticmethod
     def output(xCoord, yCoord, zCoord, nPoints, model):
-        zSliceRange = np.linspace(zCoord[0], zCoord[1], nPoints)
-        isOnYAxis = xCoord[0] == xCoord[1]
-        if not isOnYAxis:
-            slope = (yCoord[0] - yCoord[1]) / (xCoord[0] - xCoord[1])
-            xSliceRange = np.linspace(xCoord[0], xCoord[1], nPoints)
-            x, z = np.meshgrid(xSliceRange, zSliceRange)
-            el = np.array([x.flatten(), z.flatten()]).T
-            points = list(map(lambda s: [s[0], slope * (s[0] - xCoord[0]) + yCoord[0], s[1]], el))
-        else:
-            ySliceRange = np.linspace(yCoord[0], yCoord[1], nPoints)
-            y, z = np.meshgrid(ySliceRange, zSliceRange)
-            el = np.array([y.flatten(), z.flatten()]).T
-            points = list(map(lambda s: [xCoord[0], s[0], s[1]], el))
+        points = FaultIntersection.new_vertical_grid(xCoord, yCoord, zCoord, nPoints)
         get_current_profiler().profile('sections_grid')
         output = {}
         for name, fault in model.faults.items():
