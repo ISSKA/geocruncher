@@ -122,8 +122,9 @@ class Slice:
                 points = pv.PolyData(rankMatrix)
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)
+                selected_points = inside_points["SelectedPoints"].astype(np.uint16) #cast array to int16 to avoid overflow error
                 # 0 if not in gwb else gwb_id
-                matrixGwb.append(inside_points["SelectedPoints"] * int(gwb_id))
+                matrixGwb.append(selected_points * int(gwb_id))
         get_current_profiler().profile('hydro_test_inside_gwbs')
         # combine all gwb values into one matrix
         matrixGwbCombine = []
