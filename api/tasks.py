@@ -2,8 +2,8 @@ from collections import defaultdict
 import json
 from geocruncher import computations
 from .celery import app
-from .utils.redis_client import redis_client as r
-from .utils.utils import get_and_delete
+from .redis import redis_client as r
+from .utils import get_and_delete
 
 
 @app.task
@@ -41,8 +41,6 @@ def compute_intersections(data: computations.IntersectionsData, xml_key: str, de
     gwb_meshes = defaultdict(list)
     if 'springs' in data or 'drillholes' in data:
         gwb = r.hgetall(gwb_meshes_key)
-        if gwb is None:
-            raise ValueError(f"Key not found {gwb_meshes_key}")
         for name, off_mesh in gwb.items():
             gwb_id = name.split('_')[0]  # Syntax: f"{id}_{subID}"
             gwb_meshes[gwb_id].append(off_mesh)
@@ -86,8 +84,6 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
     gwb_meshes = defaultdict(list)
     gwb = r.hgetall(gwb_meshes_key)
-    if gwb is None:
-        raise ValueError(f"Key not found {gwb_meshes_key}")
     for name, off_mesh in gwb.items():
         gwb_id = name.decode('utf-8').split('_')[0]  # Syntax: f"{id}_{subID}"
         gwb_meshes[gwb_id].append(off_mesh.decode('utf-8'))

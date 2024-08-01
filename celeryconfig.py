@@ -9,7 +9,6 @@ result_expires = 8 * 60 * 60
 # disable prefetching, since we have long running tasks
 worker_prefetch_multiplier = 1
 task_default_queue = 'geocruncher:long_running'
-# TODO: queues are not working. find out why
 task_routes = {
     'api.tasks.compute_intersections': 'geocruncher:priority',
     'api.tasks.compute_faults_intersections': 'geocruncher:priority',
