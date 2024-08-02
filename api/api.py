@@ -1,7 +1,7 @@
 from io import BytesIO
 import tarfile
 import json
-from flask import Flask, request, make_response, send_file
+from flask import Flask, request, send_file, Response
 from .redis import redis_client as r
 from .utils import generate_key
 from . import tasks
@@ -10,6 +10,8 @@ from .celery import app as celery
 app = Flask(__name__)
 
 # TODO: implement revoking tasks https://docs.celeryq.dev/en/stable/userguide/workers.html#revoke-revoking-tasks
+
+# TODO: add route to poll many job status at the same time
 
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
     output = BytesIO()
@@ -37,21 +39,21 @@ def compute_meshes_or_faults(is_meshes: bool):
         output_key = generate_key()
         res = (tasks.compute_meshes if is_meshes else tasks.compute_faults).delay(
             data, xml_key, dem_key, output_key)
-        return res.id, 202
+        return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
         _id = request.args.get('id')
         if _id is None or _id == '':
-            return "Missing parameter id", 400
+            return Response("Missing parameter id", 400, mimetype="text/plain")
         res = celery.AsyncResult(_id)
         if res.state != 'SUCCESS':
-            return res.state
+            return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
         meshes = r.hgetall(output_key)
         r.delete(output_key)
         if not meshes:
-            return '', 204
+            return Response('', 204, mimetype="text/plain")
 
         output = filemap_to_tar(meshes)
         return send_file(output, mimetype="application/x-tar", as_attachment=True, download_name="meshes.tar")
@@ -83,50 +85,48 @@ def compute_intersections_or_faults_intersections(is_intersections: bool):
         else:
             res = tasks.compute_faults_intersections.delay(
                 data, xml_key, dem_key, output_key)
-        return res.id, 202
+        return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
         _id = request.args.get('id')
         if _id is None or _id == '':
-            return "Missing parameter id", 400
+            return Response("Missing parameter id", 400, mimetype="text/plain")
         res = celery.AsyncResult(_id)
         if res.state != 'SUCCESS':
-            return res.state
+            return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
         output = r.get(output_key)
         r.delete(output_key)
         if not output:
-            return '', 204
+            return Response('', 204, mimetype="text/plain")
 
-        response = make_response(output.decode('utf-8'))
-        response.mimetype = "application/json"
-        return
+        return Response(output.decode('utf-8'), mimetype="application/json")
 
 
 @app.route("/compute/tunnel_meshes", methods=['POST', 'GET'])
-def tunnel_meshes():
+def compute_tunnel_meshes():
     if request.method == 'POST':
         # when there are no files, we receive an application/json, and the body is the data directly
         # TODO: validate data
         data = request.json
         output_key = generate_key()
         res = tasks.compute_tunnel_meshes.delay(data, output_key)
-        return res.id, 202
+        return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
         _id = request.args.get('id')
         if _id is None or _id == '':
-            return "Missing parameter id", 400
+            return Response("Missing parameter id", 400, mimetype="text/plain")
         res = celery.AsyncResult(_id)
         if res.state != 'SUCCESS':
-            return res.state
+            return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
         meshes = r.hgetall(output_key)
         r.delete(output_key)
         if not meshes:
-            return '', 204
+            return Response('', 204, mimetype="text/plain")
 
         output = filemap_to_tar(meshes)
         return send_file(output, mimetype="application/x-tar", as_attachment=True, download_name="tunnel_meshes.tar")
@@ -174,23 +174,23 @@ def compute_voxels():
         output_key = generate_key()
         res = tasks.compute_voxels.delay(
             data, xml_key, dem_key, gwb_meshes_key, output_key)
-        return res.id, 202
+        return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
         _id = request.args.get('id')
         if _id is None or _id == '':
-            return "Missing parameter id", 400
+            return Response("Missing parameter id", 400, mimetype="text/plain")
         res = celery.AsyncResult(_id)
         if res.state != 'SUCCESS':
-            return res.state
+            return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
         mesh = r.get(output_key)
         r.delete(output_key)
         if not mesh:
-            return '', 204
+            return Response('', 204, mimetype="text/plain")
 
-        return mesh.decode('utf-8')
+        return Response(mesh.decode('utf-8'), mimetype="text/plain")
 
 def main():
     app.run()
