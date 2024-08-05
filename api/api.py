@@ -11,8 +11,6 @@ app = Flask(__name__)
 
 # TODO: implement revoking tasks https://docs.celeryq.dev/en/stable/userguide/workers.html#revoke-revoking-tasks
 
-# TODO: add route to poll many job status at the same time
-
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
     output = BytesIO()
     with tarfile.open(fileobj=output, mode='w') as tar:
@@ -191,6 +189,17 @@ def compute_voxels():
             return Response('', 204, mimetype="text/plain")
 
         return Response(mesh.decode('utf-8'), mimetype="text/plain")
+
+
+@app.post("/poll")
+def poll():
+    """Poll many computation statuses at the same time"""
+    data = request.json
+    result = {}
+    for _id in data:
+        res = celery.AsyncResult(str(_id))
+        result[str(_id)] = res.state
+    return Response(json.dumps(result, separators=(',', ':')), mimetype="application/json")
 
 def main():
     app.run()
