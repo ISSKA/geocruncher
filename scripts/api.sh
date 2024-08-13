@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gunicorn -w 4 'geocruncher-api.api:app' --access-logfile=-
+gunicorn -w 4 'api.api:app' --access-logfile=-
