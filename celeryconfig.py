@@ -11,7 +11,6 @@ worker_prefetch_multiplier = 1
 task_default_queue = 'geocruncher:long_running'
 task_routes = {
     'api.tasks.compute_intersections': 'geocruncher:priority',
-    'api.tasks.compute_faults_intersections': 'geocruncher:priority',
 }
 broker_connection_retry_on_startup = True
 task_track_started = True

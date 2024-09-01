@@ -67,17 +67,6 @@ def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, ou
 
 
 @app.task
-def compute_faults_intersections(data: computations.IntersectionsData, xml_key: str, dem_key: str, output_key: str) -> str:
-    xml = get_and_delete(r, xml_key)
-    dem = get_and_delete(r, dem_key).decode('utf-8')
-
-    outputs = computations.compute_faults_intersections(data, xml, dem)
-
-    r.set(output_key, json.dumps(outputs, separators=(',', ':')))
-    return output_key
-
-
-@app.task
 def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')

@@ -199,14 +199,28 @@ class IntersectionsData(TypedDict):
     computeMap: bool
 
 
-class IntersectionsResult(TypedDict):
-    """Data returned by the intersections computation"""
+class MeshIntersectionsResult(TypedDict):
+    """Data returned by the mesh intersections computation"""
     forCrossSections: dict[str, list[list[int]]]
     drillholes: dict[str, dict[str, list[list[float]]]]
     springs: dict[str, dict[str, list[float]]]
     matrixGwb: dict[str, list[int]]
     # Optional
     forMaps: list[list[int]]
+
+
+class FaultIntersectionsResult(TypedDict):
+    """Data returned by the fault intersections computation"""
+    # TODO: For standard intersections, Scala uses the int type, but for this one, the float (double) type. Find out why and make consistant
+    forCrossSections: dict[str, dict[str, list[list[float]]]]
+    # Optional
+    forMaps: dict[str, list[list[float]]]
+
+
+class IntersectionsResult(TypedDict):
+    """Combined result of mesh and fault intersections computation"""
+    mesh: MeshIntersectionsResult
+    fault: FaultIntersectionsResult
 
 
 RATIO_MAX_DIST_PROJ = 0.2
@@ -236,12 +250,16 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
     model = GeologicalModel(extract_project_data(xml, dem))
     box = model.getbox()
     cross_sections, drillhole_lines, spring_points, matrix_gwb = {}, {}, {}, {}
+    fault_output: FaultIntersectionsResult = {
+        'forCrossSections': {}, 'forMaps': {}}
 
     n_points = data['resolution']
 
     get_current_profiler()\
         .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
         .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
         .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
         .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
         .set_profiler_metadata('resolution', n_points)\
@@ -264,16 +282,20 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                             box.ymin) * RATIO_MAX_DIST_PROJ
         cross_sections[key], drillhole_lines[key], spring_points[key], matrix_gwb[key] = Slice.output(
             x_coord, y_coord, z_coord, n_points, model.rank, [1, 1], model.pile.reference == 'base', data, gwb_meshes, max_dist_proj)
+        fault_output['forCrossSections'][key] = FaultIntersection.output(
+            x_coord, y_coord, z_coord, n_points, model)
 
-    output: IntersectionsResult = {'forCrossSections': cross_sections,
-                                   'drillholes': drillhole_lines,    'springs': spring_points, 'matrixGwb': matrix_gwb}
+    mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
+                                            'drillholes': drillhole_lines, 'springs': spring_points, 'matrixGwb': matrix_gwb}
     if data['computeMap']:
         x_coord = [box.xmin, box.xmax]
         y_coord = [box.ymin, box.ymax]
-        output['forMaps'] = MapSlice.output(
+        mesh_output['forMaps'] = MapSlice.output(
             x_coord, y_coord, n_points, model.rank, model.topography.evaluate_z, model.pile.reference == 'base')
+        fault_output['forMaps'] = MapFaultIntersection.output(
+            x_coord, y_coord, n_points, model)
     get_current_profiler().save_profiler_results()
-    return output
+    return {'mesh': mesh_output, 'fault': fault_output}
 
 
 def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
@@ -318,72 +340,6 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
         box = model.getbox()
 
     output = {'mesh': {}, 'fault': generate_faults_files(model, shape, box)}
-    get_current_profiler().save_profiler_results()
-    return output
-
-
-class FaultsIntersectionsResult(TypedDict):
-    """Data returned by the intersections computation"""
-    # TODO: For standard intersections, Scala uses the int type, but for this one, the float (double) type. Find out why and make consistant
-    forCrossSections: dict[str, list[list[float]]]
-    # Optional
-    forMaps: list[list[float]]
-
-
-def compute_faults_intersections(data: IntersectionsData, xml: str, dem: str) -> FaultsIntersectionsResult:
-    """Compute Faults Intersections. Parameters and return types are a subset of intersections computation.
-
-    Parameters
-    ----------
-    data : IntersectionsData
-        The configuration data.
-    xml : str
-        Project definition as Geomodeller XML.
-    dem : str
-        DEM datapoints as ASCIIGrid.
-    gwb_meshes : dict[str, list[str]]
-        A dict from GWB ID to meshes in the OFF format.
-
-    Returns
-    -------
-    FaultsIntersectionsResult
-        Results for cross sections and maps.
-        TODO: find a more complete explanation of what is returned and simplify return type.
-    """
-    set_current_profiler(VkProfiler(PROFILES['faults_intersections']))
-    model = GeologicalModel(extract_project_data(xml, dem))
-    box = model.getbox()
-
-    n_points = data['resolution']
-
-    get_current_profiler()\
-        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, unit=False))\
-        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, unit=False))\
-        .set_profiler_metadata('resolution', n_points)\
-        .set_profiler_metadata('num_sections', len(data['toCompute'].items()))\
-        .set_profiler_metadata('compute_map', data['computeMap'])\
-        .profile('load_model')
-
-    output: FaultsIntersectionsResult = {'forCrossSections': {}, 'forMaps': {}}
-    for key, rect in data['toCompute'].items():
-        # TODO: use this format directly to avoid converting
-        x_coord = [int(round(rect['lowerLeft']['x'])),
-                   int(round(rect['upperRight']['x']))]
-        y_coord = [int(round(rect['lowerLeft']['y'])),
-                   int(round(rect['upperRight']['y']))]
-        z_coord = [int(round(rect['lowerLeft']['z'])),
-                   int(round(rect['upperRight']['z']))]
-        output['forCrossSections'][key] = FaultIntersection.output(
-            x_coord, y_coord, z_coord, n_points, model)
-
-    if data['computeMap']:
-        x_coord = [box.xmin, box.xmax]
-        y_coord = [box.ymin, box.ymax]
-        output['forMaps'] = MapFaultIntersection.output(
-            x_coord, y_coord, n_points, model)
-
     get_current_profiler().save_profiler_results()
     return output
 

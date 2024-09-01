@@ -57,51 +57,6 @@ def compute_meshes_or_faults(is_meshes: bool):
         return send_file(output, mimetype="application/x-tar", as_attachment=True, download_name="meshes.tar")
 
 
-def compute_intersections_or_faults_intersections(is_intersections: bool):
-    if request.method == 'POST':
-        # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
-        # TODO: validate data
-        data = json.loads(request.form['data'])
-        # TODO: check files exists
-        xml = request.files.get('xml').read()
-        dem = request.files.get('dem').read()
-        xml_key = generate_key()
-        dem_key = generate_key()
-        r.set(xml_key, xml)
-        r.set(dem_key, dem)
-        if is_intersections:
-            gwb_meshes_key = generate_key()
-            for key, value in request.files.items():
-                # consider every other uploaded file as a groundwater body mesh
-                if key in ['xml', 'dem']:
-                    continue
-                r.hset(gwb_meshes_key, key, value.read())
-        output_key = generate_key()
-        if is_intersections:
-            res = tasks.compute_intersections.delay(
-                data, xml_key, dem_key, gwb_meshes_key, output_key)
-        else:
-            res = tasks.compute_faults_intersections.delay(
-                data, xml_key, dem_key, output_key)
-        return Response(res.id, 202, mimetype="text/plain")
-
-    elif request.method == 'GET':
-        _id = request.args.get('id')
-        if _id is None or _id == '':
-            return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
-        if res.state != 'SUCCESS':
-            return Response(res.state, mimetype="text/plain")
-        # TODO: catch errors
-        output_key = res.get()
-        output = r.get(output_key)
-        r.delete(output_key)
-        if not output:
-            return Response('', 204, mimetype="text/plain")
-
-        return Response(output.decode('utf-8'), mimetype="application/json")
-
-
 @app.route("/compute/tunnel_meshes", methods=['POST', 'GET'])
 def compute_tunnel_meshes():
     if request.method == 'POST':
@@ -137,17 +92,50 @@ def compute_meshes():
 
 @app.route("/compute/intersections", methods=['POST', 'GET'])
 def compute_intersections():
-    return compute_intersections_or_faults_intersections(True)
+    if request.method == 'POST':
+        # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
+        # TODO: validate data
+        data = json.loads(request.form['data'])
+        # TODO: check files exists
+        xml = request.files.get('xml').read()
+        dem = request.files.get('dem').read()
+        xml_key = generate_key()
+        dem_key = generate_key()
+        r.set(xml_key, xml)
+        r.set(dem_key, dem)
+
+        gwb_meshes_key = generate_key()
+        for key, value in request.files.items():
+            # consider every other uploaded file as a groundwater body mesh
+            if key in ['xml', 'dem']:
+                continue
+            r.hset(gwb_meshes_key, key, value.read())
+        output_key = generate_key()
+
+        res = tasks.compute_intersections.delay(
+            data, xml_key, dem_key, gwb_meshes_key, output_key)
+        return Response(res.id, 202, mimetype="text/plain")
+
+    elif request.method == 'GET':
+        _id = request.args.get('id')
+        if _id is None or _id == '':
+            return Response("Missing parameter id", 400, mimetype="text/plain")
+        res = celery.AsyncResult(_id)
+        if res.state != 'SUCCESS':
+            return Response(res.state, mimetype="text/plain")
+        # TODO: catch errors
+        output_key = res.get()
+        output = r.get(output_key)
+        r.delete(output_key)
+        if not output:
+            return Response('', 204, mimetype="text/plain")
+
+        return Response(output.decode('utf-8'), mimetype="application/json")
 
 
 @app.route("/compute/faults", methods=['POST', 'GET'])
 def compute_faults():
     return compute_meshes_or_faults(False)
-
-
-@app.route("/compute/faults_intersections", methods=['POST', 'GET'])
-def compute_faults_intersections():
-    return compute_intersections_or_faults_intersections(False)
 
 
 @app.route("/compute/voxels", methods=['POST', 'GET'])
