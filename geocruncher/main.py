@@ -8,7 +8,7 @@ import os
 from collections import defaultdict
 
 from .profiler.profiler import set_is_profiling_enabled, set_profiler_output_folder
-from .computations import compute_tunnel_meshes, compute_meshes, compute_intersections, compute_faults, compute_faults_intersections, compute_voxels
+from .computations import compute_tunnel_meshes, compute_meshes, compute_intersections, compute_faults, compute_voxels
 
 
 def main():
@@ -21,7 +21,7 @@ def main():
         epilog="Stable command line arguments are still WIP. Currently, flag arguments must be passed last, and not everything is documented above."
     )
     parser.add_argument('computation', choices=[
-                        'tunnel_meshes', 'meshes', 'intersections', 'faults', 'faults_intersections', 'voxels'], help="the type of computation to perform")
+                        'tunnel_meshes', 'meshes', 'intersections', 'faults', 'voxels'], help="the type of computation to perform")
     parser.add_argument('--enable-profiling',
                         action='store_true', help="enable profiling for this computation (default: disabled)")
     parser.add_argument('--profiler-output', type=Path,
@@ -131,21 +131,6 @@ def run_geocruncher(computation: str, args: list[str]):
         # write meta json
         with open(os.path.join(out_dir, 'index.json'), 'w', encoding='utf8') as f:
             json.dump(generated_meshes_paths, f, indent=2)
-
-    if computation == 'faults_intersections':
-        # Call: main.py faults_intersections [configuration_path] [geological_model_path] [surface_model_path] [out_file]
-        with open(args[2], encoding='utf8') as f:
-            data = json.load(f)
-        with open(args[3], 'rb') as f:
-            xml = f.read()
-        with open(args[4], 'r', encoding='utf8') as f:
-            dem = f.read()
-
-        outputs = compute_faults_intersections(data, xml, dem)
-
-        with open(args[5], 'w', encoding='utf8') as f:
-            json.dump(outputs, f, indent=2, separators=(',', ': '))
-        sys.stdout.flush()
 
     if computation == 'voxels':
         # Call: main.py voxels [configuration_path] [geological_model_path] [surface_model_path] [meshes_folder] [out_file]

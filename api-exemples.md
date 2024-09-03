@@ -44,25 +44,21 @@ Will return either the state of the computation, or the output tar file
 curl http://127.0.0.1:5000/compute/meshes?id=xxyy | tar -xf -
 ```
 
-## Intersections / Faults Intersections
+## Intersections
 
-### Create an Intersections / Faults Intersections computation
+### Create an Intersections computation
 
 Will return the computation ID
 
-Replace `intersections` with `faults_intersections` in the URL for a faults intersections computation
-
-Not included in this exemple, for `intersections` only: every additional file given is considered as a groundwater body mesh
+Not included in this exemple: every additional file given is considered as a groundwater body mesh
 
 ```bash
 curl -F data='{"toCompute":{"1":{"lowerLeft":{"x":543440,"y":199630,"z":-2500},"upperRight":{"x":546260,"y":196090,"z":1500}},"2":{"lowerLeft":{"x":541440,"y":198460,"z":-2500},"upperRight":{"x":544660,"y":194390,"z":1500}},"3":{"lowerLeft":{"x":539680,"y":197970,"z":-2500},"upperRight":{"x":543470,"y":193420,"z":1500}}},"resolution":150,"computeMap":true}' -F xml=@tests/dummy_project/geocruncher_project.xml -F dem=@tests/dummy_project/geocruncher_dem.asc http://127.0.0.1:5000/compute/intersections
 ```
 
-### Poll an Intersections / Faults Intersections computation for results
+### Poll an Intersections computation for results
 
 Use the previously returned ID as parameter
-
-Replace `intersections` with `faults_intersections` in the URL for a faults intersections computation
 
 Will return either the state of the computation, or the output json
 
