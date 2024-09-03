@@ -1,0 +1,35 @@
+# This is an extension of the prod file, with changes specific to the local env
+version: "3"
+services:
+  api:
+    extends:
+      file: prod.docker-compose.yaml
+      service: api
+    image: geocruncher/geocruncher-local:latest
+    build:
+      context: ..
+      dockerfile: docker/local.Dockerfile
+    environment:
+      - DEV=1
+    # Use development server and Flask in debug mode (allows hot reloading)
+    command: ["/home/build/src/scripts/api-local.sh"]
+    volumes:
+      # Avoid packaging api / geocruncher on every change by linking to on-disk code
+      - $PWD:/home/build/src
+  worker:
+    extends:
+      file: prod.docker-compose.yaml
+      service: worker
+    image: geocruncher/geocruncher-local:latest
+    build:
+      context: ..
+      dockerfile: docker/local.Dockerfile
+    # Use more verbose output, a single queue and hot reloading
+    command: ["/home/build/src/scripts/worker-local.sh"]
+    volumes:
+      # Avoid packaging api / geocruncher on every change by linking to on-disk code
+      - $PWD:/home/build/src
+  redis:
+    extends:
+      file: prod.docker-compose.yaml
+      service: redis

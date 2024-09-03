@@ -1,5 +1,7 @@
-broker_url = 'redis://localhost:6379/1'
-result_backend = 'redis://localhost:6379/2'
+import os
+
+broker_url = f"redis://{os.environ['REDIS_HOST']}:6379/1"
+result_backend = f"redis://{os.environ['REDIS_HOST']}:6379/2"
 imports = ('api.tasks')
 # Task hard time limit in seconds. Set to 6 hours
 task_time_limit = 6 * 60 * 60

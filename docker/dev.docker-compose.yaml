@@ -1,0 +1,19 @@
+# This is simply an extension of the prod file, with different image names
+version: "3"
+services:
+  api:
+    extends:
+      file: prod.docker-compose.yaml
+      service: api
+    image: geocruncher/geocruncher-dev:latest
+    environment:
+      - DEV=1
+  worker:
+    extends:
+      file: prod.docker-compose.yaml
+      service: worker
+    image: geocruncher/geocruncher-dev:latest
+  redis:
+    extends:
+      file: prod.docker-compose.yaml
+      service: redis

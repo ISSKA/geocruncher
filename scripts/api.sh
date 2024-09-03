@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-gunicorn -w 4 'api.api:app' --access-logfile=-
+gunicorn -b localhost:5000 -w 4 'api.api:app' --access-logfile=-

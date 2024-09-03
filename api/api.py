@@ -1,4 +1,5 @@
 from io import BytesIO
+import os
 import tarfile
 import json
 from flask import Flask, request, send_file, Response
@@ -190,7 +191,7 @@ def poll():
     return Response(json.dumps(result, separators=(',', ':')), mimetype="application/json")
 
 def main():
-    app.run()
+    app.run(debug=os.environ['DEV'] == '1')
 
 
 if __name__ == '__main__':
