@@ -8,9 +8,9 @@ WorkingDirectory=/root/geocruncher
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml up -d
-ExecStop=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml down
-ExecReload=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml up -d
+ExecStart=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml up -d
+ExecStop=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml down
+ExecReload=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/prod.docker-compose.yaml up -d
 
 [Install]
 WantedBy=multi-user.target

@@ -1,6 +1,6 @@
 [Unit]
 Description=Geocruncher Dev Docker Compose container starter
-After=docker.service network-online.target prod.docker-compose.service
+After=docker.service network-online.target geocruncher.prod.service
 Requires=docker.service network-online.target
 
 [Service]
@@ -8,9 +8,9 @@ WorkingDirectory=/root/geocruncher
 Type=oneshot
 RemainAfterExit=yes
 
-ExecStart=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml up -d
-ExecStop=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml down
-ExecReload=/usr/bin/docker-compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml up -d
+ExecStart=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml up -d
+ExecStop=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml down
+ExecReload=/usr/bin/docker compose -p geocruncher -f /root/geocruncher/docker/dev.docker-compose.yaml up -d
 
 [Install]
 WantedBy=multi-user.target
