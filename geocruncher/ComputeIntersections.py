@@ -2,12 +2,11 @@ import math
 
 import numpy as np
 import pyvista as pv
-import meshio
-from io import StringIO
 
 
 from .profiler.profiler import get_current_profiler
 from .off import read_off
+
 
 class MapSlice:
 
@@ -84,7 +83,8 @@ class Slice:
     def ouputHydroLayer(lowerLeft, upperRight, rankMatrix, springMap, drillholeMap, gwb_meshes: dict[str, list[str]], maxDistProj):
         def projPointOnPlane(p0, p1, p2, q):
             # https://stackoverflow.com/a/8944143
-            n = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))  # normal of plane
+            n = np.cross(np.subtract(p1, p0), np.subtract(
+                p2, p0))  # normal of plane
             n = n / np.linalg.norm(n)
             q_proj = np.subtract(q, np.dot(np.subtract(q, p0), n) * n)
             if np.linalg.norm(np.subtract(q, q_proj)) < maxDistProj:
@@ -104,14 +104,17 @@ class Slice:
         springsPoint = {}
         get_current_profiler().profile('hydro_setup')
         for dId, line in drillholeMap.items():
-            s_proj, s_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([line["start"]["x"], line["start"]["y"], line["start"]["z"]]))
-            e_proj, e_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([line["end"]["x"], line["end"]["y"], line["end"]["z"]]))
+            s_proj, s_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array(
+                [line["start"]["x"], line["start"]["y"], line["start"]["z"]]))
+            e_proj, e_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array(
+                [line["end"]["x"], line["end"]["y"], line["end"]["z"]]))
             if s_valid or e_valid:
                 proj_line = [s_proj, e_proj]
                 drillholesLine[dId] = proj_line
         get_current_profiler().profile('hydro_project_drillholes')
         for sId, p in springMap.items():
-            p_proj, valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array([p["x"], p["y"], p["z"]]))
+            p_proj, valid = projPointOnPlane(
+                lowerLeft, upperRight, thirdPoint, np.array([p["x"], p["y"], p["z"]]))
             if valid:
                 springsPoint[sId] = p_proj
         get_current_profiler().profile('hydro_project_springs')
@@ -122,7 +125,8 @@ class Slice:
                 points = pv.PolyData(rankMatrix)
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)
-                selected_points = inside_points["SelectedPoints"].astype(np.uint16) #cast array to int16 to avoid overflow error
+                selected_points = inside_points["SelectedPoints"].astype(
+                    np.uint16)  # cast array to int16 to avoid overflow error
                 # 0 if not in gwb else gwb_id
                 matrixGwb.append(selected_points * int(gwb_id))
         get_current_profiler().profile('hydro_test_inside_gwbs')
@@ -130,8 +134,11 @@ class Slice:
         matrixGwbCombine = []
         if len(matrixGwb) > 0:
             for idx, val in enumerate(matrixGwb[0]):
-                values = [values[idx] for values in matrixGwb if values[idx] > 0]
-                matrixGwbCombine.append(int(values[0]) if len(values) > 0 else 0)  # we need to cast to int from int8 to be able to serialise in json
+                values = [values[idx]
+                          for values in matrixGwb if values[idx] > 0]
+                # we need to cast to int from int8 to be able to serialise in json
+                matrixGwbCombine.append(
+                    int(values[0]) if len(values) > 0 else 0)
         get_current_profiler().profile('hydro_combine_gwbs')
         return drillholesLine, springsPoint, matrixGwbCombine
 
@@ -158,21 +165,24 @@ class FaultIntersection:
     def new_vertical_grid(xCoord, yCoord, zCoord, nPoints):
         # TODO: modify input data to correspond to new format
         return FaultIntersection.vertical_grid(
-            np.array([xCoord[0], yCoord[0], zCoord[0]], dtype="d"), # maybe dtype="d" (double precision) is too much
+            # maybe dtype="d" (double precision) is too much
+            np.array([xCoord[0], yCoord[0], zCoord[0]], dtype="d"),
             np.array([xCoord[1], yCoord[1], zCoord[1]], dtype="d"),
             nPoints, nPoints,
         )
 
     @staticmethod
     def output(xCoord, yCoord, zCoord, nPoints, model):
-        points = FaultIntersection.new_vertical_grid(xCoord, yCoord, zCoord, nPoints)
-        get_current_profiler().profile('sections_grid')
+        points = FaultIntersection.new_vertical_grid(
+            xCoord, yCoord, zCoord, nPoints)
+        get_current_profiler().profile('fault_sections_grid')
         output = {}
         for name, fault in model.faults.items():
             coloredPoints = np.array(np.array_split(fault(points), nPoints))
             output[name] = coloredPoints.tolist()
-        get_current_profiler().profile('sections_tesselate')
+        get_current_profiler().profile('fault_sections_tesselate')
         return output
+
 
 class MapFaultIntersection:
 
@@ -182,11 +192,12 @@ class MapFaultIntersection:
         yMapRange = np.linspace(yCoord[0], yCoord[1], nPoints)
         x, y = np.meshgrid(xMapRange, yMapRange)
         el = np.array([x.flatten(), y.flatten()]).T
-        points = list(map(lambda s: [s[0], s[1], model.topography.evaluate_z([s[0], s[1]])], el))
-        get_current_profiler().profile('map_grid')
+        points = list(
+            map(lambda s: [s[0], s[1], model.topography.evaluate_z([s[0], s[1]])], el))
+        get_current_profiler().profile('fault_map_grid')
         output = {}
         for name, fault in model.faults.items():
             coloredPoints = np.array(np.array_split(fault(points), nPoints))
             output[name] = coloredPoints.tolist()
-        get_current_profiler().profile('map_tesselate')
+        get_current_profiler().profile('fault_map_tesselate')
         return output

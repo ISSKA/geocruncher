@@ -1,0 +1,26 @@
+version: "3"
+services:
+  api:
+    image: geocruncher/geocruncher-prod:latest
+    depends_on:
+      - redis
+    command: ["/home/build/src/scripts/api.sh"]
+    # Use host network so the API is visible outside docker compose
+    network_mode: "host"
+    environment:
+        # Access redis from the published port
+      - REDIS_HOST=127.0.0.1
+  worker:
+    image: geocruncher/geocruncher-prod:latest
+    depends_on:
+      - redis
+    command: ["/home/build/src/scripts/worker.sh"]
+    environment:
+        # Access redis from the inter-container network
+      - REDIS_HOST=redis
+  redis:
+    image: redis:7.4
+    restart: unless-stopped
+    ports:
+        # Publish the port so it can be accessed by the api, which runs on the host network
+      - "127.0.0.1:6379:6379"

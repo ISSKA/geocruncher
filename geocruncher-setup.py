@@ -4,10 +4,10 @@ from runner_test import PyTest
 
 setup(
     name='geocruncher',
-    version='0.3.1',
+    version='0.4.0',
     description='A bridge between Gmlib and VK',
-    packages=find_packages(exclude=['doc']),
-    python_requires='>=3',
+    packages=find_packages(include=['geocruncher']),
+    python_requires='>=3.9',
     install_requires=['numpy'],
     tests_require=['pytest'],
     cmdclass={'test': PyTest},

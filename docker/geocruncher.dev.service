@@ -1,0 +1,16 @@
+[Unit]
+Description=Geocruncher Dev Docker Compose container starter
+After=docker.service network-online.target prod.docker-compose.service
+Requires=docker.service network-online.target
+
+[Service]
+WorkingDirectory=/root/VISKAR/src/geocruncher
+Type=oneshot
+RemainAfterExit=yes
+
+ExecStart=/usr/bin/docker-compose -p geocruncher -f /root/VISKAR/src/geocruncher/docker/dev.docker-compose.yaml up -d
+ExecStop=/usr/bin/docker-compose -p geocruncher -f /root/VISKAR/src/geocruncher/docker/dev.docker-compose.yaml down
+ExecReload=/usr/bin/docker-compose -p geocruncher -f /root/VISKAR/src/geocruncher/docker/dev.docker-compose.yaml up -d
+
+[Install]
+WantedBy=multi-user.target
