@@ -1,5 +1,3 @@
-# Dockerfile for building the c/python packages of the server
-# base Dockerfile same as build.Dockerfile for caching pupose
 FROM ubuntu:20.04
 
 # see https://rtfm.co.ua/en/docker-configure-tzdata-and-timezone-during-build/
