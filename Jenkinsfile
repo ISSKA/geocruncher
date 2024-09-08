@@ -35,8 +35,9 @@ pipeline {
           // sh 'python geocruncher-setup.py test'
           sh 'python geocruncher-setup.py bdist_wheel'
           sh 'python api-setup.py bdist_wheel'
-          sh 'cp dist/geocruncher-*.whl dist/'
-          sh 'cp dist/api-*.whl dist/'
+          // Apparently not needed since the files are already where we want them to be
+          // sh 'cp dist/geocruncher-*.whl dist/'
+          // sh 'cp dist/api-*.whl dist/'
         }
       }
     }
