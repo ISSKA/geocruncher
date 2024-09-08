@@ -41,4 +41,3 @@ RUN pip install dist/pycgal*.whl
 
 # Copy start scripts
 COPY /scripts/* /home/build/src/scripts/
-
