@@ -9,7 +9,6 @@ setup(
     packages=find_packages(include=['geocruncher']),
     python_requires='>=3.9',
     install_requires=['numpy'],
-    tests_require=['pytest'],
     cmdclass={'test': PyTest},
     entry_points='''
         [console_scripts]
