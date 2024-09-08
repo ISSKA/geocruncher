@@ -30,7 +30,9 @@ pipeline {
       }
       steps {
         withEnv(["HOME=${env.WORKSPACE}"]) {
-          sh 'python geocruncher-setup.py test'
+          // TODO: Setuptools is deprecated and doesn't work anymore
+          // replace with something else, then enable tests again
+          // sh 'python geocruncher-setup.py test'
           sh 'python geocruncher-setup.py bdist_wheel'
           sh 'python api-setup.py bdist_wheel'
           sh 'cp dist/geocruncher-*.whl dist/'
