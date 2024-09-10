@@ -10,7 +10,7 @@ services:
       context: ..
       dockerfile: docker/local.Dockerfile
     # Use development server and Flask in debug mode (allows hot reloading)
-    command: ["/home/build/scripts/api-local.sh"]
+    command: ["bash", "--login", "/home/build/scripts/api-local.sh"]
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
@@ -23,7 +23,7 @@ services:
       context: ..
       dockerfile: docker/local.Dockerfile
     # Use more verbose output, a single queue and hot reloading
-    command: ["/home/build/scripts/worker-local.sh"]
+    command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build

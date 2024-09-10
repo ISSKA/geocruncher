@@ -4,20 +4,18 @@ services:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
       - redis
-    command: ["/home/build/src/scripts/api.sh"]
+    command: ["bash", "--login", "/home/build/src/scripts/api.sh"]
     ports:
       - "5000:5000"
     environment:
       - REDIS_HOST=redis
-      - GEO_ALGO_PATH=/usr/bin/viskar-geo-algo
   worker:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
       - redis
-    command: ["/home/build/src/scripts/worker.sh"]
+    command: ["bash", "--login", "/home/build/src/scripts/worker.sh"]
     environment:
       - REDIS_HOST=redis
-      - GEO_ALGO_PATH=/usr/bin/viskar-geo-algo
   redis:
     image: redis:7.4
     restart: unless-stopped

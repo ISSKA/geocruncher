@@ -82,3 +82,10 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
     r.set(output_key, voxels)
     return output_key
+
+
+@app.task
+def compute_gwb_meshes(data: computations.GwbMeshesData, output_key: str) -> str:
+    gwb = computations.compute_gwb_meshes(data)
+    r.set(output_key, json.dumps(gwb, separators=(',', ':')))
+    return output_key
