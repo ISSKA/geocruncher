@@ -191,7 +191,8 @@ def poll():
     return Response(json.dumps(result, separators=(',', ':')), mimetype="application/json")
 
 def main():
-    app.run(debug=os.environ['DEV'] == '1')
+    # Development server
+    app.run(debug=True, host='0.0.0.0')
 
 
 if __name__ == '__main__':

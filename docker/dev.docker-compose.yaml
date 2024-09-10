@@ -1,4 +1,4 @@
-# This is simply an extension of the prod file, with different image names
+# This is simply an extension of the prod file, with different image names and port 
 version: "3"
 services:
   api:
@@ -6,8 +6,8 @@ services:
       file: prod.docker-compose.yaml
       service: api
     image: geocruncher/geocruncher-dev:latest
-    environment:
-      - DEV=1
+    ports:
+      - "5001:5000"
   worker:
     extends:
       file: prod.docker-compose.yaml

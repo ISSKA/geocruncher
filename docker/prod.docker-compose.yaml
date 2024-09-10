@@ -5,22 +5,20 @@ services:
     depends_on:
       - redis
     command: ["/home/build/src/scripts/api.sh"]
-    # Use host network so the API is visible outside docker compose
-    network_mode: "host"
+    ports:
+      - "5000:5000"
     environment:
-        # Access redis from the published port
-      - REDIS_HOST=127.0.0.1
+      - REDIS_HOST=redis
+      - GEO_ALGO_PATH=/usr/bin/viskar-geo-algo
   worker:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
       - redis
     command: ["/home/build/src/scripts/worker.sh"]
     environment:
-        # Access redis from the inter-container network
       - REDIS_HOST=redis
+      - GEO_ALGO_PATH=/usr/bin/viskar-geo-algo
   redis:
     image: redis:7.4
     restart: unless-stopped
-    ports:
-        # Publish the port so it can be accessed by the api, which runs on the host network
-      - "127.0.0.1:6379:6379"
+

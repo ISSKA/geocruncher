@@ -9,8 +9,6 @@ services:
     build:
       context: ..
       dockerfile: docker/local.Dockerfile
-    environment:
-      - DEV=1
     # Use development server and Flask in debug mode (allows hot reloading)
     command: ["/home/build/src/scripts/api-local.sh"]
     volumes:
