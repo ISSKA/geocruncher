@@ -4,24 +4,20 @@ pipeline {
     DOCKER_BUILDKIT = 1
   }
   stages {
-    /*
-    TODO
     stage('geo-algo') {
       agent {
         dockerfile {
-          filename 'src/docker/build.Dockerfile'
-          args vargs
+          filename 'docker/Dockerfile.build'
         }
       }
       steps {
-        dir('src/geo-algo/VK-Aquifers') {
+        dir('geo-algo/VK-Aquifers') {
           sh 'cmake -DCMAKE_BUILD_TYPE=Release .'
           sh 'make'
           sh './viskar-geo-algo runTests'
         }
       }
     }
-    */
     stage('geocruncher & api') {
       agent {
         dockerfile {
