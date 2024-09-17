@@ -27,19 +27,27 @@ def read_off(string: str) -> Mesh:
 
     # This next line contains:
     # <number of vertices> <number of faces> <number of edges>
-    num_verts, num_faces, _ = lines[i].split(" ")
+    num_verts, num_faces, _ = lines[i].strip().split()
     num_verts = int(num_verts)
     num_faces = int(num_faces)
 
-    vert_lines_end = i + 1 + num_verts
-    vert_lines = lines[i + 1:vert_lines_end]
+    # fast forward to the next significant line
+    i += 1
+    while True:
+        line = lines[i].strip()
+        if line and line[0] != '#':
+            break
+        i += 1
 
-    verts = np.array([[float(x) for x in line.split(" ")]
+    vert_lines_end = i + num_verts
+    vert_lines = lines[i:vert_lines_end]
+
+    verts = np.array([[float(x) for x in line.strip().split()]
                      for line in vert_lines], dtype=float)
 
     face_lines = lines[vert_lines_end:vert_lines_end + num_faces]
 
-    faces = np.array([[int(x) for x in line.split(" ")]
+    faces = np.array([[int(x) for x in line.strip().split()]
                       for line in face_lines], dtype=int)
     if not np.all(faces[:, 0] == 3):
         raise ReadError("Can only read triangular faces")
