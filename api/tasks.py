@@ -85,7 +85,15 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
 
 @app.task
-def compute_gwb_meshes(data: computations.GwbMeshesData, output_key: str) -> str:
-    gwb = computations.compute_gwb_meshes(data)
+def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str) -> str:
+
+    unit_meshes = defaultdict(list)
+    stored = r.hgetall(meshes_key)
+    for unit_id, mesh in stored.items():
+        unit_meshes[unit_id.decode('utf-8')] = mesh.decode('utf-8')
+    r.delete(meshes_key)
+
+    gwb = computations.compute_gwb_meshes(unit_meshes, data)
+
     r.set(output_key, json.dumps(gwb, separators=(',', ':')))
     return output_key
