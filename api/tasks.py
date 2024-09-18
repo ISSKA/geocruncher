@@ -42,8 +42,9 @@ def compute_intersections(data: computations.IntersectionsData, xml_key: str, de
     if 'springs' in data or 'drillholes' in data:
         gwb = r.hgetall(gwb_meshes_key)
         for name, off_mesh in gwb.items():
-            gwb_id = name.split('_')[0]  # Syntax: f"{id}_{subID}"
-            gwb_meshes[gwb_id].append(off_mesh)
+            # Syntax: f"{id}_{subID}"
+            gwb_id = name.decode('utf-8').split('_')[0]
+            gwb_meshes[gwb_id].append(off_mesh.decode('utf-8'))
         r.delete(gwb_meshes_key)
 
     outputs = computations.compute_intersections(data, xml, dem, gwb_meshes)
