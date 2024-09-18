@@ -13,6 +13,7 @@ pipeline {
       steps {
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
+          conda activate geocruncher
           echo $PATH
           cmake -DCMAKE_BUILD_TYPE=Release .
           cmake --build .
@@ -33,6 +34,7 @@ pipeline {
           // replace with something else, then enable tests again
           // sh 'python geocruncher-setup.py test'
           sh '''#!/bin/bash --login
+          conda activate geocruncher
           python geocruncher-setup.py bdist_wheel
           python api-setup.py bdist_wheel
           '''
