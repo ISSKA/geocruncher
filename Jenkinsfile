@@ -12,9 +12,10 @@ pipeline {
       }
       steps {
         dir('geo-algo/VK-Aquifers') {
-          bash 'cmake -DCMAKE_BUILD_TYPE=Release .'
-          bash 'cmake --build .'
-          bash './viskar-geo-algo runTests'
+          sh 'conda activate geocruncher'
+          sh 'cmake -DCMAKE_BUILD_TYPE=Release .'
+          sh 'cmake --build .'
+          sh './viskar-geo-algo runTests'
         }
       }
     }
@@ -29,6 +30,7 @@ pipeline {
           // TODO: Setuptools is deprecated and doesn't work anymore
           // replace with something else, then enable tests again
           // sh 'python geocruncher-setup.py test'
+          sh 'conda activate geocruncher'
           sh 'python geocruncher-setup.py bdist_wheel'
           sh 'python api-setup.py bdist_wheel'
           // Apparently not needed since the files are already where we want them to be
