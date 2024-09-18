@@ -12,9 +12,9 @@ pipeline {
       }
       steps {
         dir('geo-algo/VK-Aquifers') {
-          sh 'cmake -DCMAKE_BUILD_TYPE=Release .'
-          sh 'cmake --build .'
-          sh './viskar-geo-algo runTests'
+          bash 'cmake -DCMAKE_BUILD_TYPE=Release .'
+          bash 'cmake --build .'
+          bash './viskar-geo-algo runTests'
         }
       }
     }
