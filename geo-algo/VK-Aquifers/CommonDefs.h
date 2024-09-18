@@ -25,19 +25,19 @@ private:
 public:
   VkUnitMesh() = default;
   
-  VkUnitMesh(const MeshType& mesh) : unit_id(-1), has_spring(false) {
+  VkUnitMesh(const MeshType& mesh) : unit_id(-1), has_spring(false), volume(0.0) {
     this->mesh = mesh;
   }
 
-  VkUnitMesh(const VkUnitMesh& other) : unit_id(other.unit_id), spring(other.spring), has_spring(other.has_spring) {
+  VkUnitMesh(const VkUnitMesh& other) : unit_id(other.unit_id), spring(other.spring), has_spring(other.has_spring), volume(other.volume) {
     this->mesh = other.mesh;
   }
 
-  VkUnitMesh(const MeshType& mesh, const int unit_id) : unit_id(unit_id), has_spring(false) {
+  VkUnitMesh(const MeshType& mesh, const int unit_id) : unit_id(unit_id), has_spring(false), volume(0.0) {
     this->mesh = mesh;
   }
 
-  VkUnitMesh(const MeshType& mesh, const int unit_id, const Spring& spring) : unit_id(unit_id), spring(spring), has_spring(true) {
+  VkUnitMesh(const MeshType& mesh, const int unit_id, const Spring& spring) : unit_id(unit_id), spring(spring), has_spring(true), volume(0.0) {
     this->mesh = mesh;
   }
 
