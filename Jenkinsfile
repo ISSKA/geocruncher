@@ -13,6 +13,7 @@ pipeline {
       steps {
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
+          echo $PATH
           cmake -DCMAKE_BUILD_TYPE=Release .
           cmake --build .
           '''
