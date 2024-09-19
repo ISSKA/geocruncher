@@ -9,6 +9,11 @@ services:
       - "5000:5000"
     environment:
       - REDIS_HOST=redis
+    logging:
+      driver: "journald"
+      options:
+        tag: "geocruncher.prod"
+        labels: "api"
   worker:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
@@ -16,7 +21,17 @@ services:
     command: ["bash", "--login", "/home/build/scripts/worker.sh"]
     environment:
       - REDIS_HOST=redis
+    logging:
+      driver: "journald"
+      options:
+        tag: "geocruncher.prod"
+        labels: "worker"
   redis:
     image: redis:7.4
     restart: unless-stopped
+    logging:
+      driver: "journald"
+      options:
+        tag: "geocruncher.prod"
+        labels: "redis"
 

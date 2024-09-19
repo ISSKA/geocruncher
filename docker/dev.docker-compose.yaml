@@ -8,12 +8,21 @@ services:
     image: geocruncher/geocruncher-dev:latest
     ports:
       - "5001:5000"
+    logging:
+      options:
+        tag: "geocruncher.dev"
   worker:
     extends:
       file: prod.docker-compose.yaml
       service: worker
     image: geocruncher/geocruncher-dev:latest
+    logging:
+      options:
+        tag: "geocruncher.dev"
   redis:
     extends:
       file: prod.docker-compose.yaml
       service: redis
+    logging:
+      options:
+        tag: "geocruncher.dev"
