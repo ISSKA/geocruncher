@@ -1,6 +1,6 @@
 version: "3"
 services:
-  api-prod:
+  api:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
       - redis
@@ -14,7 +14,7 @@ services:
       options:
         tag: "geocruncher.prod"
         labels: "api"
-  worker-prod:
+  worker:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
       - redis
@@ -26,7 +26,7 @@ services:
       options:
         tag: "geocruncher.prod"
         labels: "worker"
-  redis-prod:
+  redis:
     image: redis:7.4
     restart: unless-stopped
     logging:

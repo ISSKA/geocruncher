@@ -1,7 +1,7 @@
 # This is an extension of the prod file, with changes specific to the local env
 version: "3"
 services:
-  api-local:
+  api:
     extends:
       file: prod.docker-compose.yaml
       service: api
@@ -14,7 +14,7 @@ services:
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
-  worker-local:
+  worker:
     extends:
       file: prod.docker-compose.yaml
       service: worker
@@ -27,7 +27,7 @@ services:
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
-  redis-local:
+  redis:
     extends:
       file: prod.docker-compose.yaml
       service: redis
