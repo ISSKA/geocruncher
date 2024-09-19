@@ -37,7 +37,7 @@ conda activate viskar39
 
 If you are part of the VisualKarsys team, please refer to the [build.Dockerfile](https://github.com/ISSKA/VISKAR/blob/develop/src/docker/build.Dockerfile) to see the required packages, and follow the [VisualKarsys Geocruncher Documentation](https://github.com/ISSKA/VISKAR/blob/develop/doc/backend/geocruncher.md) to understand how to build the libraries.
 
-Geocruncher requires gmlib >=0.3.17, MeshTools main@5a02671, pycgal >=0.3.14 and vtkwriters >=0.0.10.
+Geocruncher requires gmlib >=0.3.22, MeshTools main@5a02671, pycgal >=0.3.14 and vtkwriters >=0.0.10.
 
 vtkwriters is publicly available [here](https://github.com/BRGM/vtkwriters), however, the other 3 libraries are private. Please inquire with [BRGM](https://gitlab.brgm.fr) for access.
 
