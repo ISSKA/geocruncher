@@ -1,7 +1,7 @@
 # This is simply an extension of the prod file, with different image names and port 
 version: "3"
 services:
-  api:
+  api-dev:
     extends:
       file: prod.docker-compose.yaml
       service: api
@@ -11,7 +11,7 @@ services:
     logging:
       options:
         tag: "geocruncher.dev"
-  worker:
+  worker-dev:
     extends:
       file: prod.docker-compose.yaml
       service: worker
@@ -19,7 +19,7 @@ services:
     logging:
       options:
         tag: "geocruncher.dev"
-  redis:
+  redis-dev:
     extends:
       file: prod.docker-compose.yaml
       service: redis
