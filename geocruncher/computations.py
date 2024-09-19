@@ -13,6 +13,7 @@ from .MeshGeneration import generate_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import Voxels
+from .geo_algo import GeoAlgo
 
 from .profiler.profiler import VkProfiler, PROFILES, set_current_profiler, get_current_profiler
 from .profiler.util import MetadataHelpers
@@ -385,5 +386,42 @@ def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, l
         box = model.getbox()
 
     output = Voxels.output(model, shape, box, gwb_meshes)
+    get_current_profiler().save_profiler_results()
+    return output
+
+
+class Spring(TypedDict):
+    """Spring data needed for the gwb meshes computation"""
+    id: int
+    location: Vec3Float
+    unit_id: int
+
+
+class UnitMesh(TypedDict):
+    """UnitMesh"""
+    unit_id: int
+    mesh: str
+
+
+class GwbMeshesResult(TypedDict):
+    """Data returned by the gwb meshes computation"""
+    # OFF mesh file
+    mesh: str
+    # Geological Model Unit ID
+    unit_id: int
+    # Point of interest ID
+    spring_id: int
+    # Volume of the mesh
+    volume: float
+
+
+def compute_gwb_meshes(unit_meshes: dict[str, str], springs: list[Spring]) -> list[GwbMeshesResult]:
+    set_current_profiler(VkProfiler(PROFILES['gwb_meshes']))
+
+    get_current_profiler()\
+        .set_profiler_metadata('num_units', len(unit_meshes))\
+        .set_profiler_metadata('num_springs', len(springs))
+
+    output = GeoAlgo.output(unit_meshes, springs)
     get_current_profiler().save_profiler_results()
     return output

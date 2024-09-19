@@ -1,5 +1,4 @@
 from io import BytesIO
-import os
 import tarfile
 import json
 from flask import Flask, request, send_file, Response
@@ -178,6 +177,39 @@ def compute_voxels():
             return Response('', 204, mimetype="text/plain")
 
         return Response(mesh.decode('utf-8'), mimetype="text/plain")
+
+
+@app.route("/compute/gwb_meshes", methods=['POST', 'GET'])
+def compute_gwb_meshes():
+    if request.method == 'POST':
+        # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
+        # TODO: validate data
+        data = json.loads(request.form['data'])
+
+        meshes_key = generate_key()
+        for key, value in request.files.items():
+            # consider every uploaded file as a unit mesh
+            r.hset(meshes_key, key, value.read())
+        output_key = generate_key()
+
+        res = tasks.compute_gwb_meshes.delay(data, meshes_key, output_key)
+        return Response(res.id, 202, mimetype="text/plain")
+
+    elif request.method == 'GET':
+        _id = request.args.get('id')
+        if _id is None or _id == '':
+            return Response("Missing parameter id", 400, mimetype="text/plain")
+        res = celery.AsyncResult(_id)
+        if res.state != 'SUCCESS':
+            return Response(res.state, mimetype="text/plain")
+        # TODO: catch errors
+        output_key = res.get()
+        output = r.get(output_key)
+        r.delete(output_key)
+        if not output:
+            return Response('', 204, mimetype="text/plain")
+
+        return Response(output.decode('utf-8'), mimetype="application/json")
 
 
 @app.post("/poll")

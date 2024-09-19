@@ -16,19 +16,4 @@ RUN conda install -c conda-forge compilers cgal boost eigen mpfr occt -y
 RUN conda install -c anaconda gmp -y
 
 # standard python libraries
-RUN pip install lxml scipy sympy pyyaml meshio pyvista scikit-image verstr numpy pillow flask redis celery "pybind11[global]"
-# pre-build python libaries
-COPY \
-  geocruncher-dist/MeshTools-5a02671-*$cpu.whl \
-  geocruncher-dist/vtkwriters-0.0.10-*.whl \
-  geocruncher-dist/gmlib-0.3.17-*$cpu.whl \
-  geocruncher-dist/pycgal-0.3.14-*$cpu.whl dist/
-RUN pip install dist/vtkwriters*.whl
-RUN pip install dist/gmlib*.whl
-RUN pip install dist/MeshTools*.whl
-RUN pip install dist/pycgal*.whl
-
-# Copy start scripts
-COPY /scripts/* /home/build/scripts/
-
-ENV PYTHONPATH="${PYTHONPATH}:/usr/bin:"
+RUN pip install "pybind11[global]"

@@ -4,24 +4,23 @@ pipeline {
     DOCKER_BUILDKIT = 1
   }
   stages {
-    /*
-    TODO
     stage('geo-algo') {
       agent {
         dockerfile {
-          filename 'src/docker/build.Dockerfile'
-          args vargs
+          filename 'docker/Dockerfile.build'
         }
       }
       steps {
-        dir('src/geo-algo/VK-Aquifers') {
-          sh 'cmake -DCMAKE_BUILD_TYPE=Release .'
-          sh 'make'
+        dir('geo-algo/VK-Aquifers') {
+          sh '''#!/bin/bash --login
+          conda activate geocruncher
+          cmake -DCMAKE_BUILD_TYPE=Release .
+          cmake --build .
+          '''
           sh './viskar-geo-algo runTests'
         }
       }
     }
-    */
     stage('geocruncher & api') {
       agent {
         dockerfile {
@@ -33,8 +32,11 @@ pipeline {
           // TODO: Setuptools is deprecated and doesn't work anymore
           // replace with something else, then enable tests again
           // sh 'python geocruncher-setup.py test'
-          sh 'python geocruncher-setup.py bdist_wheel'
-          sh 'python api-setup.py bdist_wheel'
+          sh '''#!/bin/bash --login
+          conda activate geocruncher
+          python geocruncher-setup.py bdist_wheel
+          python api-setup.py bdist_wheel
+          '''
           // Apparently not needed since the files are already where we want them to be
           // sh 'cp dist/geocruncher-*.whl dist/'
           // sh 'cp dist/api-*.whl dist/'

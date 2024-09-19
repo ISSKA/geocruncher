@@ -4,7 +4,7 @@ __pycache__
 .vscode
 build
 docker
-scripts/local.sh
+scripts/run.sh
 .editorconfig
 .gitignore
 Jenkinsfile
@@ -12,3 +12,9 @@ LICENSE
 
 *.md
 *.egg-info
+
+
+**/CMakeFiles
+**/cmake_install.cmake
+**/CMakeCache.txt
+**/Makefile
