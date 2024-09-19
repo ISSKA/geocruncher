@@ -21,7 +21,7 @@ RUN pip install lxml scipy sympy pyyaml meshio pyvista scikit-image verstr numpy
 COPY \
   geocruncher-dist/MeshTools-5a02671-*$cpu.whl \
   geocruncher-dist/vtkwriters-0.0.10-*.whl \
-  geocruncher-dist/gmlib-0.3.17-*$cpu.whl \
+  geocruncher-dist/gmlib-0.3.22-*$cpu.whl \
   geocruncher-dist/pycgal-0.3.14-*$cpu.whl dist/
 RUN pip install dist/vtkwriters*.whl
 RUN pip install dist/gmlib*.whl
