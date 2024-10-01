@@ -40,8 +40,10 @@ class Voxels:
 
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)
+                selected_points = inside_points["SelectedPoints"].astype(
+                    np.uint16)  # cast array to int16 to avoid overflow error
                 gwb_tags = [max(new_id, _id) for new_id, _id in zip(
-                    inside_points['SelectedPoints'] * int(gwb_id), gwb_tags)]
+                    selected_points * int(gwb_id), gwb_tags)]
                 get_current_profiler().profile('test_inside_gwbs')
 
         ranks = list(map(lambda point:  model.rank(point, True), xyz))
