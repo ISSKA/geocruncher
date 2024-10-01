@@ -1,28 +1,37 @@
-# This is simply an extension of the prod file, with different image names and port 
 version: "3"
 services:
-  api:
-    extends:
-      file: prod.docker-compose.yaml
-      service: api
+  api-dev:
     image: geocruncher/geocruncher-dev:latest
+    depends_on:
+      - redis-dev
+    command: ["bash", "--login", "/home/build/scripts/api.sh"]
     ports:
       - "5001:5000"
+    environment:
+      - REDIS_HOST=redis-dev
     logging:
+      driver: "journald"
       options:
         tag: "geocruncher.dev"
-  worker:
-    extends:
-      file: prod.docker-compose.yaml
-      service: worker
+        labels: "api"
+  worker-dev:
     image: geocruncher/geocruncher-dev:latest
+    depends_on:
+      - redis-dev
+    command: ["bash", "--login", "/home/build/scripts/worker.sh"]
+    environment:
+      - REDIS_HOST=redis-dev
     logging:
+      driver: "journald"
       options:
         tag: "geocruncher.dev"
-  redis:
-    extends:
-      file: prod.docker-compose.yaml
-      service: redis
+        labels: "worker"
+  redis-dev:
+    image: redis:7.4
+    restart: unless-stopped
     logging:
+      driver: "journald"
       options:
         tag: "geocruncher.dev"
+        labels: "redis"
+

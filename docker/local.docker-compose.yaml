@@ -1,33 +1,34 @@
-# This is an extension of the prod file, with changes specific to the local env
 version: "3"
 services:
-  api:
-    extends:
-      file: prod.docker-compose.yaml
-      service: api
+  api-local:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
       dockerfile: docker/local.Dockerfile
-    # Use development server and Flask in debug mode (allows hot reloading)
+    depends_on:
+      - redis-local
     command: ["bash", "--login", "/home/build/scripts/api-local.sh"]
+    ports:
+      - "5000:5000"
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
-  worker:
-    extends:
-      file: prod.docker-compose.yaml
-      service: worker
+    environment:
+      - REDIS_HOST=redis-local
+  worker-local:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
       dockerfile: docker/local.Dockerfile
-    # Use more verbose output, a single queue and hot reloading
+    depends_on:
+      - redis-local
     command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
-  redis:
-    extends:
-      file: prod.docker-compose.yaml
-      service: redis
+    environment:
+      - REDIS_HOST=redis-local
+  redis-local:
+    image: redis:7.4
+    restart: unless-stopped
+
