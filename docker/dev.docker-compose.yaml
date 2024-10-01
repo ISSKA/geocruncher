@@ -1,32 +1,32 @@
 version: "3"
 services:
-  api-dev:
+  api:
     image: geocruncher/geocruncher-dev:latest
     depends_on:
-      - redis-dev
+      - redis
     command: ["bash", "--login", "/home/build/scripts/api.sh"]
     ports:
       - "5001:5000"
     environment:
-      - REDIS_HOST=redis-dev
+      - REDIS_HOST=redis
     logging:
       driver: "journald"
       options:
         tag: "geocruncher.dev"
         labels: "api"
-  worker-dev:
+  worker:
     image: geocruncher/geocruncher-dev:latest
     depends_on:
-      - redis-dev
+      - redis
     command: ["bash", "--login", "/home/build/scripts/worker.sh"]
     environment:
-      - REDIS_HOST=redis-dev
+      - REDIS_HOST=redis
     logging:
       driver: "journald"
       options:
         tag: "geocruncher.dev"
         labels: "worker"
-  redis-dev:
+  redis:
     image: redis:7.4
     restart: unless-stopped
     logging:

@@ -1,12 +1,12 @@
 version: "3"
 services:
-  api-local:
+  api:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
       dockerfile: docker/local.Dockerfile
     depends_on:
-      - redis-local
+      - redis
     command: ["bash", "--login", "/home/build/scripts/api-local.sh"]
     ports:
       - "5000:5000"
@@ -14,21 +14,21 @@ services:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
     environment:
-      - REDIS_HOST=redis-local
-  worker-local:
+      - REDIS_HOST=redis
+  worker:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
       dockerfile: docker/local.Dockerfile
     depends_on:
-      - redis-local
+      - redis
     command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build
     environment:
-      - REDIS_HOST=redis-local
-  redis-local:
+      - REDIS_HOST=redis
+  redis:
     image: redis:7.4
     restart: unless-stopped
 
