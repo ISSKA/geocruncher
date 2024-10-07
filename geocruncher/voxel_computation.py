@@ -3,6 +3,7 @@ import numpy as np
 import pyvista as pv
 import meshio
 from gmlib.GeologicalModel3D import GeologicalModel, Box
+from gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler.profiler import get_current_profiler
 from .off import read_off
@@ -46,12 +47,10 @@ class Voxels:
                     selected_points * int(gwb_id), gwb_tags)]
                 get_current_profiler().profile('test_inside_gwbs')
 
-        ranks = list(map(lambda point:  model.rank(point, True), xyz))
-
-        # More performant version but there is a bug with topography
-        # cppmodel = from_GeoModeller(model)
-        # evaluator = Evaluator(cppmodel)
-        # ranks = evaluator(xyz) + 1
+        cppmodel = from_GeoModeller(model)
+        topography = model.implicit_topography()
+        evaluator = make_evaluator(cppmodel, topography)
+        ranks = evaluator(xyz)
         get_current_profiler().profile('ranks')
 
         ranks_tags = list(zip(ranks, gwb_tags))
