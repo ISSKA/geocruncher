@@ -1,4 +1,4 @@
-# Exemples for querying the API using CURL
+# Examples for querying the API using CURL
 
 ## Tunnel Meshes
 
