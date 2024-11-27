@@ -3,6 +3,7 @@
     These functions take data as input and return data as output, with no Disk interaction
 """
 
+import numpy as np
 from typing import TypedDict
 from enum import Enum
 from gmlib.GeologicalModel3D import GeologicalModel
@@ -282,19 +283,26 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         max_dist_proj = max(box.xmax - box.xmin, box.ymax -
                             box.ymin) * RATIO_MAX_DIST_PROJ
         cross_sections[key], drillhole_lines[key], spring_points[key], matrix_gwb[key] = Slice.output(
-            x_coord, y_coord, z_coord, n_points, model.rank, [1, 1], model.pile.reference == 'base', data, gwb_meshes, max_dist_proj)
+            x_coord, y_coord, z_coord, n_points, model, model.pile.reference == 'base', data, gwb_meshes, max_dist_proj)
         fault_output['forCrossSections'][key] = FaultIntersection.output(
             x_coord, y_coord, z_coord, n_points, model)
 
     mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
                                             'drillholes': drillhole_lines, 'springs': spring_points, 'matrixGwb': matrix_gwb}
     if data['computeMap']:
-        x_coord = [box.xmin, box.xmax]
-        y_coord = [box.ymin, box.ymax]
-        mesh_output['forMaps'] = MapSlice.output(
-            x_coord, y_coord, n_points, model.rank, model.topography.evaluate_z, model.pile.reference == 'base')
-        fault_output['forMaps'] = MapFaultIntersection.output(
-            x_coord, y_coord, n_points, model)
+        x_map_range = np.linspace(box.xmin, box.xmax, n_points)
+        y_map_range = np.linspace(box.ymin, box.ymax, n_points)
+        x, y = np.meshgrid(x_map_range, y_map_range)
+        xy = np.stack([x.ravel(), y.ravel()], axis=1)
+        z = model.topography.evaluate_z(xy)
+        xyz = np.column_stack((xy, z))
+        # For some reason the ranking numbers are expected in a different order than the fault numbers
+        # TODO: Align the order of the fault numbers with the ranking numbers or vice versa
+        xyz_reordered = xyz[np.lexsort((xyz[:, 1], xyz[:, 0]))]
+        get_current_profiler().profile('map_grid')
+
+        mesh_output['forMaps'] = MapSlice.output(xyz_reordered, n_points, model)
+        fault_output['forMaps'] = MapFaultIntersection.output(xyz, n_points, model)
     get_current_profiler().save_profiler_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
