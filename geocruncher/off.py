@@ -74,9 +74,8 @@ def generate_off(verts, faces, precision=3):
     # Implementation reference: https://en.wikipedia.org/wiki/OFF_(file_format)#Composition
     num_verts = len(verts)
     num_faces = len(faces)
-    v = '\n'.join([' '.join([str(round(float(position), precision))
-                             for position in vertex]) for vertex in verts])
-    f = '\n'.join([' '.join([str(len(face)), *(str(int(index))
-                                               for index in face)]) for face in faces])
 
-    return f"OFF\n{num_verts} {num_faces} 0\n{v}\n{f}\n"
+    verts_rounded = np.round(verts.astype(float), precision)
+    verts_str = '\n'.join(' '.join(map(str, vertex)) for vertex in verts_rounded)
+    faces_str = '\n'.join(f"{len(face)} {' '.join(map(str, face))}" for face in faces)
+    return f"OFF\n{num_verts} {num_faces} 0\n{verts_str}\n{faces_str}\n"
