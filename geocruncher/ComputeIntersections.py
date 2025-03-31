@@ -151,7 +151,7 @@ class Slice:
         if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
             lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
             upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
-            drill_holes_line, springs_point, matrix_gwb = Slice.ouputHydroLayer(
+            drill_holes_line, springs_point, matrix_gwb = Slice.ouput_hydro_layer(
                 lower_left, upper_right, xyz,
                 data.get("springs"), data.get("drillholes"),
                 gwb_meshes, max_dist_proj
@@ -168,67 +168,151 @@ class Slice:
         return ranks.tolist(), drill_holes_line, springs_point, matrix_gwb
 
     @staticmethod
-    def ouputHydroLayer(lowerLeft, upperRight, rankMatrix, springMap, drillholeMap, gwb_meshes: dict[str, list[str]], max_dist_proj):
-        def projPointOnPlane(p0, p1, p2, q):
-            # https://stackoverflow.com/a/8944143
-            n = np.cross(np.subtract(p1, p0), np.subtract(
-                p2, p0))  # normal of plane
-            n = n / np.linalg.norm(n)
-            q_proj = np.subtract(q, np.dot(np.subtract(q, p0), n) * n)
-            if np.linalg.norm(np.subtract(q, q_proj)) < max_dist_proj:
-                return (transformValue(p0, q_proj), True)
-            else:
-                return (transformValue(p0, q_proj), False)
+    def ouput_hydro_layer(
+        lower_left: np.ndarray,
+        upper_right: np.ndarray,
+        xyz: np.ndarray,
+        spring_map: dict,
+        drill_hole_map: dict,
+        gwb_meshes: dict[str, list[str]],
+        max_dist_proj: float
+    ) -> Tuple[dict, dict, list]:
+        """Project hydrogeological features onto a vertical cross section plane.
 
-        def transformValue(p0, q):
-            # transform point in 2d; x, y
-            return [math.sqrt(math.pow(q[0] - p0[0], 2) + math.pow(q[1] - p0[1], 2)), q[2]]
+        Parameters
+        ----------
+        lower_left : np.ndarray
+            The lower left corner coordinates of the cross section
+        upper_right : np.ndarray
+            The upper right corner coordinates of the cross section
+        xyz : np.ndarray
+            Array of shape (N, 3) containing the (x, y, z) coordinates of points of the cross section
+        spring_map : dict
+            Dictionary of spring data with coordinates
+        drill_hole_map : dict
+            Dictionary of drill hole data with start and end coordinates
+        gwb_meshes : dict[str, list[str]]
+            Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF format
+        max_dist_proj : float
+            Maximum projection distance for features
 
-        # we need a third point to create a plane
-        # and we know that the up point of cs are juste higher z and there is not vertical angle
-        thirdPoint = np.array([lowerLeft[0], lowerLeft[1], upperRight[2]])
-        matrixGwb = []
-        drillholesLine = {}
-        springsPoint = {}
+        Returns
+        -------
+        drill_holes_line : dict
+            Dictionary of projected drill holes with start and end coordinates
+        springs_point : dict
+            Dictionary of projected springs with coordinates
+        matrix_gwb_combine : list
+            List of groundwater body values for each point in rank_matrix
+            each value corresponds to the groundwater body ID for that point
+        """
+        
+        # Create a third point to define the plane
+        # The third point is the same x and y as the lower left corner, but z is the upper right corner
+        # This is possible because cross sections are always parallel to the z axis
+        p0 = np.array(lower_left)
+        p1 = np.array(upper_right)
+        p2 = np.array([lower_left[0], lower_left[1], upper_right[2]])
+        
+        # Pre-compute plane normal vector once
+        plane_normal = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))
+        plane_normal = plane_normal / np.linalg.norm(plane_normal)
+        
+        def proj_point_on_plane(q: np.ndarray) -> Tuple[list, bool]:
+            """Project a point onto the section plane and check if it's within threshold.
+
+            Parameters
+            ----------
+            q : np.ndarray
+                The 3D point to project
+
+            Returns
+            -------
+            Tuple[list, bool]
+                Projected 2D coordinates and boolean indicating if projection is valid
+            """
+            q_to_p0 = np.subtract(q, p0)
+            dist_to_plane = np.dot(q_to_p0, plane_normal)
+            q_proj = np.subtract(q, dist_to_plane * plane_normal)
+            proj_distance = np.linalg.norm(np.subtract(q, q_proj))
+            valid = proj_distance < max_dist_proj
+            return transform_value(q_proj), valid
+        
+        def transform_value(q: np.ndarray) -> list:
+            """Transform a 3D point into 2D section coordinates.
+
+            Parameters
+            ----------
+            q : np.ndarray
+                The 3D point to transform
+
+            Returns
+            -------
+            list
+                2D coordinates [distance_along_section, elevation]
+            """
+            delta_x = q[0] - p0[0]
+            delta_y = q[1] - p0[1]
+            return [math.sqrt(delta_x**2 + delta_y**2), q[2]]
+        
+        matrix_gwb = []
+        drill_holes_line = {}
+        springs_point = {}
         get_current_profiler().profile('hydro_setup')
-        for dId, line in drillholeMap.items():
-            s_proj, s_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array(
-                [line["start"]["x"], line["start"]["y"], line["start"]["z"]]))
-            e_proj, e_valid = projPointOnPlane(lowerLeft, upperRight, thirdPoint, np.array(
-                [line["end"]["x"], line["end"]["y"], line["end"]["z"]]))
-            if s_valid or e_valid:
-                proj_line = [s_proj, e_proj]
-                drillholesLine[dId] = proj_line
+        
+        if drill_hole_map:
+            for d_id, line in drill_hole_map.items():
+                start_point = np.array([line["start"]["x"], line["start"]["y"], line["start"]["z"]])
+                end_point = np.array([line["end"]["x"], line["end"]["y"], line["end"]["z"]])
+                
+                s_proj, s_valid = proj_point_on_plane(start_point)
+                e_proj, e_valid = proj_point_on_plane(end_point)
+                
+                if s_valid or e_valid:
+                    drill_holes_line[d_id] = [s_proj, e_proj]
         get_current_profiler().profile('hydro_project_drillholes')
-        for sId, p in springMap.items():
-            p_proj, valid = projPointOnPlane(
-                lowerLeft, upperRight, thirdPoint, np.array([p["x"], p["y"], p["z"]]))
-            if valid:
-                springsPoint[sId] = p_proj
+        
+        if spring_map:
+            for s_id, p in spring_map.items():
+                point = np.array([p["x"], p["y"], p["z"]])
+                p_proj, valid = proj_point_on_plane(point)
+                if valid:
+                    springs_point[s_id] = p_proj
         get_current_profiler().profile('hydro_project_springs')
-        # read all mesh files an test for every point if inside of gwb or not
+        
+        points_polydata = pv.PolyData(xyz)
+        # Test each point of the cross section against groundwater body meshes
         for gwb_id, meshes in gwb_meshes.items():
+            gwb_id_int = int(gwb_id)
             for mesh_str in meshes:
                 mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
-                points = pv.PolyData(rankMatrix)
-                inside_points = points.select_enclosed_points(
-                    mesh, tolerance=0.00001)
-                selected_points = inside_points["SelectedPoints"].astype(
-                    np.uint16)  # cast array to int16 to avoid overflow error
-                # 0 if not in gwb else gwb_id
-                matrixGwb.append(selected_points * int(gwb_id))
+                inside_points = points_polydata.select_enclosed_points(mesh, tolerance=0.00001)
+                selected_points = inside_points["SelectedPoints"].astype(np.uint16)
+                matrix_gwb.append(selected_points * gwb_id_int)
         get_current_profiler().profile('hydro_test_inside_gwbs')
-        # combine all gwb values into one matrix
-        matrixGwbCombine = []
-        if len(matrixGwb) > 0:
-            for idx, val in enumerate(matrixGwb[0]):
-                values = [values[idx]
-                          for values in matrixGwb if values[idx] > 0]
-                # we need to cast to int from int8 to be able to serialise in json
-                matrixGwbCombine.append(
-                    int(values[0]) if len(values) > 0 else 0)
+        
+        # Combine all gwb values into one matrix
+        matrix_gwb_combine = []
+        if matrix_gwb:
+            # Stack matrices into a 2D array where each column is a GWB matrix
+            stacked = np.column_stack(matrix_gwb) if len(matrix_gwb) > 1 else matrix_gwb[0]
+            
+            if len(matrix_gwb) > 1:
+                nonzero_mask = stacked > 0
+                row_has_nonzero = np.any(nonzero_mask, axis=1)
+                # Cast to int from int8 to be able to serialize in json
+                result = np.zeros(len(matrix_gwb[0]), dtype=np.int32)
+                
+                for i in np.where(row_has_nonzero)[0]:
+                    first_nonzero_idx = np.argmax(nonzero_mask[i])
+                    result[i] = stacked[i, first_nonzero_idx]
+                
+                matrix_gwb_combine = result.tolist()
+            else:
+                matrix_gwb_combine = stacked.astype(np.int32).tolist()
+        
         get_current_profiler().profile('hydro_combine_gwbs')
-        return drillholesLine, springsPoint, matrixGwbCombine
+        return drill_holes_line, springs_point, matrix_gwb_combine
 
 
 class FaultIntersection:
