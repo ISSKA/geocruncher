@@ -56,19 +56,22 @@ def read_off(string: str) -> Mesh:
     return Mesh(verts, cells)
 
 
-def generate_off(verts, faces, precision=3):
+def generate_off(verts: np.array, faces: np.array, precision=3):
     """Generates a valid OFF string from the given verts and faces.
 
-    Parameters:
-        verts: (V, 3) array
+    Parameters
+    ----------
+        verts: np.array
             Spatial coordinates for V unique mesh vertices. Coordinate order
-            must be (x, y, z).
-        faces: (F, N) array
+            must be (x, y, z). The array must be of shape (V, 3).
+        faces: np.array
             Define F unique faces of N size via referencing vertex indices from ``verts``.
+            The array must be of shape (F, N).
         precision: int
             How many decimals to keep when writing vertex position. Defaults to 3.
 
-    Returns:
+    Returns
+    --------
         str: A valid OFF string.
     """
     # Implementation reference: https://en.wikipedia.org/wiki/OFF_(file_format)#Composition
