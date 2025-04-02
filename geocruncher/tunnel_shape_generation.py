@@ -38,7 +38,7 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
             get_current_profiler().profile("project_points")
     triangles = _connect_vertices(len(xy_points), nb_series)
     get_current_profiler().profile("connect_vertices")
-    off_mesh = generate_off(vertices, np.array(triangles))
+    off_mesh = generate_off(np.array(vertices), np.array(triangles))
     get_current_profiler().profile("generate_off")
     return off_mesh
 
