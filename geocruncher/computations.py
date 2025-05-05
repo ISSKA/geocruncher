@@ -9,7 +9,7 @@ from enum import Enum
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import MapFaultIntersection, Slice, MapSlice, FaultIntersection
+from .ComputeIntersections import compute_cross_section_ranks_and_hydro_features, compute_cross_section_fault_intersections, compute_map_ranks, compute_map_fault_intersections
 from .MeshGeneration import generate_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
@@ -282,9 +282,9 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                    int(round(rect['upperRight']['z']))]
         max_dist_proj = max(box.xmax - box.xmin, box.ymax -
                             box.ymin) * RATIO_MAX_DIST_PROJ
-        cross_sections[key], drillhole_lines[key], spring_points[key], matrix_gwb[key] = Slice.output(
+        cross_sections[key], drillhole_lines[key], spring_points[key], matrix_gwb[key] = compute_cross_section_ranks_and_hydro_features(
             x_coord, y_coord, z_coord, n_points, model, model.pile.reference == 'base', data, gwb_meshes, max_dist_proj)
-        fault_output['forCrossSections'][key] = FaultIntersection.output(
+        fault_output['forCrossSections'][key] = compute_cross_section_fault_intersections(
             x_coord, y_coord, z_coord, n_points, model)
 
     mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
@@ -301,8 +301,8 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         xyz_reordered = xyz[np.lexsort((xyz[:, 1], xyz[:, 0]))]
         get_current_profiler().profile('map_grid')
 
-        mesh_output['forMaps'] = MapSlice.output(xyz_reordered, n_points, model)
-        fault_output['forMaps'] = MapFaultIntersection.output(xyz, n_points, model)
+        mesh_output['forMaps'] = compute_map_ranks(xyz_reordered, n_points, model)
+        fault_output['forMaps'] = compute_map_fault_intersections(xyz, n_points, model)
     get_current_profiler().save_profiler_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
