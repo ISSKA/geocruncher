@@ -1,6 +1,5 @@
 import math
 
-from typing import Tuple
 import numpy as np
 import pyvista as pv
 from gmlib.GeologicalModel3D import GeologicalModel
@@ -12,13 +11,13 @@ from .off import read_off
 # ----- MAP INTERSECTIONS -----
 
 
-def compute_map_ranks(xyz_reordered: np.array, n_points: int, model: GeologicalModel
+def compute_map_ranks(xyz_reordered: np.ndarray, n_points: int, model: GeologicalModel
                       ) -> list:
     """Compute formation ranks for a top-down geological cross section.
 
     Parameters
     ----------
-    xyz_reordered: np.array
+    xyz_reordered: np.ndarray
         A numpy array of reordered (column by column -> x changes first, then y) coordinates, shape (n_points^2, 3).
     n_points: int
         Number of points in each dimension of the cross section.
@@ -41,17 +40,18 @@ def compute_map_ranks(xyz_reordered: np.array, n_points: int, model: GeologicalM
 
     ranks = evaluator(xyz_reordered) + rank_offset
     ranks.shape = (n_points, n_points)
+    ranks = ranks.tolist()
     get_current_profiler().profile('map_ranks')
-    return ranks.tolist()
+    return ranks
 
 
-def compute_map_fault_intersections(xyz: np.array, n_points: int, model: GeologicalModel
+def compute_map_fault_intersections(xyz: np.ndarray, n_points: int, model: GeologicalModel
                                     ) -> dict:
     """Compute fault intersections on a top-down geological cross section.
 
     Parameters
     ----------
-    xyz : np.array
+    xyz : np.ndarray
         Array of 3D coordinates where fault values will be evaluated, ordered row by row -> y changes first, then x, shape (n_points^2, 3)
     n_points : int
         Number of points in each dimension of the output grid
@@ -75,8 +75,8 @@ def compute_map_fault_intersections(xyz: np.array, n_points: int, model: Geologi
 
 
 def _compute_vertical_slice_points(
-    x_coord: Tuple[int, int],
-    y_coord: Tuple[int, int],
+    x_coord: tuple[int, int],
+    y_coord: tuple[int, int],
     z_slice_range: np.ndarray,
     n_points: int,
     is_on_y_axis: bool
@@ -122,16 +122,16 @@ def _compute_vertical_slice_points(
     return xyz
 
 
-def compute_cross_section_ranks_and_hydro_features(x_coord: Tuple[int, int],
-                                                   y_coord: Tuple[int, int],
-                                                   z_coord: Tuple[int, int],
+def compute_cross_section_ranks_and_hydro_features(x_coord: tuple[int, int],
+                                                   y_coord: tuple[int, int],
+                                                   z_coord: tuple[int, int],
                                                    n_points: int,
                                                    model: GeologicalModel,
                                                    is_base: bool,
                                                    data: dict,
                                                    gwb_meshes: dict[str, list[str]],
                                                    max_dist_proj: float
-                                                   ) -> Tuple[list, dict, dict, list]:
+                                                   ) -> tuple[list, dict, dict, list]:
     """Compute vertical cross section by evaluating formation ranks and projecting
     hydrogeological features onto the section plane.
 
@@ -160,7 +160,7 @@ def compute_cross_section_ranks_and_hydro_features(x_coord: Tuple[int, int],
     -------
     ranks : list
         2D array of computed formation ranks
-    drill_holes_line : dict
+    drillholes_line : dict
         Projected drill holes data
     springs_point : dict
         Projected springs data
@@ -171,7 +171,7 @@ def compute_cross_section_ranks_and_hydro_features(x_coord: Tuple[int, int],
     z_slice_range = np.linspace(z_coord[0], z_coord[1], n_points)
 
     is_on_y_axis = x_coord[0] == x_coord[1]
-    drill_holes_line, springs_point, matrix_gwb = {}, {}, []
+    drillholes_line, springs_point, matrix_gwb = {}, {}, []
 
     xyz = _compute_vertical_slice_points(
         x_coord, y_coord, z_slice_range, n_points, is_on_y_axis)
@@ -179,7 +179,7 @@ def compute_cross_section_ranks_and_hydro_features(x_coord: Tuple[int, int],
     if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
         lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
         upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
-        drill_holes_line, springs_point, matrix_gwb = _project_hydro_features_on_slice(
+        drillholes_line, springs_point, matrix_gwb = _project_hydro_features_on_slice(
             lower_left, upper_right, xyz,
             data.get("springs"), data.get("drillholes"),
             gwb_meshes, max_dist_proj
@@ -193,7 +193,7 @@ def compute_cross_section_ranks_and_hydro_features(x_coord: Tuple[int, int],
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = (n_points, n_points)
     get_current_profiler().profile('sections_ranks')
-    return ranks.tolist(), drill_holes_line, springs_point, matrix_gwb
+    return ranks.tolist(), drillholes_line, springs_point, matrix_gwb
 
 
 def _project_hydro_features_on_slice(
@@ -201,10 +201,10 @@ def _project_hydro_features_on_slice(
     upper_right: np.ndarray,
     xyz: np.ndarray,
     spring_map: dict,
-    drill_hole_map: dict,
+    drillhole_map: dict,
     gwb_meshes: dict[str, list[str]],
     max_dist_proj: float
-) -> Tuple[dict, dict, list]:
+) -> tuple[dict, dict, list]:
     """Project hydrogeological features onto a vertical cross section plane.
 
     Parameters
@@ -217,7 +217,7 @@ def _project_hydro_features_on_slice(
         Array of shape (N, 3) containing the (x, y, z) coordinates of points of the cross section
     spring_map : dict
         Dictionary of spring data with coordinates
-    drill_hole_map : dict
+    drillhole_map : dict
         Dictionary of drill hole data with start and end coordinates
     gwb_meshes : dict[str, list[str]]
         Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF format
@@ -226,7 +226,7 @@ def _project_hydro_features_on_slice(
 
     Returns
     -------
-    drill_holes_line : dict
+    drillholes_line : dict
         Dictionary of projected drill holes with start and end coordinates
     springs_point : dict
         Dictionary of projected springs with coordinates
@@ -246,7 +246,7 @@ def _project_hydro_features_on_slice(
     plane_normal = np.cross(np.subtract(p1, p0), np.subtract(p2, p0))
     plane_normal = plane_normal / np.linalg.norm(plane_normal)
 
-    def _proj_point_on_plane(q: np.ndarray) -> Tuple[list, bool]:
+    def _proj_point_on_plane(q: np.ndarray) -> tuple[list, bool]:
         """Project a point onto the section plane and check if it's within threshold.
 
         Parameters
@@ -284,12 +284,12 @@ def _project_hydro_features_on_slice(
         return [math.sqrt(delta_x**2 + delta_y**2), q[2]]
 
     matrix_gwb = []
-    drill_holes_line = {}
+    drillholes_line = {}
     springs_point = {}
     get_current_profiler().profile('hydro_setup')
 
-    if drill_hole_map:
-        for d_id, line in drill_hole_map.items():
+    if drillhole_map:
+        for d_id, line in drillhole_map.items():
             start_point = np.array(
                 [line["start"]["x"], line["start"]["y"], line["start"]["z"]])
             end_point = np.array(
@@ -299,7 +299,7 @@ def _project_hydro_features_on_slice(
             e_proj, e_valid = _proj_point_on_plane(end_point)
 
             if s_valid or e_valid:
-                drill_holes_line[d_id] = [s_proj, e_proj]
+                drillholes_line[d_id] = [s_proj, e_proj]
     get_current_profiler().profile('hydro_project_drillholes')
 
     if spring_map:
@@ -344,13 +344,13 @@ def _project_hydro_features_on_slice(
             matrix_gwb_combine = stacked.astype(np.int32).tolist()
 
     get_current_profiler().profile('hydro_combine_gwbs')
-    return drill_holes_line, springs_point, matrix_gwb_combine
+    return drillholes_line, springs_point, matrix_gwb_combine
 
 
 def _create_vertical_section_grid(
-    x_coord: Tuple[int, int],
-    y_coord: Tuple[int, int],
-    z_coord: Tuple[int, int],
+    x_coord: tuple[int, int],
+    y_coord: tuple[int, int],
+    z_coord: tuple[int, int],
     n_points: int
 ) -> np.ndarray:
     """Create a vertical grid of points in 3D space.
@@ -383,9 +383,9 @@ def _create_vertical_section_grid(
 
 
 def compute_cross_section_fault_intersections(
-    x_coord: Tuple[int, int],
-    y_coord: Tuple[int, int],
-    z_coord: Tuple[int, int],
+    x_coord: tuple[int, int],
+    y_coord: tuple[int, int],
+    z_coord: tuple[int, int],
     n_points: int,
     model: GeologicalModel
 ) -> dict:
