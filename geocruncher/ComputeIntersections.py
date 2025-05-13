@@ -2,105 +2,36 @@ import math
 
 import numpy as np
 import pyvista as pv
-from gmlib.GeologicalModel3D import GeologicalModel
+from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler.profiler import get_current_profiler
 from .off import read_off
 
-# ----- MAP INTERSECTIONS -----
-
-
-def compute_map_ranks(xyz_reordered: np.ndarray, n_points: int, model: GeologicalModel
-                      ) -> list:
-    """Compute formation ranks for a top-down geological cross section.
-
-    Parameters
-    ----------
-    xyz_reordered: np.ndarray
-        A numpy array of reordered (column by column -> x changes first, then y) coordinates, shape (n_points^2, 3).
-    n_points: int
-        Number of points in each dimension of the cross section.
-    model: gmlib.GeologicalModel3D.GeologicalModel
-        The GeologicalModel from gmlib to use for the formation rank evaluation.
-
-    Returns:
-        list: A list of ranks after evaluation, reshaped to (n_points, n_points).
-
-    Notes
-    -----
-    The rank evaluation is being done without the topography, as it's not needed for a top-down view.
-    """
-
-    cppmodel = from_GeoModeller(model)
-    evaluator = make_evaluator(cppmodel)
-
-    is_base = model.pile.reference == 'base'
-    rank_offset = -1 if is_base else 0
-
-    ranks = evaluator(xyz_reordered) + rank_offset
-    ranks.shape = (n_points, n_points)
-    ranks = ranks.tolist()
-    get_current_profiler().profile('map_ranks')
-    return ranks
-
-
-def compute_map_fault_intersections(xyz: np.ndarray, n_points: int, model: GeologicalModel
-                                    ) -> dict:
-    """Compute fault intersections on a top-down geological cross section.
-
-    Parameters
-    ----------
-    xyz : np.ndarray
-        Array of 3D coordinates where fault values will be evaluated, ordered row by row -> y changes first, then x, shape (n_points^2, 3)
-    n_points : int
-        Number of points in each dimension of the output grid
-    model : gmlib.GeologicalModel3D.GeologicalModel
-        GeologicalModel from gmlib containing the faults data
-
-    Returns
-    -------
-    dict
-        Dictionary mapping fault names to 2D arrays of intersection values,
-        where each array has shape (n_points, n_points)
-    """
-    output = {}
-    for name, fault in model.faults.items():
-        colored_points = fault(xyz)
-        output[name] = colored_points.reshape(n_points, n_points).tolist()
-    get_current_profiler().profile('fault_map_tesselate')
-    return output
-
-# ----- VERTICAL INTERSECTIONS -----
-
-
-def _compute_vertical_slice_points(
+def compute_vertical_slice_points(
     x_coord: tuple[int, int],
     y_coord: tuple[int, int],
-    z_slice_range: np.ndarray,
-    n_points: int,
-    is_on_y_axis: bool
+    z_coord: tuple[int, int],
+    n_points: int
 ) -> np.ndarray:
     """Calculate 3D points along a vertical slice plane.
 
     Parameters
     ----------
-    x_coord : Tuple[int, int]
+    x_coord : tuple[int, int]
         Start and end x-coordinates of the slice line.
-    y_coord : Tuple[int, int]
+    y_coord : tuple[int, int]
         Start and end y-coordinates of the slice line.
-    z_slice_range : np.ndarray
-        Array of z-coordinates defining the vertical range of the slice.
+    z_coord : tuple[int, int]
+        Start and end z-coordinates defining the vertical range of the slice.
     n_points : int
-        Number of points to generate along the slice line.
-    is_on_y_axis : bool
-        If True, the slice is parallel to the y-axis. If False, it's at an angle.
+        Number of points to generate along each dimension.
 
     Returns
     -------
     np.ndarray
-        Array of shape (N, 3) containing the (x, y, z) coordinates of points
-        in the slice plane, where N = n_points * len(z_slice_range).
+        Array of shape (n_points^2, 3) containing the (x, y, z) coordinates of points
+        in the slice plane.
 
     Notes
     -----
@@ -109,7 +40,9 @@ def _compute_vertical_slice_points(
     while y varies linearly.
     """
 
-    if not is_on_y_axis:
+    z_slice_range = np.linspace(z_coord[0], z_coord[1], n_points)
+
+    if not x_coord[0] == x_coord[1]:
         x_slice_range = np.linspace(x_coord[0], x_coord[1], n_points)
         slope = (y_coord[0] - y_coord[1]) / (x_coord[0] - x_coord[1])
         z, x = np.meshgrid(z_slice_range, x_slice_range)
@@ -121,82 +54,123 @@ def _compute_vertical_slice_points(
     xyz = np.stack((x.ravel(), y.ravel(), z.ravel()), axis=-1)
     return xyz
 
-
-def compute_cross_section_ranks_and_hydro_features(x_coord: tuple[int, int],
-                                                   y_coord: tuple[int, int],
-                                                   z_coord: tuple[int, int],
-                                                   n_points: int,
-                                                   model: GeologicalModel,
-                                                   is_base: bool,
-                                                   data: dict,
-                                                   gwb_meshes: dict[str, list[str]],
-                                                   max_dist_proj: float
-                                                   ) -> tuple[list, dict, dict, list]:
-    """Compute vertical cross section by evaluating formation ranks and projecting
-    hydrogeological features onto the section plane.
+def compute_map_points(box: Box, n_points: int, model: GeologicalModel) -> np.ndarray:
+    """Compute points for a top-down geological cross section.
 
     Parameters
     ----------
-    x_coord : Tuple[int, int]
-        X-axis coordinates (start, end) of the section
-    y_coord : Tuple[int, int]
-        Y-axis coordinates (start, end) of the section
-    z_coord : Tuple[int, int]
-        Z-axis coordinates (start, end) of the section
+    box : Box
+        The bounding box of the geological model.
     n_points : int
-        Number of points to compute along each axis
+        Number of points in each dimension of the map cross section.
+    model : gmlib.GeologicalModel3D.GeologicalModel
+        The GeologicalModel from gmlib to use for the topography evaluation.
+    
+    Returns
+    -------
+    np.ndarray
+        A numpy array of shape (n_points^2, 3) containing the (x, y, z) coordinates of the points.
+    
+    Notes
+    -----
+    The z coordinate is evaluated using the topography of the geological model.
+    The returned points are ordered in a grid pattern, sorted by x, then y.
+    """
+
+    x_map_range = np.linspace(box.xmin, box.xmax, n_points)
+    y_map_range = np.linspace(box.ymin, box.ymax, n_points)
+    y, x = np.meshgrid(y_map_range, x_map_range)
+    xy = np.stack([x.ravel(), y.ravel()], axis=1)
+    z = model.topography.evaluate_z(xy)
+    xyz = np.column_stack((xy, z))
+    return xyz
+
+def compute_cross_section_ranks(
+    xyz: np.ndarray,
+    n_points: int,
+    model: GeologicalModel,
+    topography: bool = False
+) -> list:
+    """Compute formation ranks for a geological cross section.
+
+    Parameters
+    ----------
+    xyz : np.ndarray
+       Array of 3D coordinates where the ranks will be evaluated, shape (n_points^2, 3)
+    n_points : int
+        Number of points in each dimension of the cross section.
     model : gmlib.GeologicalModel3D.GeologicalModel
         The GeologicalModel from gmlib to use for the formation rank evaluation.
-    is_base : bool
-        Flag indicating if this is a base section (affects rank calculation)
-    data : dict
-        Dictionary containing optional 'springs' and 'drillholes' data
-    gwb_meshes : dict[str, list[str]]
-        Dictionary mapping groundwater bodies to mesh elements
-    max_dist_proj : float
-        Maximum projection distance for hydrogeological features
+    topography : bool, optional
+        If True, the topography of the geological model will be used for rank evaluation.
+        Default is False.
 
     Returns
     -------
-    ranks : list
-        2D array of computed formation ranks
-    drillholes_line : dict
-        Projected drill holes data
-    springs_point : dict
-        Projected springs data
-    matrix_gwb : list
-        Groundwater bodies mesh data
+    list
+        A list of ranks after evaluation, reshaped to (n_points, n_points).
+
+    Notes
+    -----
+    For top-down views the topography should be False and for vertical slices it should be True.
     """
 
-    z_slice_range = np.linspace(z_coord[0], z_coord[1], n_points)
-
-    is_on_y_axis = x_coord[0] == x_coord[1]
-    drillholes_line, springs_point, matrix_gwb = {}, {}, []
-
-    xyz = _compute_vertical_slice_points(
-        x_coord, y_coord, z_slice_range, n_points, is_on_y_axis)
-
-    if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
-        lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
-        upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
-        drillholes_line, springs_point, matrix_gwb = _project_hydro_features_on_slice(
-            lower_left, upper_right, xyz,
-            data.get("springs"), data.get("drillholes"),
-            gwb_meshes, max_dist_proj
-        )
-
     cppmodel = from_GeoModeller(model)
-    topography = model.implicit_topography()
-    evaluator = make_evaluator(cppmodel, topography)
+    if topography:
+        topography = model.implicit_topography()
+        evaluator = make_evaluator(cppmodel, topography)
+    else:
+        evaluator = make_evaluator(cppmodel)
 
+    is_base = model.pile.reference == 'base'
     rank_offset = -1 if is_base else 0
+
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = (n_points, n_points)
-    get_current_profiler().profile('sections_ranks')
-    return ranks.tolist(), drillholes_line, springs_point, matrix_gwb
+    ranks = ranks.tolist()
+    get_current_profiler().profile('cross_section_ranks')
+    return ranks
 
 
-def _project_hydro_features_on_slice(
+def compute_cross_section_fault_intersections(
+    xyz: np.ndarray,
+    n_points: int,
+    model: GeologicalModel
+) -> dict:
+    """Compute fault intersections on a top-down or vertical geological cross section.
+
+    Parameters
+    ----------
+    xyz : np.ndarray
+        Array of 3D coordinates where fault values will be evaluated, shape (n_points^2, 3)
+    n_points : int
+        Number of points in each dimension of the output grid
+    model : gmlib.GeologicalModel3D.GeologicalModel
+        GeologicalModel from gmlib containing the faults data
+
+    Returns
+    -------
+    dict
+        Dictionary mapping fault names to lists of intersection values,
+        reshaped to (n_points, n_points).
+    
+    Notes
+    -----
+    The order of the intersection values are transposed compared to the rank matrix. This is
+    because VISKAR expects these values in transposed order.
+    """
+    output = {}
+    for name, fault in model.faults.items():
+        colored_points = fault(xyz)
+        colored_points = colored_points.reshape(n_points, n_points)
+        # VISKAR expects these points in transposed order
+        # compared to the rank matrix
+        transposed_points = np.transpose(colored_points)
+        output[name] = transposed_points.tolist()
+    get_current_profiler().profile('fault_cross_section_tesselate')
+    return output
+
+def project_hydro_features_on_slice(
     lower_left: np.ndarray,
     upper_right: np.ndarray,
     xyz: np.ndarray,
@@ -345,77 +319,3 @@ def _project_hydro_features_on_slice(
 
     get_current_profiler().profile('hydro_combine_gwbs')
     return drillholes_line, springs_point, matrix_gwb_combine
-
-
-def _create_vertical_section_grid(
-    x_coord: tuple[int, int],
-    y_coord: tuple[int, int],
-    z_coord: tuple[int, int],
-    n_points: int
-) -> np.ndarray:
-    """Create a vertical grid of points in 3D space.
-
-    Parameters
-    ----------
-    x_coord : Tuple[int, int]
-        Min and max x coordinates (x_min, x_max)
-    y_coord : Tuple[int, int]
-        Min and max y coordinates (y_min, y_max)
-    z_coord : Tuple[int, int]
-        Min and max z coordinates (z_min, z_max)
-    n_points : int
-        Number of points along each dimension
-
-    Returns
-    -------
-    np.ndarray
-        Array of shape (n_points * n_points, 3) containing the grid points
-    """
-    x = np.linspace(x_coord[0], x_coord[1], n_points)
-    y = np.linspace(y_coord[0], y_coord[1], n_points)
-    z = np.linspace(z_coord[0], z_coord[1], n_points)
-
-    xx, zz = np.meshgrid(x, z)
-    yy = np.full_like(xx, y[:, np.newaxis]).T
-
-    xyz = np.stack([xx, yy, zz], axis=-1)
-    return xyz.reshape(-1, 3)
-
-
-def compute_cross_section_fault_intersections(
-    x_coord: tuple[int, int],
-    y_coord: tuple[int, int],
-    z_coord: tuple[int, int],
-    n_points: int,
-    model: GeologicalModel
-) -> dict:
-    """Compute fault intersections on a vertical cross section.
-
-    Parameters
-    ----------
-    x_coord : Tuple[int, int]
-        Min and max x coordinates (x_min, x_max)
-    y_coord : Tuple[int, int]
-        Min and max y coordinates (y_min, y_max)
-    z_coord : Tuple[int, int]
-        Min and max z coordinates (z_min, z_max)
-    n_points : int
-        Number of points along each dimension
-    model : gmlib.GeologicalModel3D.GeologicalModel
-        GeologicalModel from gmlib containing the faults data
-
-    Returns
-    -------
-    dict
-        Dictionary mapping fault names to 2D arrays of intersection values,
-        where each array has shape (n_points, n_points)
-    """
-    xyz = _create_vertical_section_grid(
-        x_coord, y_coord, z_coord, n_points)
-    get_current_profiler().profile('fault_sections_grid')
-    output = {}
-    for name, fault in model.faults.items():
-        colored_points = fault(xyz)
-        output[name] = colored_points.reshape(n_points, n_points).tolist()
-    get_current_profiler().profile('fault_sections_tesselate')
-    return output
