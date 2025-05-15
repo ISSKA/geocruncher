@@ -9,7 +9,7 @@ from enum import Enum
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import MapFaultIntersection, Slice, MapSlice, FaultIntersection
+from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks, compute_cross_section_fault_intersections
 from .MeshGeneration import generate_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
@@ -282,27 +282,27 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                    int(round(rect['upperRight']['z']))]
         max_dist_proj = max(box.xmax - box.xmin, box.ymax -
                             box.ymin) * RATIO_MAX_DIST_PROJ
-        cross_sections[key], drillhole_lines[key], spring_points[key], matrix_gwb[key] = Slice.output(
-            x_coord, y_coord, z_coord, n_points, model, model.pile.reference == 'base', data, gwb_meshes, max_dist_proj)
-        fault_output['forCrossSections'][key] = FaultIntersection.output(
-            x_coord, y_coord, z_coord, n_points, model)
+        xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, n_points)
+        get_current_profiler().profile('cross_section_grid')
+
+        cross_sections[key] = compute_cross_section_ranks(xyz, n_points, model, topography=True)
+        if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
+            lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
+            upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
+            drillhole_lines[key], spring_points[key], matrix_gwb[key] = project_hydro_features_on_slice(
+                                                                            lower_left, upper_right,
+                                                                            xyz, data.get("springs"), data.get("drillholes"),
+                                                                            gwb_meshes, max_dist_proj)
+        fault_output['forCrossSections'][key] = compute_cross_section_fault_intersections(xyz, n_points, model)
 
     mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
                                             'drillholes': drillhole_lines, 'springs': spring_points, 'matrixGwb': matrix_gwb}
     if data['computeMap']:
-        x_map_range = np.linspace(box.xmin, box.xmax, n_points)
-        y_map_range = np.linspace(box.ymin, box.ymax, n_points)
-        x, y = np.meshgrid(x_map_range, y_map_range)
-        xy = np.stack([x.ravel(), y.ravel()], axis=1)
-        z = model.topography.evaluate_z(xy)
-        xyz = np.column_stack((xy, z))
-        # For some reason the ranking numbers are expected in a different order than the fault numbers
-        # TODO: Align the order of the fault numbers with the ranking numbers or vice versa
-        xyz_reordered = xyz[np.lexsort((xyz[:, 1], xyz[:, 0]))]
+        xyz = compute_map_points(box, n_points, model)
         get_current_profiler().profile('map_grid')
 
-        mesh_output['forMaps'] = MapSlice.output(xyz_reordered, n_points, model)
-        fault_output['forMaps'] = MapFaultIntersection.output(xyz, n_points, model)
+        mesh_output['forMaps'] = compute_cross_section_ranks(xyz, n_points, model, topography=False)
+        fault_output['forMaps'] = compute_cross_section_fault_intersections(xyz, n_points, model)
     get_current_profiler().save_profiler_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
