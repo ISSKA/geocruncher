@@ -9,6 +9,7 @@ task_time_limit = 6 * 60 * 60
 # TODO: also delete associated data
 result_expires = 8 * 60 * 60
 # disable prefetching, since we have long running tasks
+# WARNING: changing this will break the job cancellation system
 worker_prefetch_multiplier = 1
 task_default_queue = 'geocruncher:long_running'
 task_routes = {
