@@ -222,6 +222,20 @@ def poll():
         result[str(_id)] = res.state
     return Response(json.dumps(result, separators=(',', ':')), mimetype="application/json")
 
+@app.post("/revoke")
+def revoke():
+    """Revoke a task by id"""
+    _id = request.args.get('id')
+    if not _id or _id == '':
+        return Response("Missing parameter id", 400, mimetype="text/plain")
+
+    res = celery.AsyncResult(_id)
+    res.revoke(terminate=True, wait=True, timeout=2)
+    if res.state != 'REVOKED':
+        return Response(f"Task {_id} could not be revoked", 500, mimetype="text/plain")
+    else:
+        return Response(f"Task {_id} revoked", 200, mimetype="text/plain")
+
 def main():
     # Development server
     app.run(debug=True, host='0.0.0.0')
