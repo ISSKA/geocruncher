@@ -3,10 +3,10 @@ import numpy as np
 from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
-from .off import generate_off
+from .mesh_io.mesh_io import generate_mesh
 from .profiler.profiler import get_current_profiler
 
-def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> str:
+def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> bytes:
     """Generate a mesh for a tunnel
 
     Args:
@@ -38,9 +38,9 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
             get_current_profiler().profile("project_points")
     triangles = _connect_vertices(len(xy_points), nb_series)
     get_current_profiler().profile("connect_vertices")
-    off_mesh = generate_off(np.array(vertices), np.array(triangles))
+    mesh = generate_mesh(np.array(vertices), np.array(triangles))
     get_current_profiler().profile("generate_off")
-    return off_mesh
+    return mesh
 
 def get_circle_segment(radius, nb_vertices):
     """Get a segment on the xy plane of a circle
