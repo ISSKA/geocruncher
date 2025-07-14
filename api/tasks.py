@@ -22,14 +22,14 @@ def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, ou
     generated_meshes = computations.compute_meshes(data, xml, dem)
 
     # write unit files
-    for rank, off_mesh in generated_meshes['mesh'].items():
+    for rank, mesh in generated_meshes['mesh'].items():
         field = f"rank_{rank}"
-        r.hset(output_key, field, off_mesh)
+        r.hset(output_key, field, mesh)
 
     # write fault files
-    for name, off_mesh in generated_meshes['fault'].items():
+    for name, mesh in generated_meshes['fault'].items():
         field = f"fault_{name}"
-        r.hset(output_key, field, off_mesh)
+        r.hset(output_key, field, mesh)
     return output_key
 
 
@@ -41,10 +41,10 @@ def compute_intersections(data: computations.IntersectionsData, xml_key: str, de
     gwb_meshes = defaultdict(list)
     if 'springs' in data or 'drillholes' in data:
         gwb = r.hgetall(gwb_meshes_key)
-        for name, off_mesh in gwb.items():
+        for name, mesh in gwb.items():
             # Syntax: f"{id}_{subID}"
             gwb_id = name.decode('utf-8').split('_')[0]
-            gwb_meshes[gwb_id].append(off_mesh.decode('utf-8'))
+            gwb_meshes[gwb_id].append(mesh)
         r.delete(gwb_meshes_key)
 
     outputs = computations.compute_intersections(data, xml, dem, gwb_meshes)
@@ -74,9 +74,9 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
     gwb_meshes = defaultdict(list)
     gwb = r.hgetall(gwb_meshes_key)
-    for name, off_mesh in gwb.items():
+    for name, mesh in gwb.items():
         gwb_id = name.decode('utf-8').split('_')[0]  # Syntax: f"{id}_{subID}"
-        gwb_meshes[gwb_id].append(off_mesh.decode('utf-8'))
+        gwb_meshes[gwb_id].append(mesh)
     r.delete(gwb_meshes_key)
 
     voxels = computations.compute_voxels(data, xml, dem, gwb_meshes)
@@ -91,10 +91,16 @@ def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_
     unit_meshes = defaultdict(list)
     stored = r.hgetall(meshes_key)
     for unit_id, mesh in stored.items():
-        unit_meshes[unit_id.decode('utf-8')] = mesh.decode('utf-8')
+        unit_meshes[unit_id.decode('utf-8')] = mesh
     r.delete(meshes_key)
 
-    gwb = computations.compute_gwb_meshes(unit_meshes, data)
+    metadata, meshes = computations.compute_gwb_meshes(unit_meshes, data)
 
-    r.set(output_key, json.dumps(gwb, separators=(',', ':')))
+    # write metadata
+    r.hset(output_key, "metadata", json.dumps(metadata, separators=(',', ':')))
+
+    # write gwb files
+    for unit_id, mesh in meshes.items():
+        r.hset(output_key, unit_id, mesh)
+
     return output_key
