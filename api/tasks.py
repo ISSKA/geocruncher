@@ -61,9 +61,9 @@ def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, ou
     generated_meshes = computations.compute_faults(data, xml, dem)
 
     # write fault files
-    for name, off_mesh in generated_meshes['fault'].items():
+    for name, mesh in generated_meshes['fault'].items():
         field = f"fault_{name}"
-        r.hset(output_key, field, off_mesh)
+        r.hset(output_key, field, mesh)
     return output_key
 
 
