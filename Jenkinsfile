@@ -12,9 +12,12 @@ pipeline {
       }
       steps {
         dir('third_party/draco') {
-          sh 'mkdir -p ../draco_build && cd ../draco_build && ' +
-             'cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install ../draco && ' +
-             'make -j$(nproc) install'
+          sh '''#!/bin/bash --login
+          conda activate geocruncher
+          mkdir -p ../draco_build && cd ../draco_build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install ../draco
+          make -j$(nproc) install
+          '''
         }
         // Archive Draco artifacts for geo-algo stage
         stash name: 'draco_install', includes: 'draco_install/**'
