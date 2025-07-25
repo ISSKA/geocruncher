@@ -7,7 +7,7 @@ RUN pip install gunicorn
 COPY celeryconfig.py /
 
 # Jenkins build artifacts
-COPY geo-algo/VK-Aquifers/build/PyGeoAlgo.* /usr/bin/
+COPY geo-algo/VK-Aquifers/PyGeoAlgo.* /usr/bin/
 COPY \
   dist/geocruncher-*.whl \
   dist/api-*.whl dist/

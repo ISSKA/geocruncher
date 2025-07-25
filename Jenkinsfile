@@ -35,14 +35,12 @@ pipeline {
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
           conda activate geocruncher
-          echo "Checking Draco installation at ${WORKSPACE}/draco_install:"
-          ls -lR ${WORKSPACE}/draco_install
 
-          cmake -B build \
+          cmake \
           -DCMAKE_BUILD_TYPE=Release \
           -DDRACO_INSTALL_DIR=${WORKSPACE}/draco_install \
           .
-          cmake --build build --target PyGeoAlgo
+          cmake --build .
           '''
           sh './viskar-geo-algo runTests'
         }
