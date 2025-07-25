@@ -35,6 +35,7 @@ pipeline {
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
           conda activate geocruncher
+          mkdir -p build
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
           -DDRACO_INSTALL_DIR=${WORKSPACE}/draco_install \
