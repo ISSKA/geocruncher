@@ -4,7 +4,10 @@ project(VK-Aquifers)
 set(CMAKE_CXX_STANDARD 17) # Draco requires C++14+
 
 # Explicit Draco configuration
-set(DRACO_INSTALL_DIR "/opt/draco")
+# Configurable Draco configuration with default
+if(NOT DEFINED DRACO_INSTALL_DIR)
+    set(DRACO_INSTALL_DIR "/opt/draco")
+endif()
 set(DRACO_INCLUDE_DIR "${DRACO_INSTALL_DIR}/include")
 set(DRACO_LIB_DIR "${DRACO_INSTALL_DIR}/lib")
 

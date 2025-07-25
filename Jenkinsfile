@@ -2,6 +2,7 @@ pipeline {
   agent none
   environment {
     DOCKER_BUILDKIT = 1
+    DRACO_INSTALL_DIR = "${WORKSPACE}/draco_install"
   }
   stages {
     stage('draco') {
@@ -15,12 +16,12 @@ pipeline {
           sh '''#!/bin/bash --login
           conda activate geocruncher
           mkdir -p ../draco_build && cd ../draco_build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install ../draco
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${DRACO_INSTALL_DIR} ../draco
           make -j$(nproc) install
           '''
         }
         // Archive Draco artifacts for geo-algo stage
-        stash name: 'draco_install', includes: 'draco_install/**'
+        stash name: 'draco_artifacts', includes: "${DRACO_INSTALL_DIR}/**"
       }
     }
     stage('geo-algo') {
@@ -31,14 +32,13 @@ pipeline {
       }
       steps {
         // Retrieve Draco artifacts
-        unstash 'draco_install'
-        sh 'mkdir -p /opt/draco'
-        sh 'cp -r draco_install/* /opt/draco/'
+        unstash 'draco_artifacts'
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
           conda activate geocruncher
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
+          -DDRACO_INSTALL_DIR=${DRACO_INSTALL_DIR} \
           .
           cmake --build build --target PyGeoAlgo
           '''
