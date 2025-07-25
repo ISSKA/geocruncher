@@ -55,17 +55,14 @@ void FileIO::write_off(std::ostream &file, const Mesh &mesh) {
   }
 }
 
-void FileIO::write_off_to_bytes(const Mesh &mesh, char **out_data,
-                                size_t *out_size) {
+std::vector<char> FileIO::write_off_to_bytes(const Mesh &mesh) {
   // Generate OFF data into a stringstream
   std::stringstream s;
   write_off(s, mesh); // Write OFF format using CGAL's << operator
 
-  // Get the string content and copy to output buffer
+  // Directly construct vector from string (no extra copies)
   std::string off_str = s.str();
-  *out_size = off_str.size();
-  *out_data = new char[*out_size];                   // Allocate memory
-  std::memcpy(*out_data, off_str.data(), *out_size); // Copy data
+  return std::vector<char>(off_str.begin(), off_str.end());
 }
 
 Mesh FileIO::load_draco_from_bytes(const char *draco_data, size_t size) {
@@ -140,8 +137,7 @@ Mesh FileIO::load_draco_from_bytes(const char *draco_data, size_t size) {
   return cgal_mesh;
 }
 
-void FileIO::write_draco_to_bytes(const Mesh &cgal_mesh, char **out_data,
-                                  size_t *out_size) {
+std::vector<char> FileIO::write_draco_to_bytes(const Mesh &cgal_mesh) {
   // Create Draco mesh
   draco::Mesh draco_mesh;
   const size_t num_vertices = cgal_mesh.number_of_vertices();
@@ -194,9 +190,9 @@ void FileIO::write_draco_to_bytes(const Mesh &cgal_mesh, char **out_data,
 
   // Encode mesh to Draco buffer
   draco::Encoder encoder;
-  encoder.SetSpeedOptions(5, 5); // Balanced compression speed vs size
+  encoder.SetSpeedOptions(DRACO_ENCODING_SPEED, DRACO_DECODING_SPEED);
   encoder.SetAttributeQuantization(draco::GeometryAttribute::POSITION,
-                                   14); // 14-bit precision
+                                   DRACO_POSITION_QUANTIZATION_BITS);
 
   draco::EncoderBuffer buffer;
   const draco::Status status = encoder.EncodeMeshToBuffer(draco_mesh, &buffer);
@@ -205,11 +201,12 @@ void FileIO::write_draco_to_bytes(const Mesh &cgal_mesh, char **out_data,
                              std::string(status.error_msg()));
   }
 
-  // Allocate and copy the data (Python will manage this memory via pybind11)
-  *out_size = buffer.size();
-  *out_data =
-      new char[*out_size]; // Python will free this via pybind11's capsule
-  std::memcpy(*out_data, buffer.data(), *out_size);
+  // Efficiently convert to std::vector<char> without extra copies
+  const char *data = buffer.data();
+  const size_t size = buffer.size();
+
+  // Create vector directly from Draco buffer (move semantics)
+  return std::vector<char>(data, data + size);
 }
 
 bool is_off_file(const char *data, size_t size) {
@@ -228,11 +225,11 @@ Mesh FileIO::load_from_bytes(const char *data, size_t size) {
   }
 }
 
-void FileIO::write_to_bytes(const Mesh &mesh, char **out_data, size_t *out_size,
-                            bool use_off = false) {
+std::vector<char> FileIO::write_to_bytes(const Mesh &mesh,
+                                         bool use_off = false) {
   if (use_off) {
-    write_off_to_bytes(mesh, out_data, out_size);
+    return write_off_to_bytes(mesh);
   } else {
-    write_draco_to_bytes(mesh, out_data, out_size);
+    return write_draco_to_bytes(mesh);
   }
 }

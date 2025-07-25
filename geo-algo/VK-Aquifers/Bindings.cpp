@@ -24,16 +24,9 @@ PYBIND11_MODULE(PyGeoAlgo, m) {
             );
         })
         .def_static("write_to_bytes", [](const Mesh &mesh, bool use_off) {
-            char* data = nullptr;
-            size_t size = 0;
-            FileIO::write_to_bytes(mesh, &data, &size, use_off);
-        
-            // Use pybind11's capsule to auto-delete the data when Python is done
-            py::capsule free_when_done(data, [](void* f) {
-                delete[] static_cast<char*>(f);
-            });
-        
-            return py::bytes(data, size);  // Convert to Python bytes
+            const auto& vec = FileIO::write_to_bytes(mesh, use_off);
+            // Convert directly to Python bytes (zero-copy for the view)
+            return py::bytes(vec.data(), vec.size());
         }, py::arg("mesh"), py::arg("use_off") = false);
 
     py::class_<Point_3>(m, "Point_3")
