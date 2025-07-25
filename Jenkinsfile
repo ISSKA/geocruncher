@@ -37,6 +37,7 @@ pipeline {
           conda activate geocruncher
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_PREFIX_PATH=${WORKSPACE}/draco_install
           .
           cmake --build build --target PyGeoAlgo
           '''
