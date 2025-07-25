@@ -32,12 +32,13 @@ pipeline {
       steps {
         // Retrieve Draco artifacts
         unstash 'draco_install'
+        sh 'mkdir -p /opt/draco'
+        sh 'cp -r draco_install/* /opt/draco/'
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
           conda activate geocruncher
           cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_PREFIX_PATH=${WORKSPACE}/draco_install \
           .
           cmake --build build --target PyGeoAlgo
           '''
