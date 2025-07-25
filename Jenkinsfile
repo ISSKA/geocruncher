@@ -13,7 +13,7 @@ pipeline {
       steps {
         dir('third_party/draco') {
           sh 'mkdir -p ../draco_build && cd ../draco_build && ' +
-             'cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install .. && ' +
+             'cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install ../draco && ' +
              'make -j$(nproc) install'
         }
         // Archive Draco artifacts for geo-algo stage
