@@ -58,7 +58,7 @@ class TunnelMeshesData(TypedDict):
     tEnd: float
 
 
-def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, str]:
+def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, bytes]:
     """Compute Tunnel Meshes.
 
     Parameters
@@ -68,8 +68,8 @@ def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, str]:
 
     Returns
     -------
-    dict[str, str]
-        A map from Tunnel name to OFF mesh file.
+    dict[str, bytes]
+        A map from Tunnel name to OFF or Draco mesh file.
     """
     output = {}
     # sub tunnel are a bit bigger to wrap main tunnel
@@ -119,8 +119,8 @@ class MeshesData(TypedDict):
 
 class MeshesResult(TypedDict):
     """Data returned by the meshes computation"""
-    mesh: dict[str, str]
-    fault: dict[str, str]
+    mesh: dict[str, bytes]
+    fault: dict[str, bytes]
 
 
 def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
@@ -138,7 +138,7 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     Returns
     -------
     MeshesResult
-        Dictionnary with mesh, a map from unit ID to OFF mesh file, and fault, a map from fault name to OFF mesh file.
+        Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
     set_current_profiler(VkProfiler(PROFILES['meshes']))
     model = GeologicalModel(extract_project_data(xml, dem))
@@ -228,7 +228,7 @@ class IntersectionsResult(TypedDict):
 RATIO_MAX_DIST_PROJ = 0.2
 
 
-def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshes: dict[str, list[str]]) -> IntersectionsResult:
+def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshes: dict[str, list[bytes]]) -> IntersectionsResult:
     """Compute Intersections.
 
     Parameters
@@ -239,8 +239,8 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
-    gwb_meshes : dict[str, list[str]]
-        A dict from GWB ID to meshes in the OFF format.
+    gwb_meshes : dict[str, list[bytes]]
+        A dict from GWB ID to meshes in the OFF or Draco format.
 
     Returns
     -------
@@ -353,7 +353,7 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     return output
 
 
-def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, list[str]]) -> str:
+def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, list[bytes]]) -> str:
     """Compute Voxels.
 
     Parameters
@@ -413,8 +413,6 @@ class UnitMesh(TypedDict):
 
 class GwbMeshesResult(TypedDict):
     """Data returned by the gwb meshes computation"""
-    # OFF mesh file
-    mesh: str
     # Geological Model Unit ID
     unit_id: int
     # Point of interest ID
@@ -423,13 +421,14 @@ class GwbMeshesResult(TypedDict):
     volume: float
 
 
-def compute_gwb_meshes(unit_meshes: dict[str, str], springs: list[Spring]) -> list[GwbMeshesResult]:
+def compute_gwb_meshes(unit_meshes: dict[str, bytes], springs: list[Spring]) -> tuple[list[GwbMeshesResult], dict[str, bytes]]:
+    """Returns the metadata, then a dict of unit_id to OFF or Draco mesh file"""
     set_current_profiler(VkProfiler(PROFILES['gwb_meshes']))
 
     get_current_profiler()\
         .set_profiler_metadata('num_units', len(unit_meshes))\
         .set_profiler_metadata('num_springs', len(springs))
 
-    output = GeoAlgo.output(unit_meshes, springs)
+    metadata, meshes = GeoAlgo.output(unit_meshes, springs)
     get_current_profiler().save_profiler_results()
-    return output
+    return metadata, meshes

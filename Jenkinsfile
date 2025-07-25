@@ -4,6 +4,29 @@ pipeline {
     DOCKER_BUILDKIT = 1
   }
   stages {
+    stage('draco') {
+      agent {
+        dockerfile {
+          filename 'docker/Dockerfile.build'
+        }
+      }
+      steps {
+        dir('third_party/draco') {
+          sh '''#!/bin/bash --login
+          conda activate geocruncher
+          mkdir -p ../draco_build && cd ../draco_build
+          cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          ../draco
+          make -j$(nproc) install
+          '''
+        }
+        // Archive Draco artifacts for geo-algo stage
+        stash name: 'draco_artifacts', includes: "draco_install/**"
+      }
+    }
     stage('geo-algo') {
       agent {
         dockerfile {
@@ -11,10 +34,16 @@ pipeline {
         }
       }
       steps {
+        // Retrieve Draco artifacts
+        unstash 'draco_artifacts'
         dir('geo-algo/VK-Aquifers') {
           sh '''#!/bin/bash --login
           conda activate geocruncher
-          cmake -DCMAKE_BUILD_TYPE=Release .
+
+          cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DDRACO_INSTALL_DIR=${WORKSPACE}/draco_install \
+          .
           cmake --build .
           '''
           sh './viskar-geo-algo runTests'

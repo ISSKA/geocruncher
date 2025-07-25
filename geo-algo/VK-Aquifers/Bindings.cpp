@@ -13,8 +13,21 @@ PYBIND11_MODULE(PyGeoAlgo, m) {
         .def("calculate", &AquiferCalc::calculate);
 
     py::class_<FileIO>(m, "FileIO")
-        .def_static("load_off_from_string", &FileIO::load_off_from_string)
-        .def_static("write_off_to_string", &FileIO::write_off_to_string);
+        .def_static("load_from_bytes", [](py::buffer buf) {
+            py::buffer_info info = buf.request();
+            if (info.ndim != 1) {
+                throw std::runtime_error("Expected a 1D buffer");
+            }
+            return FileIO::load_from_bytes(
+                static_cast<const char*>(info.ptr), 
+                info.size * info.itemsize
+            );
+        })
+        .def_static("write_to_bytes", [](const Mesh &mesh, bool use_off) {
+            const auto& vec = FileIO::write_to_bytes(mesh, use_off);
+            // Convert directly to Python bytes (zero-copy for the view)
+            return py::bytes(vec.data(), vec.size());
+        }, py::arg("mesh"), py::arg("use_off") = false);
 
     py::class_<Point_3>(m, "Point_3")
         .def(py::init<double, double, double>());
