@@ -15,7 +15,11 @@ pipeline {
           sh '''#!/bin/bash --login
           conda activate geocruncher
           mkdir -p ../draco_build && cd ../draco_build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install ../draco
+          cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=${WORKSPACE}/draco_install \
+          -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          ../draco
           make -j$(nproc) install
           '''
         }
