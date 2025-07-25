@@ -2,10 +2,14 @@ import numpy as np
 import pyvista as pv
 import DracoPy
 
+DRACO_COMPRESSION_LEVEL = 5
+DRACO_QUANTIZATION_BITS = 14
+
 
 def generate_draco(verts: np.array, faces: np.array) -> bytes:
     return DracoPy.encode(verts, faces,
-                          quantization_bits=14, compression_level=5)
+                          quantization_bits=DRACO_QUANTIZATION_BITS,
+                          compression_level=DRACO_COMPRESSION_LEVEL)
 
 
 def read_draco_to_polydata(draco_bytes: bytes) -> pv.PolyData:
