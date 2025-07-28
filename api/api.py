@@ -204,12 +204,13 @@ def compute_gwb_meshes():
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        output = r.get(output_key)
+        meshes_and_metadata = r.hgetall(output_key)
         r.delete(output_key)
-        if not output:
+        if not meshes_and_metadata:
             return Response('', 204, mimetype="text/plain")
 
-        return Response(output.decode('utf-8'), mimetype="application/json")
+        output = filemap_to_tar(meshes_and_metadata)
+        return send_file(output, mimetype="application/x-tar", as_attachment=True, download_name="gwb_meshes.tar")
 
 
 @app.post("/poll")

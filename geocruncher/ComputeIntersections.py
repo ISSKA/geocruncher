@@ -6,7 +6,7 @@ from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler.profiler import get_current_profiler
-from .off import read_off
+from .mesh_io.mesh_io import read_mesh_to_polydata
 
 def compute_vertical_slice_points(
     x_coord: tuple[int, int],
@@ -176,7 +176,7 @@ def project_hydro_features_on_slice(
     xyz: np.ndarray,
     spring_map: dict,
     drillhole_map: dict,
-    gwb_meshes: dict[str, list[str]],
+    gwb_meshes: dict[str, list[bytes]],
     max_dist_proj: float
 ) -> tuple[dict, dict, list]:
     """Project hydrogeological features onto a vertical cross section plane.
@@ -194,7 +194,7 @@ def project_hydro_features_on_slice(
     drillhole_map : dict
         Dictionary of drill hole data with start and end coordinates
     gwb_meshes : dict[str, list[str]]
-        Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF format
+        Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF or Draco format
     max_dist_proj : float
         Maximum projection distance for features
 
@@ -288,8 +288,8 @@ def project_hydro_features_on_slice(
     # Test each point of the cross section against groundwater body meshes
     for gwb_id, meshes in gwb_meshes.items():
         gwb_id_int = int(gwb_id)
-        for mesh_str in meshes:
-            mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
+        for data in meshes:
+            mesh = read_mesh_to_polydata(data)
             inside_points = points_polydata.select_enclosed_points(
                 mesh, tolerance=0.00001)
             selected_points = inside_points["SelectedPoints"].astype(np.uint16)
