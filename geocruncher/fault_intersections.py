@@ -3,11 +3,12 @@ import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
 from .profiler.profiler import get_current_profiler
 
-CLIP_VALUE = None
+CLIP_VALUE = np.nan
 
 
 class FaultIntersector:
     """Inspired by gmlib FaultTesselator"""
+
     def __init__(self, grid_points, n_points, model):
         self.grid_points = grid_points
         self.n_points = n_points
@@ -107,7 +108,9 @@ class FaultIntersector:
         # Prepare output: transpose and convert to list
         for name, potential in fault_potentials.items():
             transposed = np.transpose(potential)
-            fault_potentials[name] = transposed.tolist()
+            # Setting the values to None directly doesn't work, so we use np.nan and replace it all with None at the end
+            fault_potentials[name] = np.where(
+                np.isnan(transposed), None, transposed).tolist()
 
         get_current_profiler().profile('fault_cross_section_tesselate')
         return fault_potentials
