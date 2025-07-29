@@ -132,44 +132,6 @@ def compute_cross_section_ranks(
     return ranks
 
 
-def compute_cross_section_fault_intersections(
-    xyz: np.ndarray,
-    n_points: int,
-    model: GeologicalModel
-) -> dict:
-    """Compute fault intersections on a top-down or vertical geological cross section.
-
-    Parameters
-    ----------
-    xyz : np.ndarray
-        Array of 3D coordinates where fault values will be evaluated, shape (n_points^2, 3)
-    n_points : int
-        Number of points in each dimension of the output grid
-    model : gmlib.GeologicalModel3D.GeologicalModel
-        GeologicalModel from gmlib containing the faults data
-
-    Returns
-    -------
-    dict
-        Dictionary mapping fault names to lists of intersection values,
-        reshaped to (n_points, n_points).
-    
-    Notes
-    -----
-    The order of the intersection values are transposed compared to the rank matrix. This is
-    because VISKAR expects these values in transposed order.
-    """
-    output = {}
-    for name, fault in model.faults.items():
-        colored_points = fault(xyz)
-        colored_points = colored_points.reshape(n_points, n_points)
-        # VISKAR expects these points in transposed order
-        # compared to the rank matrix
-        transposed_points = np.transpose(colored_points)
-        output[name] = transposed_points.tolist()
-    get_current_profiler().profile('fault_cross_section_tesselate')
-    return output
-
 def project_hydro_features_on_slice(
     lower_left: np.ndarray,
     upper_right: np.ndarray,
