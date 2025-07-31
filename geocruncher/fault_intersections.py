@@ -9,9 +9,9 @@ CLIP_VALUE = np.nan
 class FaultIntersector:
     """Inspired by gmlib FaultTesselator"""
 
-    def __init__(self, grid_points: np.ndarray, n_points: int, model: GeologicalModel):
+    def __init__(self, grid_points: np.ndarray, resolution: tuple[int, int], model: GeologicalModel):
         self._grid_points = grid_points
-        self._n_points = n_points
+        self._resolution = resolution
         self._model = model
         self._topography = self._intersect_topography()
 
@@ -53,15 +53,15 @@ class FaultIntersector:
         return topography
 
     def intersect(self) -> dict:
-        n = self._n_points
-        topography_2d = self._topography.reshape(n, n)
+        res = self._resolution
+        topography_2d = self._topography.reshape(res)
 
         model = self._model
         fault_potentials = {}
 
         # Evaluate all faults upfront
         for name, field in model.faults.items():
-            fault_potentials[name] = field(self._grid_points).reshape(n, n)
+            fault_potentials[name] = field(self._grid_points).reshape(res)
 
         # Process each fault in dependency order
         for name in self._sort_faults():
@@ -100,7 +100,7 @@ class FaultIntersector:
             if not fault_data.infinite:
                 ellipsoid = model.fault_ellipsoids.get(name)
                 if ellipsoid:
-                    E = ellipsoid(self._grid_points).reshape(n, n)
+                    E = ellipsoid(self._grid_points).reshape(res)
                     if np.any(E):
                         # Set outside ellipsoid to None
                         potential[E > 0] = CLIP_VALUE
@@ -118,7 +118,7 @@ class FaultIntersector:
 
 def compute_fault_intersections(
     grid_points: np.ndarray,
-    n_points: int,
+    resolution: tuple[int, int],
     model: GeologicalModel
 ) -> dict:
     """Compute fault intersections on a top-down or vertical geological cross section.
@@ -127,8 +127,8 @@ def compute_fault_intersections(
     ----------
     xyz : np.ndarray
         Array of 3D coordinates where fault values will be evaluated, shape (n_points^2, 3)
-    n_points : int
-        Number of points in each dimension of the output grid
+    resolution : tuple[int, int]
+        x is the width resolution, y is the height resolution.
     model : gmlib.GeologicalModel3D.GeologicalModel
         GeologicalModel from gmlib containing the faults data
 
@@ -136,12 +136,12 @@ def compute_fault_intersections(
     -------
     dict
         Dictionary mapping fault names to lists of intersection values,
-        reshaped to (n_points, n_points).
+        reshaped to resolution.
 
     Notes
     -----
     The order of the intersection values are transposed compared to the rank matrix. This is
     because VISKAR expects these values in transposed order.
     """
-    intersector = FaultIntersector(grid_points, n_points, model)
+    intersector = FaultIntersector(grid_points, resolution, model)
     return intersector.intersect()
