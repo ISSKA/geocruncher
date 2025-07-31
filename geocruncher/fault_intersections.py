@@ -9,25 +9,25 @@ CLIP_VALUE = np.nan
 class FaultIntersector:
     """Inspired by gmlib FaultTesselator"""
 
-    def __init__(self, grid_points, n_points, model):
-        self.grid_points = grid_points
-        self.n_points = n_points
-        self.model = model
-        self.topography = self._intersect_topography()
+    def __init__(self, grid_points: np.ndarray, n_points: int, model: GeologicalModel):
+        self._grid_points = grid_points
+        self._n_points = n_points
+        self._model = model
+        self._topography = self._intersect_topography()
 
-    def _sort_faults(self):
+    def _sort_faults(self) -> list[str]:
         """
         Will sort faults from the most subordinated to the major ones.
         There is only a partial order relation between faults.
         """
         # find the faults that a given fault limits (reverse of stops on)
         fault_limits = defaultdict(set)
-        for name, fault_data in self.model.faults_data.items():
+        for name, fault_data in self._model.faults_data.items():
             fault_limits[name].update(set())
             for limit in fault_data.stops_on:
                 fault_limits[limit].add(name)
         sorted_faults = []
-        faults = set(self.model.faults.keys())
+        faults = set(self._model.faults.keys())
         while len(faults) > 0:
             subordinated_faults = set(
                 fault for fault, limits in fault_limits.items() if len(limits) == 0
@@ -41,27 +41,27 @@ class FaultIntersector:
         return sorted_faults
 
     def _intersect_topography(self):
-        model = self.model
+        model = self._model
 
         if hasattr(model.topography, 'z') and isinstance(model.topography.z, float):
             # Horizontal plane case: potential = point.z - plane.z
-            topography = self.grid_points[:, 2] - model.topography.z
+            topography = self._grid_points[:, 2] - model.topography.z
         else:
             # Evaluate actual topography function
-            topography = model.topography(self.grid_points)
+            topography = model.topography(self._grid_points)
 
         return topography
 
-    def intersect(self):
-        n = self.n_points
-        topography_2d = self.topography.reshape(n, n)
+    def intersect(self) -> dict:
+        n = self._n_points
+        topography_2d = self._topography.reshape(n, n)
 
-        model = self.model
+        model = self._model
         fault_potentials = {}
 
         # Evaluate all faults upfront
         for name, field in model.faults.items():
-            fault_potentials[name] = field(self.grid_points).reshape(n, n)
+            fault_potentials[name] = field(self._grid_points).reshape(n, n)
 
         # Process each fault in dependency order
         for name in self._sort_faults():
@@ -100,7 +100,7 @@ class FaultIntersector:
             if not fault_data.infinite:
                 ellipsoid = model.fault_ellipsoids.get(name)
                 if ellipsoid:
-                    E = ellipsoid(self.grid_points).reshape(n, n)
+                    E = ellipsoid(self._grid_points).reshape(n, n)
                     if np.any(E):
                         # Set outside ellipsoid to None
                         potential[E > 0] = CLIP_VALUE
