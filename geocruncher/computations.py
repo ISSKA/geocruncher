@@ -285,7 +285,7 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         x_extent = x_coord[1] - x_coord[0]
         y_extent = y_coord[1] - y_coord[0]
         width = math.sqrt(x_extent ** 2 + y_extent ** 2)
-        height = z_coord[1] - z_coord[0]
+        height = abs(z_coord[1] - z_coord[0])
         resolution = calculate_resolution(width, height, data['resolution'])
         xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, resolution)
         get_current_profiler().profile('cross_section_grid')
