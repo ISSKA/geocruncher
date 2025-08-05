@@ -4,12 +4,13 @@
 """
 
 import numpy as np
+import math
 from typing import TypedDict
 from enum import Enum
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks
+from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks, calculate_resolution
 from .fault_intersections import compute_fault_intersections
 from .MeshGeneration import generate_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
@@ -256,8 +257,6 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
     fault_output: FaultIntersectionsResult = {
         'forCrossSections': {}, 'forMaps': {}}
 
-    n_points = data['resolution']
-
     get_current_profiler()\
         .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
         .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
@@ -265,7 +264,7 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
         .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
         .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
-        .set_profiler_metadata('resolution', n_points)\
+        .set_profiler_metadata('resolution', data['resolution'])\
         .set_profiler_metadata('num_sections', len(data['toCompute']))\
         .set_profiler_metadata('compute_map', data['computeMap'])\
         .set_profiler_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
@@ -283,10 +282,15 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                    int(round(rect['upperRight']['z']))]
         max_dist_proj = max(box.xmax - box.xmin, box.ymax -
                             box.ymin) * RATIO_MAX_DIST_PROJ
-        xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, n_points)
+        x_extent = x_coord[1] - x_coord[0]
+        y_extent = y_coord[1] - y_coord[0]
+        width = math.sqrt(x_extent ** 2 + y_extent ** 2)
+        height = abs(z_coord[1] - z_coord[0])
+        resolution = calculate_resolution(width, height, data['resolution'])
+        xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, resolution)
         get_current_profiler().profile('cross_section_grid')
 
-        cross_sections[key] = compute_cross_section_ranks(xyz, n_points, model, topography=True)
+        cross_sections[key] = compute_cross_section_ranks(xyz, resolution, model, topography=True)
         if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
             lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
             upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
@@ -294,16 +298,19 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                                                                             lower_left, upper_right,
                                                                             xyz, data.get("springs"), data.get("drillholes"),
                                                                             gwb_meshes, max_dist_proj)
-        fault_output['forCrossSections'][key] = compute_fault_intersections(xyz, n_points, model)
+        fault_output['forCrossSections'][key] = compute_fault_intersections(xyz, resolution, model)
 
     mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
                                             'drillholes': drillhole_lines, 'springs': spring_points, 'matrixGwb': matrix_gwb}
     if data['computeMap']:
-        xyz = compute_map_points(box, n_points, model)
+        width = box.xmax - box.xmin
+        height = box.ymax - box.ymin
+        resolution = calculate_resolution(width, height, data['resolution'])
+        xyz = compute_map_points(box, resolution, model)
         get_current_profiler().profile('map_grid')
 
-        mesh_output['forMaps'] = compute_cross_section_ranks(xyz, n_points, model, topography=False)
-        fault_output['forMaps'] = compute_fault_intersections(xyz, n_points, model)
+        mesh_output['forMaps'] = compute_cross_section_ranks(xyz, resolution, model, topography=False)
+        fault_output['forMaps'] = compute_fault_intersections(xyz, resolution, model)
     get_current_profiler().save_profiler_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
