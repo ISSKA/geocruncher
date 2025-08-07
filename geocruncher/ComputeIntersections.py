@@ -22,12 +22,17 @@ def calculate_resolution(width: float, height: float, res: int) -> tuple[int, in
     Returns:
         Tuple[int, int]: New (width, height) where one dimension equals `res`.
     """
+    if width <= 0 and height <= 0:
+        raise ValueError("Both width and height must be positive.")
+    if width == 0 or height == 0:
+        # edge case for drillhole-style slices where width is zero
+        return (res, res)
     if width >= height:
         new_width = res
         new_height = int(round(height * (res / width)))
     else:
-        new_height = res
         new_width = int(round(width * (res / height)))
+        new_height = res
     return (new_width, new_height)
 
 def compute_vertical_slice_points(

@@ -294,6 +294,14 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
             lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
             upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
+
+            # fix for drillholes slices where lower_left and upper_right are the same (except in z)
+            if lower_left[0] == upper_right[0] and lower_left[1] == upper_right[1]:
+                lower_left[0] -= 1
+                upper_right[0] += 1
+                lower_left[1] -= 1
+                upper_right[1] += 1
+
             drillhole_lines[key], spring_points[key], matrix_gwb[key] = project_hydro_features_on_slice(
                                                                             lower_left, upper_right,
                                                                             xyz, data.get("springs"), data.get("drillholes"),
