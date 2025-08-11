@@ -7,7 +7,7 @@ from skimage.measure import marching_cubes
 from gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from gmlib.utils.tools import BBox3
 
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 from .off import generate_off
 
 # Constants
@@ -64,7 +64,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
     num_ranks = len(rank_values)
     out_files = {"mesh": {}, "fault": {}}
 
-    get_current_profiler().profile('ranks')
+    profile_step('ranks')
 
     # to close bodies, we put them in a slightly bigger grid
     extended_shape = tuple(n + 2 for n in shape)
@@ -83,7 +83,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
         volume = np.zeros(extended_shape, dtype=np.float32)
         volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
 
-        get_current_profiler().profile('volume')
+        profile_step('volume')
 
         # Using the lewiner variant leads to holes in the meshes which CGAL cannot handle
         # (Produces an error when reading the OFF in geo-algo/VK-Aquifers)
@@ -91,13 +91,13 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
         verts, faces = marching_cubes(
             volume, level=0.5, gradient_direction='ascent', method='lorensen')[:2]
         mesh = rescale_to_grid(verts, box, shape)
-        get_current_profiler().profile('marching_cubes')
+        profile_step('marching_cubes')
 
         # FIXME @lopez use pycgal on next line to extract verts and faces
         # we have our own "off" generation for now, because of precision issues with the CGAL implementation. Do not replace that for now
         off_mesh = generate_off(mesh, faces)
         out_files["mesh"][str(rank_id)] = off_mesh
-        get_current_profiler().profile('generate_off')
+        profile_step('generate_off')
 
     if len(model.faults.items()) > 0:
         # don't waste time generating faults if there are none
@@ -111,7 +111,7 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), box: B
     box = box or model.getbox()
     faults = tesselate_faults(box, shape, model)
 
-    get_current_profiler().profile('tesselate_faults')
+    profile_step('tesselate_faults')
 
     out_files = {}
     for name, fault in faults.items():
@@ -119,5 +119,5 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), box: B
             fault_arr = fault.as_arrays()
             off_mesh = generate_off(fault_arr[0], fault_arr[1][0])
             out_files[name] = off_mesh
-            get_current_profiler().profile('generate_off')
+            profile_step('generate_off')
     return out_files

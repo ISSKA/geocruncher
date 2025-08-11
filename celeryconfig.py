@@ -17,3 +17,5 @@ task_routes = {
 }
 broker_connection_retry_on_startup = True
 task_track_started = True
+task_send_sent_event = True
+worker_send_task_events = True

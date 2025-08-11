@@ -4,7 +4,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from sympy import diff, symbols
 import scipy.integrate as integrate
 from .off import generate_off
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 
 def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> str:
     """Generate a mesh for a tunnel
@@ -27,19 +27,19 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
         dfy = diff(fy, t)
         fz = parse_expr(f["z"].replace("^", "**"))
         dfz = diff(fz, t)
-        get_current_profiler().profile("sympy_parse_diff_function")
+        profile_step("sympy_parse_diff_function")
         for i in np.arange(tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step):
             normal = np.array([float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))])
             bottom = np.array([float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))])
-            get_current_profiler().profile("interpolate_function")
+            profile_step("interpolate_function")
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
             nb_series += 1
-            get_current_profiler().profile("project_points")
+            profile_step("project_points")
     triangles = _connect_vertices(len(xy_points), nb_series)
-    get_current_profiler().profile("connect_vertices")
+    profile_step("connect_vertices")
     off_mesh = generate_off(np.array(vertices), np.array(triangles))
-    get_current_profiler().profile("generate_off")
+    profile_step("generate_off")
     return off_mesh
 
 def get_circle_segment(radius, nb_vertices):
