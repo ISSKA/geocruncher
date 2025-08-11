@@ -259,19 +259,20 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         'forCrossSections': {}, 'forMaps': {}}
 
     get_current_profiler()\
-        .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
-        .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
-        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
-        .set_profiler_metadata('resolution', data['resolution'])\
-        .set_profiler_metadata('num_sections', len(data['toCompute']))\
-        .set_profiler_metadata('compute_map', data['computeMap'])\
-        .set_profiler_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
-        .set_profiler_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
-        .set_profiler_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
-        .profile('load_model')
+        .set_metadata('num_series', MetadataHelpers.num_series(model))\
+        .set_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
+        .set_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
+        .set_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
+        .set_metadata('resolution', data['resolution'])\
+        .set_metadata('num_sections', len(data['toCompute']))\
+        .set_metadata('compute_map', data['computeMap'])\
+        .set_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
+        .set_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
+        .set_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
+
+    profile_step('load_model')
 
     for key, rect in data['toCompute'].items():
         # TODO: use this format directly to avoid converting
