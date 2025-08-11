@@ -4,12 +4,14 @@
 """
 
 import numpy as np
+import math
 from typing import TypedDict
 from enum import Enum
 from gmlib.GeologicalModel3D import GeologicalModel
 from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks, compute_cross_section_fault_intersections
+from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks, calculate_resolution
+from .fault_intersections import compute_fault_intersections
 from .MeshGeneration import generate_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
@@ -58,7 +60,7 @@ class TunnelMeshesData(TypedDict):
     tEnd: float
 
 
-def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, str]:
+def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, bytes]:
     """Compute Tunnel Meshes.
 
     Parameters
@@ -68,8 +70,8 @@ def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, str]:
 
     Returns
     -------
-    dict[str, str]
-        A map from Tunnel name to OFF mesh file.
+    dict[str, bytes]
+        A map from Tunnel name to OFF or Draco mesh file.
     """
     output = {}
     # sub tunnel are a bit bigger to wrap main tunnel
@@ -119,8 +121,8 @@ class MeshesData(TypedDict):
 
 class MeshesResult(TypedDict):
     """Data returned by the meshes computation"""
-    mesh: dict[str, str]
-    fault: dict[str, str]
+    mesh: dict[str, bytes]
+    fault: dict[str, bytes]
 
 
 def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
@@ -138,7 +140,7 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     Returns
     -------
     MeshesResult
-        Dictionnary with mesh, a map from unit ID to OFF mesh file, and fault, a map from fault name to OFF mesh file.
+        Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
     set_profiler(PROFILES['meshes'])
     model = GeologicalModel(extract_project_data(xml, dem))
@@ -229,7 +231,7 @@ class IntersectionsResult(TypedDict):
 RATIO_MAX_DIST_PROJ = 0.2
 
 
-def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshes: dict[str, list[str]]) -> IntersectionsResult:
+def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshes: dict[str, list[bytes]]) -> IntersectionsResult:
     """Compute Intersections.
 
     Parameters
@@ -240,8 +242,8 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
-    gwb_meshes : dict[str, list[str]]
-        A dict from GWB ID to meshes in the OFF format.
+    gwb_meshes : dict[str, list[bytes]]
+        A dict from GWB ID to meshes in the OFF or Draco format.
 
     Returns
     -------
@@ -256,23 +258,20 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
     fault_output: FaultIntersectionsResult = {
         'forCrossSections': {}, 'forMaps': {}}
 
-    n_points = data['resolution']
-
     get_current_profiler()\
-        .set_metadata('num_series', MetadataHelpers.num_series(model))\
-        .set_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
-        .set_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
-        .set_metadata('resolution', n_points)\
-        .set_metadata('num_sections', len(data['toCompute']))\
-        .set_metadata('compute_map', data['computeMap'])\
-        .set_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
-        .set_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
-        .set_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
-
-    profile_step('load_model')
+        .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
+        .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
+        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
+        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
+        .set_profiler_metadata('resolution', data['resolution'])\
+        .set_profiler_metadata('num_sections', len(data['toCompute']))\
+        .set_profiler_metadata('compute_map', data['computeMap'])\
+        .set_profiler_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
+        .set_profiler_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
+        .set_profiler_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
+        .profile('load_model')
 
     for key, rect in data['toCompute'].items():
         # TODO: use this format directly to avoid converting
@@ -284,27 +283,43 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
                    int(round(rect['upperRight']['z']))]
         max_dist_proj = max(box.xmax - box.xmin, box.ymax -
                             box.ymin) * RATIO_MAX_DIST_PROJ
-        xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, n_points)
+        x_extent = x_coord[1] - x_coord[0]
+        y_extent = y_coord[1] - y_coord[0]
+        width = math.sqrt(x_extent ** 2 + y_extent ** 2)
+        height = abs(z_coord[1] - z_coord[0])
+        resolution = calculate_resolution(width, height, data['resolution'])
+        xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, resolution)
         profile_step('cross_section_grid')
 
-        cross_sections[key] = compute_cross_section_ranks(xyz, n_points, model, topography=True)
+        cross_sections[key] = compute_cross_section_ranks(xyz, resolution, model, topography=True)
         if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
             lower_left = np.array([x_coord[0], y_coord[0], z_coord[0]])
             upper_right = np.array([x_coord[1], y_coord[1], z_coord[1]])
+
+            # fix for drillholes slices where lower_left and upper_right are the same (except in z)
+            if lower_left[0] == upper_right[0] and lower_left[1] == upper_right[1]:
+                lower_left[0] -= 1
+                upper_right[0] += 1
+                lower_left[1] -= 1
+                upper_right[1] += 1
+
             drillhole_lines[key], spring_points[key], matrix_gwb[key] = project_hydro_features_on_slice(
                                                                             lower_left, upper_right,
                                                                             xyz, data.get("springs"), data.get("drillholes"),
                                                                             gwb_meshes, max_dist_proj)
-        fault_output['forCrossSections'][key] = compute_cross_section_fault_intersections(xyz, n_points, model)
+        fault_output['forCrossSections'][key] = compute_fault_intersections(xyz, resolution, model)
 
     mesh_output: MeshIntersectionsResult = {'forCrossSections': cross_sections,
                                             'drillholes': drillhole_lines, 'springs': spring_points, 'matrixGwb': matrix_gwb}
     if data['computeMap']:
-        xyz = compute_map_points(box, n_points, model)
+        width = box.xmax - box.xmin
+        height = box.ymax - box.ymin
+        resolution = calculate_resolution(width, height, data['resolution'])
+        xyz = compute_map_points(box, resolution, model)
         profile_step('map_grid')
 
-        mesh_output['forMaps'] = compute_cross_section_ranks(xyz, n_points, model, topography=False)
-        fault_output['forMaps'] = compute_cross_section_fault_intersections(xyz, n_points, model)
+        mesh_output['forMaps'] = compute_cross_section_ranks(xyz, resolution, model, topography=False)
+        fault_output['forMaps'] = compute_fault_intersections(xyz, resolution, model)
     get_current_profiler().save_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
@@ -356,7 +371,7 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     return output
 
 
-def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, list[str]]) -> str:
+def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, list[bytes]]) -> str:
     """Compute Voxels.
 
     Parameters
@@ -417,8 +432,6 @@ class UnitMesh(TypedDict):
 
 class GwbMeshesResult(TypedDict):
     """Data returned by the gwb meshes computation"""
-    # OFF mesh file
-    mesh: str
     # Geological Model Unit ID
     unit_id: int
     # Point of interest ID
@@ -427,13 +440,14 @@ class GwbMeshesResult(TypedDict):
     volume: float
 
 
-def compute_gwb_meshes(unit_meshes: dict[str, str], springs: list[Spring]) -> list[GwbMeshesResult]:
+def compute_gwb_meshes(unit_meshes: dict[str, bytes], springs: list[Spring]) -> tuple[list[GwbMeshesResult], dict[str, bytes]]:
+    """Returns the metadata, then a dict of unit_id to OFF or Draco mesh file"""
     set_profiler(PROFILES['gwb_meshes'])
 
     get_current_profiler()\
         .set_metadata('num_units', len(unit_meshes))\
         .set_metadata('num_springs', len(springs))
 
-    output = GeoAlgo.output(unit_meshes, springs)
+    metadata, meshes = GeoAlgo.output(unit_meshes, springs)
     get_current_profiler().save_results()
-    return output
+    return metadata, meshes

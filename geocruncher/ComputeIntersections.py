@@ -6,13 +6,40 @@ from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler import profile_step
-from .off import read_off
+from .mesh_io.mesh_io import read_mesh_to_polydata
+
+def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
+    """Calculates a proportional resolution where the larger dimension matches `res`.
+    
+    The smaller dimension is scaled to maintain the original aspect ratio, with rounding
+    to the nearest integer.
+
+    Args:
+        width: Original width (float, accepts non-integer ratios).
+        height: Original height (float, accepts non-integer ratios).
+        res: Target resolution (int) for the larger dimension.
+
+    Returns:
+        Tuple[int, int]: New (width, height) where one dimension equals `res`.
+    """
+    if width <= 0 and height <= 0:
+        raise ValueError("Both width and height must be positive.")
+    if width == 0 or height == 0:
+        # edge case for drillhole-style slices where width is zero
+        return (res, res)
+    if width >= height:
+        new_width = res
+        new_height = int(round(height * (res / width)))
+    else:
+        new_width = int(round(width * (res / height)))
+        new_height = res
+    return (new_width, new_height)
 
 def compute_vertical_slice_points(
     x_coord: tuple[int, int],
     y_coord: tuple[int, int],
     z_coord: tuple[int, int],
-    n_points: int
+    resolution: tuple[int, int]
 ) -> np.ndarray:
     """Calculate 3D points along a vertical slice plane.
 
@@ -24,13 +51,13 @@ def compute_vertical_slice_points(
         Start and end y-coordinates of the slice line.
     z_coord : tuple[int, int]
         Start and end z-coordinates defining the vertical range of the slice.
-    n_points : int
-        Number of points to generate along each dimension.
+    resolution : tuple[int, int]
+        Width resolution and Height resolution.
 
     Returns
     -------
     np.ndarray
-        Array of shape (n_points^2, 3) containing the (x, y, z) coordinates of points
+        Array of shape (resolution[0]*resolution[1], 3) containing the (x, y, z) coordinates of points
         in the slice plane.
 
     Notes
@@ -39,37 +66,36 @@ def compute_vertical_slice_points(
     start and end coordinates. For y-axis-aligned slices, x remains constant
     while y varies linearly.
     """
-
-    z_slice_range = np.linspace(z_coord[0], z_coord[1], n_points)
+    z_slice_range = np.linspace(z_coord[0], z_coord[1], resolution[1])
 
     if not x_coord[0] == x_coord[1]:
-        x_slice_range = np.linspace(x_coord[0], x_coord[1], n_points)
+        x_slice_range = np.linspace(x_coord[0], x_coord[1], resolution[0])
         slope = (y_coord[0] - y_coord[1]) / (x_coord[0] - x_coord[1])
         z, x = np.meshgrid(z_slice_range, x_slice_range)
         y = slope * (x - x_coord[0]) + y_coord[0]
     else:
-        y_slice_range = np.linspace(y_coord[0], y_coord[1], n_points)
+        y_slice_range = np.linspace(y_coord[0], y_coord[1], resolution[0])
         z, y = np.meshgrid(z_slice_range, y_slice_range)
         x = np.full_like(y, x_coord[0])
     xyz = np.stack((x.ravel(), y.ravel(), z.ravel()), axis=-1)
     return xyz
 
-def compute_map_points(box: Box, n_points: int, model: GeologicalModel) -> np.ndarray:
+def compute_map_points(box: Box, resolution: tuple[int, int], model: GeologicalModel) -> np.ndarray:
     """Compute points for a top-down geological cross section.
 
     Parameters
     ----------
     box : Box
         The bounding box of the geological model.
-    n_points : int
-        Number of points in each dimension of the map cross section.
+    resolution : tuple[int, int]
+        Width resolution and Height resolution.
     model : gmlib.GeologicalModel3D.GeologicalModel
         The GeologicalModel from gmlib to use for the topography evaluation.
     
     Returns
     -------
     np.ndarray
-        A numpy array of shape (n_points^2, 3) containing the (x, y, z) coordinates of the points.
+        A numpy array of shape (resolution[0]*resolution[1], 3) containing the (x, y, z) coordinates of the points.
     
     Notes
     -----
@@ -77,8 +103,8 @@ def compute_map_points(box: Box, n_points: int, model: GeologicalModel) -> np.nd
     The returned points are ordered in a grid pattern, sorted by x, then y.
     """
 
-    x_map_range = np.linspace(box.xmin, box.xmax, n_points)
-    y_map_range = np.linspace(box.ymin, box.ymax, n_points)
+    x_map_range = np.linspace(box.xmin, box.xmax, resolution[0])
+    y_map_range = np.linspace(box.ymin, box.ymax, resolution[1])
     y, x = np.meshgrid(y_map_range, x_map_range)
     xy = np.stack([x.ravel(), y.ravel()], axis=1)
     z = model.topography.evaluate_z(xy)
@@ -87,7 +113,7 @@ def compute_map_points(box: Box, n_points: int, model: GeologicalModel) -> np.nd
 
 def compute_cross_section_ranks(
     xyz: np.ndarray,
-    n_points: int,
+    resolution: tuple[int, int],
     model: GeologicalModel,
     topography: bool = False
 ) -> list:
@@ -96,9 +122,9 @@ def compute_cross_section_ranks(
     Parameters
     ----------
     xyz : np.ndarray
-       Array of 3D coordinates where the ranks will be evaluated, shape (n_points^2, 3)
-    n_points : int
-        Number of points in each dimension of the cross section.
+       Array of 3D coordinates where the ranks will be evaluated, shape (resolution[0]*resolution[1], 3)
+    resolution : tuple[int, int]
+        x is the width resolution, y is the height resolution.
     model : gmlib.GeologicalModel3D.GeologicalModel
         The GeologicalModel from gmlib to use for the formation rank evaluation.
     topography : bool, optional
@@ -108,7 +134,7 @@ def compute_cross_section_ranks(
     Returns
     -------
     list
-        A list of ranks after evaluation, reshaped to (n_points, n_points).
+        A list of ranks after evaluation, reshaped to resolution.
 
     Notes
     -----
@@ -126,49 +152,11 @@ def compute_cross_section_ranks(
     rank_offset = -1 if is_base else 0
 
     ranks = evaluator(xyz) + rank_offset
-    ranks.shape = (n_points, n_points)
+    ranks.shape = resolution
     ranks = ranks.tolist()
     profile_step('cross_section_ranks')
     return ranks
 
-
-def compute_cross_section_fault_intersections(
-    xyz: np.ndarray,
-    n_points: int,
-    model: GeologicalModel
-) -> dict:
-    """Compute fault intersections on a top-down or vertical geological cross section.
-
-    Parameters
-    ----------
-    xyz : np.ndarray
-        Array of 3D coordinates where fault values will be evaluated, shape (n_points^2, 3)
-    n_points : int
-        Number of points in each dimension of the output grid
-    model : gmlib.GeologicalModel3D.GeologicalModel
-        GeologicalModel from gmlib containing the faults data
-
-    Returns
-    -------
-    dict
-        Dictionary mapping fault names to lists of intersection values,
-        reshaped to (n_points, n_points).
-    
-    Notes
-    -----
-    The order of the intersection values are transposed compared to the rank matrix. This is
-    because VISKAR expects these values in transposed order.
-    """
-    output = {}
-    for name, fault in model.faults.items():
-        colored_points = fault(xyz)
-        colored_points = colored_points.reshape(n_points, n_points)
-        # VISKAR expects these points in transposed order
-        # compared to the rank matrix
-        transposed_points = np.transpose(colored_points)
-        output[name] = transposed_points.tolist()
-    profile_step('fault_cross_section_tesselate')
-    return output
 
 def project_hydro_features_on_slice(
     lower_left: np.ndarray,
@@ -176,7 +164,7 @@ def project_hydro_features_on_slice(
     xyz: np.ndarray,
     spring_map: dict,
     drillhole_map: dict,
-    gwb_meshes: dict[str, list[str]],
+    gwb_meshes: dict[str, list[bytes]],
     max_dist_proj: float
 ) -> tuple[dict, dict, list]:
     """Project hydrogeological features onto a vertical cross section plane.
@@ -194,7 +182,7 @@ def project_hydro_features_on_slice(
     drillhole_map : dict
         Dictionary of drill hole data with start and end coordinates
     gwb_meshes : dict[str, list[str]]
-        Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF format
+        Dictionary containing groundwater body IDs and their corresponding mesh strings in OFF or Draco format
     max_dist_proj : float
         Maximum projection distance for features
 
@@ -288,8 +276,8 @@ def project_hydro_features_on_slice(
     # Test each point of the cross section against groundwater body meshes
     for gwb_id, meshes in gwb_meshes.items():
         gwb_id_int = int(gwb_id)
-        for mesh_str in meshes:
-            mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
+        for data in meshes:
+            mesh = read_mesh_to_polydata(data)
             inside_points = points_polydata.select_enclosed_points(
                 mesh, tolerance=0.00001)
             selected_points = inside_points["SelectedPoints"].astype(np.uint16)

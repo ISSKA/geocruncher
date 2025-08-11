@@ -1,3 +1,6 @@
 [submodule "geocruncher-dist"]
 	path = geocruncher-dist
 	url = https://github.com/ISSKA/geocruncher-dist
+[submodule "third_party/draco"]
+	path = third_party/draco
+	url = https://github.com/google/draco

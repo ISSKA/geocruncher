@@ -6,11 +6,11 @@ from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler import profile_step
-from .off import read_off
+from .mesh_io.mesh_io import read_mesh_to_polydata
 
 class Voxels:
     @staticmethod
-    def output(model: GeologicalModel, shape: (int, int, int), box: Box, gwb_meshes: dict[str, list[str]]) -> str:
+    def output(model: GeologicalModel, shape: (int, int, int), box: Box, gwb_meshes: dict[str, list[bytes]]) -> str:
         # we use numpy meshgrid to produce a regular grid
         # the output is a list containing a 3D array for each coordinate
         # if we want an evaluation on the center of the voxels
@@ -34,8 +34,8 @@ class Voxels:
 
         gwb_tags = [0] * xyz.shape[0]
         for gwb_id, meshes in gwb_meshes.items():
-            for mesh_str in meshes:
-                mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
+            for mesh_data in meshes:
+                mesh = read_mesh_to_polydata(mesh_data)
                 points = pv.PolyData(xyz)
                 profile_step('read_gwbs')
 
@@ -55,7 +55,7 @@ class Voxels:
 
         ranks_tags = list(zip(ranks, gwb_tags))
 
-        # We sort the arrays in reverse-nested loop order where z ist the outer loop, y the middle and x the inner loop
+        # We sort the arrays in reverse-nested loop order where z is the outer loop, y the middle and x the inner loop
         # So that we don't have to write index in the output file
         xyz, ranks_tags = zip(*sorted(zip(xyz, ranks_tags),
                               key=lambda tup: (tup[0][2], tup[0][1], tup[0][0])))
