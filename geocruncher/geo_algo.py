@@ -1,14 +1,27 @@
 """
 GeoAlgo is a set of C++ algorithms that enable the computation of ground water body meshes
 """
-import PyGeoAlgo as ga
+from typing import TypedDict
 
 from .profiler.profiler import get_current_profiler
 
+class GwbMeshesResult(TypedDict):
+    """Data returned by the gwb meshes computation"""
+    unit_id: int
+    """Geological Model Unit ID"""
+    spring_id: int
+    """Point of interest ID"""
+    volume: float
+    """Volume of the mesh"""
+
+class GeoAlgoOutput(TypedDict):
+    """Data returned by the GeoAlgo output"""
+    metadata: list[GwbMeshesResult]
+    meshes: list[bytes]
 
 class GeoAlgo:
     @staticmethod
-    def output(unit_meshes: dict[str, bytes], springs: list) -> tuple[list, dict[str, bytes]]:
+    def output(unit_meshes: dict[str, bytes], springs: list) -> GeoAlgoOutput:
         s = [ga.Spring(spring['id'], ga.Point_3(spring['location']['x'], spring['location']['y'],
                                                 spring['location']['z']), spring['unit_id']) for spring in springs]
 
@@ -20,11 +33,15 @@ class GeoAlgo:
         aquifers = aquifer_calc.calculate()
         get_current_profiler().profile('compute')
 
-        metadata = [{"unit_id": aquifer.unit_id, "spring_id": aquifer.spring.id,
-                     "volume": aquifer.volume} for aquifer in aquifers]
-        meshes = {}
+        metadata = []
+        meshes = []
         for aquifer in aquifers:
-            meshes[aquifer.unit_id] = ga.FileIO.write_to_bytes(aquifer.mesh)
+            metadata.append({
+                "unit_id": aquifer.unit_id,
+                "spring_id": aquifer.spring.id,
+                "volume": aquifer.volume
+            })
+            meshes.append(ga.FileIO.write_to_bytes(aquifer.mesh))
 
         get_current_profiler().profile('generate_off')
-        return metadata, meshes
+        return {"metadata": metadata, "meshes": meshes}
