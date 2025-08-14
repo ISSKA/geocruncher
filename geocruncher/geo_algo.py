@@ -2,6 +2,7 @@
 GeoAlgo is a set of C++ algorithms that enable the computation of ground water body meshes
 """
 from typing import TypedDict
+import PyGeoAlgo as ga
 
 from .profiler.profiler import get_current_profiler
 

@@ -225,8 +225,7 @@ Mesh FileIO::load_from_bytes(const char *data, size_t size) {
   }
 }
 
-std::vector<char> FileIO::write_to_bytes(const Mesh &mesh,
-                                         bool use_off = false) {
+std::vector<char> FileIO::write_to_bytes(const Mesh &mesh, bool use_off) {
   if (use_off) {
     return write_off_to_bytes(mesh);
   } else {
