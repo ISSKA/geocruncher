@@ -88,19 +88,20 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 @app.task
 def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str) -> str:
 
-    unit_meshes = defaultdict(list)
+    # get existing meshes for groundwater bodies
+    unit_meshes: dict[str, bytes] = {}
     stored = r.hgetall(meshes_key)
     for unit_id, mesh in stored.items():
         unit_meshes[unit_id.decode('utf-8')] = mesh
     r.delete(meshes_key)
 
-    metadata, meshes = computations.compute_gwb_meshes(unit_meshes, data)
+    results = computations.compute_gwb_meshes(unit_meshes, data)
 
     # write metadata
-    r.hset(output_key, "metadata", json.dumps(metadata, separators=(',', ':')))
+    r.hset(output_key, "metadata", json.dumps(results["metadata"], separators=(',', ':')))
 
     # write gwb files
-    for unit_id, mesh in meshes.items():
-        r.hset(output_key, unit_id, mesh)
+    for id, mesh in enumerate(results["meshes"]):
+        r.hset(output_key, f"mesh_{id}", mesh)
 
     return output_key

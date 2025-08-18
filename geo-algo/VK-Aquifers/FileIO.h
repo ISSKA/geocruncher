@@ -14,7 +14,7 @@ public:
   static Mesh load_draco_from_bytes(const char *, size_t);
   static std::vector<char> write_draco_to_bytes(const Mesh &);
   static Mesh load_from_bytes(const char *, size_t);
-  static std::vector<char> write_to_bytes(const Mesh &, bool);
+  static std::vector<char> write_to_bytes(const Mesh &, bool = false);
 
 private:
     // From Draco implementation comments:
