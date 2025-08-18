@@ -270,7 +270,7 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         .set_metadata('compute_map', data['computeMap'])\
         .set_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
         .set_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
-        .set_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
+        .set_metadata('num_gwb_parts', len(gwb_meshes))\
 
     profile_step('load_model')
 
@@ -398,7 +398,7 @@ def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, l
     get_current_profiler()\
         .set_metadata('num_series', MetadataHelpers.num_series(model))\
         .set_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
+        .set_metadata('num_gwb_parts', len(gwb_meshes))\
         .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
 
     profile_step('load_model')

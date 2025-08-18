@@ -112,7 +112,7 @@ class FaultIntersector:
             fault_potentials[name] = np.where(
                 np.isnan(transposed), None, transposed).tolist()
 
-        profile_step('fault_cross_section_tesselate')
+        profile_step('tesselate_faults')
         return fault_potentials
 
 

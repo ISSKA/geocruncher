@@ -28,7 +28,7 @@ class GeoAlgo:
 
         m = [ga.UnitMesh(ga.FileIO.load_from_bytes(
             mesh), int(unit_id)) for unit_id, mesh in unit_meshes.items()]
-        profile_step('load_off')
+        profile_step('load_mesh')
 
         aquifer_calc = ga.AquiferCalc(m, s)
         aquifers = aquifer_calc.calculate()

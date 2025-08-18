@@ -154,7 +154,7 @@ def compute_cross_section_ranks(
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
     ranks = ranks.tolist()
-    profile_step('cross_section_ranks')
+    profile_step('ranks')
     return ranks
 
 
@@ -282,7 +282,6 @@ def project_hydro_features_on_slice(
                 mesh, tolerance=0.00001)
             selected_points = inside_points["SelectedPoints"].astype(np.uint16)
             matrix_gwb.append(selected_points * gwb_id_int)
-    profile_step('hydro_test_inside_gwbs')
 
     # Combine all gwb values into one matrix
     matrix_gwb_combine = []
@@ -304,6 +303,6 @@ def project_hydro_features_on_slice(
             matrix_gwb_combine = result.tolist()
         else:
             matrix_gwb_combine = stacked.astype(np.int32).tolist()
+    profile_step('hydro_project_gwbs')
 
-    profile_step('hydro_combine_gwbs')
     return drillholes_line, springs_point, matrix_gwb_combine
