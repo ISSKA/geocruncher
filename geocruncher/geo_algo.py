@@ -44,5 +44,5 @@ class GeoAlgo:
             })
             meshes.append(ga.FileIO.write_to_bytes(aquifer.mesh))
 
-        profile_step('generate_off')
+        profile_step("generate_mesh")
         return {"metadata": metadata, "meshes": meshes}

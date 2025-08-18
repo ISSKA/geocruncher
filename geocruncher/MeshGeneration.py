@@ -95,7 +95,7 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
 
         mesh = generate_mesh(scaled_verts, faces)
         out_files["mesh"][str(rank_id)] = mesh
-        profile_step('generate_off')
+        profile_step('generate_mesh')
 
     if len(model.faults.items()) > 0:
         # don't waste time generating faults if there are none
@@ -116,5 +116,5 @@ def generate_faults_files(model: GeologicalModel, shape: (int, int, int), box: B
         if not fault.is_empty():
             fault_arr = fault.as_arrays()
             out_files[name] = generate_mesh(fault_arr[0], fault_arr[1][0])
-            profile_step('generate_off')
+            profile_step('generate_mesh')
     return out_files

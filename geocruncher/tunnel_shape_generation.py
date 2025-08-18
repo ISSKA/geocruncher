@@ -39,7 +39,7 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
     triangles = _connect_vertices(len(xy_points), nb_series)
     profile_step("connect_vertices")
     mesh = generate_mesh(np.array(vertices), np.array(triangles))
-    profile_step("generate_off")
+    profile_step("generate_mesh")
     return mesh
 
 def get_circle_segment(radius, nb_vertices):
