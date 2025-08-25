@@ -1,4 +1,5 @@
 from typing import NamedTuple
+from gmlib.GeologicalModel3D import GeologicalModel
 
 
 class VkProfilerSettings(NamedTuple):
@@ -32,21 +33,21 @@ class MetadataHelpers:
         return len([x for name, x in model.faults_data.items() if x.infinite])
 
     @staticmethod
-    def num_contact_data(model, unit=True, fault=True) -> int:
+    def num_contact_data(model: GeologicalModel, unit=True, fault=True) -> int:
         num_unit_contact_data = 0
         num_fault_contact_data = 0
         if unit:
             # divide interfaces by 2, because they are lines made of 2 points
             num_unit_contact_data = len(
-                [a for s in model.pile.all_series if s.potential_data is not None for i in s.potential_data.interfaces for a in i]) / 2
+                [a for s in model.pile.all_series if s.potential_data is not None for i in s.potential_data.interfaces for a in i]) // 2
         if fault:
             num_fault_contact_data = len(
-                [a for f in model.faults_data.values() if f.potential_data is not None for i in f.potential_data.interfaces for a in i]) / 2
+                [a for f in model.faults_data.values() if f.potential_data is not None for i in f.potential_data.interfaces for a in i]) // 2
 
         return num_unit_contact_data + num_fault_contact_data
 
     @staticmethod
-    def num_dips(model, unit=True, fault=True) -> int:
+    def num_dips(model: GeologicalModel, unit=True, fault=True) -> int:
         num_unit_dips = 0
         num_fault_dips = 0
         if unit:

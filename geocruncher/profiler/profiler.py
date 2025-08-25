@@ -13,21 +13,20 @@ class VkProfiler():
         self._pr = cProfile.Profile()
         # set the start time, to calculate relative durations
         self._last_profiled = time.process_time()
-        self.settings = settings
-        self.storage = storage
+        self._settings = settings
+        self._storage = storage
         # dictionnary where each step's name maps to the total fractional seconds spent on that step (time)
         # TODO: as well as the top function calls calculated by cProfile (profile)
         # make the dictionnary with a default value for each step
-        self._steps = dict(
-            [[step, {'profile': list(), 'time': 0}] for step in settings.steps])
+        self._steps = {step: {'profile': [], 'time': 0} for step in settings.steps}
         # make the dictionnary with a default value for each metadata
-        self._metadata = dict([[meta, None] for meta in settings.metadata])
+        self._metadata = {meta: None for meta in settings.metadata}
 
         # set the metadata that's on every computation
         self.set_metadata(
             'start_time', datetime.datetime.now().isoformat())
 
-        if self.storage:
+        if self._storage:
             self._pr.enable()
 
     def profile(self, step: str) -> 'VkProfiler':
@@ -35,7 +34,7 @@ class VkProfiler():
         Also works inside loops (total time per step gets summed up). For loops, it is recommended 
         to profile at least just before entering and at the end of every iteration, so the first 
         profile in the loop is consistent"""
-        if not self.storage or step not in self._steps:
+        if not self._storage or step not in self._steps:
             return self
         now = time.process_time()
 
@@ -59,10 +58,10 @@ class VkProfiler():
         """Save profiling results using configured storage"""
         self._pr.disable()
         
-        if self.storage:
-            self.storage.save(
-                self.settings.computation,
-                self.settings.version,
+        if self._storage:
+            self._storage.save(
+                self._settings.computation,
+                self._settings.version,
                 self._metadata,
                 self._steps
             )
@@ -73,13 +72,13 @@ class ProfilerManager:
     """Manages global profiler state"""
 
     def __init__(self):
-        self.config = ProfilerConfig()
-        self.storage = self.config.create_storage()
+        self._config = ProfilerConfig()
+        self._storage = self._config.create_storage()
         self._current_profiler: Optional[VkProfiler] = None
 
     def create_profiler(self, settings: VkProfilerSettings) -> None:
         """Create a new profiler instance"""
-        profiler = VkProfiler(settings, self.storage)
+        profiler = VkProfiler(settings, self._storage)
         self._current_profiler = profiler
 
     def get_current_profiler(self) -> Optional[VkProfiler]:
