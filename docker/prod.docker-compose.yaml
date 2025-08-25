@@ -28,6 +28,8 @@ services:
         labels: "worker"
   redis:
     image: redis:7.4
+    volumes:
+      - /root/data/web-prod/var/lib/redis:/data
     restart: unless-stopped
     logging:
       driver: "journald"
