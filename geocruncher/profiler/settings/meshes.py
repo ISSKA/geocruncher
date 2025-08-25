@@ -7,4 +7,4 @@ PROFILER_MESHES_V4 = VkProfilerSettings(
     'meshes',
     ['load_model', 'ranks', 'volume',
         'marching_cubes', 'tesselate_faults', 'generate_mesh'],
-    ['start_time', 'num_series', 'num_units', 'num_finite_faults', 'num_infinite_faults', 'num_interfaces', 'num_foliations', 'resolution'])
+    ['start_time', 'num_series', 'num_units', 'num_finite_faults', 'num_infinite_faults', 'num_contact_data', 'num_dips', 'resolution'])

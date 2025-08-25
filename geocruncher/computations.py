@@ -153,8 +153,8 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
         .set_metadata('num_units', MetadataHelpers.num_units(model))\
         .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
         .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_metadata('num_interfaces', MetadataHelpers.num_interfaces(model))\
-        .set_metadata('num_foliations', MetadataHelpers.num_foliations(model))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model))\
         .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
     
     profile_step('load_model')
@@ -263,8 +263,8 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         .set_metadata('num_units', MetadataHelpers.num_units(model))\
         .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
         .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
-        .set_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model, fault=False))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model, fault=False))\
         .set_metadata('resolution', data['resolution'])\
         .set_metadata('num_sections', len(data['toCompute']))\
         .set_metadata('compute_map', data['computeMap'])\
@@ -351,8 +351,8 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     get_current_profiler()\
         .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
         .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, unit=False))\
-        .set_metadata('num_foliations', MetadataHelpers.num_foliations(model, unit=False))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model, unit=False))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model, unit=False))\
         .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
 
     profile_step('load_model')

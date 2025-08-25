@@ -32,29 +32,28 @@ class MetadataHelpers:
         return len([x for name, x in model.faults_data.items() if x.infinite])
 
     @staticmethod
-    def num_interfaces(model, unit=True, fault=True) -> int:
-        num_unit_interfaces = 0
-        num_fault_interfaces = 0
+    def num_contact_data(model, unit=True, fault=True) -> int:
+        num_unit_contact_data = 0
+        num_fault_contact_data = 0
         if unit:
             # divide interfaces by 2, because they are lines made of 2 points
-            num_unit_interfaces = len(
+            num_unit_contact_data = len(
                 [a for s in model.pile.all_series if s.potential_data is not None for i in s.potential_data.interfaces for a in i]) / 2
         if fault:
-            num_fault_interfaces = len(
+            num_fault_contact_data = len(
                 [a for f in model.faults_data.values() if f.potential_data is not None for i in f.potential_data.interfaces for a in i]) / 2
 
-        return num_unit_interfaces + num_fault_interfaces
+        return num_unit_contact_data + num_fault_contact_data
 
     @staticmethod
-    def num_foliations(model, unit=True, fault=True) -> int:
-        num_unit_foliations = 0
-        num_fault_foliations = 0
+    def num_dips(model, unit=True, fault=True) -> int:
+        num_unit_dips = 0
+        num_fault_dips = 0
         if unit:
-            # divide interfaces by 2, because they are lines made of 2 points
-            num_unit_foliations = len([
+            num_unit_dips = len([
                 l for s in model.pile.all_series if s.potential_data is not None for l in s.potential_data.gradients.locations])
         if fault:
-            num_fault_foliations = len([
+            num_fault_dips = len([
                 l for f in model.faults_data.values() if f.potential_data is not None for l in f.potential_data.gradients.locations])
 
-        return num_unit_foliations + num_fault_foliations
+        return num_unit_dips + num_fault_dips

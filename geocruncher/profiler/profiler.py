@@ -41,11 +41,6 @@ class VkProfiler():
 
         # stop tracking previous step
         self._pr.disable()
-        # TODO: WIP extracting stats from cProfile
-        # _pr.create_stats()
-        # ps = pstats.Stats(_pr).sort_stats(
-        #     SortKey.TIME, SortKey.NAME)
-        # ps.get_stats_profile()
 
         # add for the step the difference between now and the last profiled time
         # since we add, the profile function works in loops. on each loop iteration, the step's time will be increased

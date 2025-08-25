@@ -6,4 +6,4 @@ PROFILER_FAULTS_V3 = VkProfilerSettings(
     3,
     'faults',
     ['load_model', 'tesselate_faults', 'generate_mesh'],
-    ['start_time', 'num_finite_faults', 'num_infinite_faults', 'num_interfaces', 'num_foliations', 'resolution'])
+    ['start_time', 'num_finite_faults', 'num_infinite_faults', 'num_contact_data', 'num_dips', 'resolution'])
