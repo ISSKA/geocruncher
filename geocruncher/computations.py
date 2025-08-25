@@ -18,7 +18,7 @@ from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, g
 from .voxel_computation import Voxels
 from .geo_algo import GeoAlgo, GeoAlgoOutput
 
-from .profiler.profiler import VkProfiler, PROFILES, set_current_profiler, get_current_profiler
+from .profiler import PROFILES, set_profiler, get_current_profiler, profile_step
 from .profiler.util import MetadataHelpers
 
 
@@ -84,14 +84,14 @@ def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, bytes]:
     }
     for tunnel in data['tunnels']:
         # profile each tunnel separatly
-        set_current_profiler(VkProfiler(PROFILES['tunnel_meshes']))
+        set_profiler(PROFILES['tunnel_meshes'])
         get_current_profiler()\
-            .set_profiler_metadata('shape', tunnel['shape'])\
-            .set_profiler_metadata('num_waypoints', len(tunnel['functions']) + 1)
+            .set_metadata('shape', tunnel['shape'])\
+            .set_metadata('num_waypoints', len(tunnel['functions']) + 1)
         output[tunnel['name']] = tunnel_to_meshes(tunnel['functions'], data['step'], plane_segment[tunnel['shape']](
             tunnel), data['idxStart'], data['tStart'], data['idxEnd'], data['tEnd'])
         # write profiler result before moving on to the next tunnel
-        get_current_profiler().save_profiler_results()
+        get_current_profiler().save_results()
     return output
 
 
@@ -142,21 +142,22 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     MeshesResult
         Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
-    set_current_profiler(VkProfiler(PROFILES['meshes']))
+    set_profiler(PROFILES['meshes'])
     model = GeologicalModel(extract_project_data(xml, dem))
 
     shape = (data['resolution']['x'], data['resolution']
              ['y'], data['resolution']['z'])
 
     get_current_profiler()\
-        .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
-        .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model))\
-        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model))\
-        .set_profiler_metadata('resolution', shape[0] * shape[1] * shape[2])\
-        .profile('load_model')
+        .set_metadata('num_series', MetadataHelpers.num_series(model))\
+        .set_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model))\
+        .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
+    
+    profile_step('load_model')
 
     if 'box' in data and data['box']:
         box = Box(xmin=data['box']['xMin'],
@@ -168,7 +169,7 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     else:
         box = model.getbox()
     output = generate_volumes(model, shape, box)
-    get_current_profiler().save_profiler_results()
+    get_current_profiler().save_results()
     return output
 
 
@@ -250,7 +251,7 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         Results for cross sections, drillholes, sptrings, gwb matrix and maps.
         TODO: find a more complete explanation of what is returned and simplify return type.
     """
-    set_current_profiler(VkProfiler(PROFILES['intersections']))
+    set_profiler(PROFILES['intersections'])
     model = GeologicalModel(extract_project_data(xml, dem))
     box = model.getbox()
     cross_sections, drillhole_lines, spring_points, matrix_gwb = {}, {}, {}, {}
@@ -258,19 +259,20 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         'forCrossSections': {}, 'forMaps': {}}
 
     get_current_profiler()\
-        .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
-        .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, fault=False))\
-        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, fault=False))\
-        .set_profiler_metadata('resolution', data['resolution'])\
-        .set_profiler_metadata('num_sections', len(data['toCompute']))\
-        .set_profiler_metadata('compute_map', data['computeMap'])\
-        .set_profiler_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
-        .set_profiler_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
-        .set_profiler_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
-        .profile('load_model')
+        .set_metadata('num_series', MetadataHelpers.num_series(model))\
+        .set_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model, fault=False))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model, fault=False))\
+        .set_metadata('resolution', data['resolution'])\
+        .set_metadata('num_sections', len(data['toCompute']))\
+        .set_metadata('compute_map', data['computeMap'])\
+        .set_metadata('num_springs', len(data['springs']) if 'springs' in data else 0)\
+        .set_metadata('num_drillholes', len(data['drillholes']) if 'drillholes' in data else 0)\
+        .set_metadata('num_gwb_parts', len(gwb_meshes))\
+
+    profile_step('load_model')
 
     for key, rect in data['toCompute'].items():
         # TODO: use this format directly to avoid converting
@@ -288,7 +290,7 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         height = abs(z_coord[1] - z_coord[0])
         resolution = calculate_resolution(width, height, data['resolution'])
         xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, resolution)
-        get_current_profiler().profile('cross_section_grid')
+        profile_step('cross_section_grid')
 
         cross_sections[key] = compute_cross_section_ranks(xyz, resolution, model, topography=True)
         if any(key in data for key in ["springs", "drillholes"]) or gwb_meshes:
@@ -315,11 +317,11 @@ def compute_intersections(data: IntersectionsData, xml: str, dem: str, gwb_meshe
         height = box.ymax - box.ymin
         resolution = calculate_resolution(width, height, data['resolution'])
         xyz = compute_map_points(box, resolution, model)
-        get_current_profiler().profile('map_grid')
+        profile_step('map_grid')
 
         mesh_output['forMaps'] = compute_cross_section_ranks(xyz, resolution, model, topography=False)
         fault_output['forMaps'] = compute_fault_intersections(xyz, resolution, model)
-    get_current_profiler().save_profiler_results()
+    get_current_profiler().save_results()
     return {'mesh': mesh_output, 'fault': fault_output}
 
 
@@ -340,19 +342,20 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     MeshesResult
         Dictionnary with mesh, an empty map, and fault, a map from fault name to OFF mesh file.
     """
-    set_current_profiler(VkProfiler(PROFILES['faults']))
+    set_profiler(PROFILES['faults'])
     model = GeologicalModel(extract_project_data(xml, dem))
 
     shape = (data['resolution']['x'], data['resolution']
              ['y'], data['resolution']['z'])
 
     get_current_profiler()\
-        .set_profiler_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
-        .set_profiler_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
-        .set_profiler_metadata('num_interfaces', MetadataHelpers.num_interfaces(model, unit=False))\
-        .set_profiler_metadata('num_foliations', MetadataHelpers.num_foliations(model, unit=False))\
-        .set_profiler_metadata('resolution', shape[0] * shape[1] * shape[2])\
-        .profile('load_model')
+        .set_metadata('num_finite_faults', MetadataHelpers.num_finite_faults(model))\
+        .set_metadata('num_infinite_faults', MetadataHelpers.num_infinite_faults(model))\
+        .set_metadata('num_contact_data', MetadataHelpers.num_contact_data(model, unit=False))\
+        .set_metadata('num_dips', MetadataHelpers.num_dips(model, unit=False))\
+        .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
+
+    profile_step('load_model')
 
     if 'box' in data and data['box']:
         box = Box(xmin=data['box']['xMin'],
@@ -365,7 +368,7 @@ def compute_faults(data: MeshesData, xml: str, dem: str) -> MeshesResult:
         box = model.getbox()
 
     output = {'mesh': {}, 'fault': generate_faults_files(model, shape, box)}
-    get_current_profiler().save_profiler_results()
+    get_current_profiler().save_results()
     return output
 
 
@@ -386,18 +389,19 @@ def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, l
     str
         The VOX mesh file
     """
-    set_current_profiler(VkProfiler(PROFILES['voxels']))
+    set_profiler(PROFILES['voxels'])
     model = GeologicalModel(extract_project_data(xml, dem))
 
     shape = (data['resolution']['x'], data['resolution']
              ['y'], data['resolution']['z'])
 
     get_current_profiler()\
-        .set_profiler_metadata('num_series', MetadataHelpers.num_series(model))\
-        .set_profiler_metadata('num_units', MetadataHelpers.num_units(model))\
-        .set_profiler_metadata('num_gwb_parts', sum(len(l) for l in gwb_meshes.values()))\
-        .set_profiler_metadata('resolution', shape[0] * shape[1] * shape[2])\
-        .profile('load_model')
+        .set_metadata('num_series', MetadataHelpers.num_series(model))\
+        .set_metadata('num_units', MetadataHelpers.num_units(model))\
+        .set_metadata('num_gwb_parts', len(gwb_meshes))\
+        .set_metadata('resolution', shape[0] * shape[1] * shape[2])\
+
+    profile_step('load_model')
 
     if 'box' in data and data['box']:
         box = Box(xmin=data['box']['xMin'],
@@ -410,7 +414,7 @@ def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, l
         box = model.getbox()
 
     output = Voxels.output(model, shape, box, gwb_meshes)
-    get_current_profiler().save_profiler_results()
+    get_current_profiler().save_results()
     return output
 
 
@@ -430,12 +434,12 @@ class UnitMesh(TypedDict):
 
 def compute_gwb_meshes(unit_meshes: dict[str, bytes], springs: list[Spring]) -> GeoAlgoOutput:
     """Returns the metadata, then a dict of unit_id to OFF or Draco mesh file"""
-    set_current_profiler(VkProfiler(PROFILES['gwb_meshes']))
+    set_profiler(PROFILES['gwb_meshes'])
 
     get_current_profiler()\
-        .set_profiler_metadata('num_units', len(unit_meshes))\
-        .set_profiler_metadata('num_springs', len(springs))
+        .set_metadata('num_units', len(unit_meshes))\
+        .set_metadata('num_springs', len(springs))
 
     results = GeoAlgo.output(unit_meshes, springs)
-    get_current_profiler().save_profiler_results()
+    get_current_profiler().save_results()
     return results

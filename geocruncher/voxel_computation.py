@@ -5,7 +5,7 @@ import meshio
 from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
 
 class Voxels:
@@ -30,14 +30,14 @@ class Voxels:
         xyz = np.stack((x, y, z), axis=-1)
         xyz.shape = (-1, 3)
 
-        get_current_profiler().profile('grid')
+        profile_step('grid')
 
         gwb_tags = [0] * xyz.shape[0]
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_data in meshes:
                 mesh = read_mesh_to_polydata(mesh_data)
                 points = pv.PolyData(xyz)
-                get_current_profiler().profile('read_gwbs')
+                profile_step('read_gwbs')
 
                 inside_points = points.select_enclosed_points(
                     mesh, tolerance=0.00001)
@@ -45,13 +45,13 @@ class Voxels:
                     np.uint16)  # cast array to int16 to avoid overflow error
                 gwb_tags = [max(new_id, _id) for new_id, _id in zip(
                     selected_points * int(gwb_id), gwb_tags)]
-                get_current_profiler().profile('test_inside_gwbs')
+                profile_step('test_inside_gwbs')
 
         cppmodel = from_GeoModeller(model)
         topography = model.implicit_topography()
         evaluator = make_evaluator(cppmodel, topography)
         ranks = evaluator(xyz)
-        get_current_profiler().profile('ranks')
+        profile_step('ranks')
 
         ranks_tags = list(zip(ranks, gwb_tags))
 
@@ -67,5 +67,5 @@ XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} 
 NUMBERX={shape[0]} NUMBERY={shape[1]} NUMBERZ={shape[2]} NOVALUE=0\n\
 rank gwb_id\n\
 {data}"
-        get_current_profiler().profile('generate_vox')
+        profile_step('generate_vox')
         return vox

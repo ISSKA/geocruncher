@@ -21,6 +21,7 @@ services:
     command: ["bash", "--login", "/home/build/scripts/worker.sh"]
     environment:
       - REDIS_HOST=redis
+      - PROFILING_ENABLED=true
     logging:
       driver: "journald"
       options:
@@ -28,6 +29,8 @@ services:
         labels: "worker"
   redis:
     image: redis:7.4
+    volumes:
+      - /root/data/web-ci/var/lib/redis:/data
     restart: unless-stopped
     logging:
       driver: "journald"

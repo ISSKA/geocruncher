@@ -9,8 +9,6 @@ from .celery import app as celery
 
 app = Flask(__name__)
 
-# TODO: implement revoking tasks https://docs.celeryq.dev/en/stable/userguide/workers.html#revoke-revoking-tasks
-
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
     output = BytesIO()
     with tarfile.open(fileobj=output, mode='w') as tar:

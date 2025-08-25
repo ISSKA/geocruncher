@@ -5,7 +5,7 @@ import pyvista as pv
 from gmlib.GeologicalModel3D import GeologicalModel, Box
 from gmlib.architecture import from_GeoModeller, make_evaluator
 
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
@@ -154,7 +154,7 @@ def compute_cross_section_ranks(
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
     ranks = ranks.tolist()
-    get_current_profiler().profile('cross_section_ranks')
+    profile_step('ranks')
     return ranks
 
 
@@ -248,7 +248,7 @@ def project_hydro_features_on_slice(
     matrix_gwb = []
     drillholes_line = {}
     springs_point = {}
-    get_current_profiler().profile('hydro_setup')
+    profile_step('hydro_setup')
 
     if drillhole_map:
         for d_id, line in drillhole_map.items():
@@ -262,7 +262,7 @@ def project_hydro_features_on_slice(
 
             if s_valid or e_valid:
                 drillholes_line[d_id] = [s_proj, e_proj]
-    get_current_profiler().profile('hydro_project_drillholes')
+    profile_step('hydro_project_drillholes')
 
     if spring_map:
         for s_id, p in spring_map.items():
@@ -270,7 +270,7 @@ def project_hydro_features_on_slice(
             p_proj, valid = _proj_point_on_plane(point)
             if valid:
                 springs_point[s_id] = p_proj
-    get_current_profiler().profile('hydro_project_springs')
+    profile_step('hydro_project_springs')
 
     points_polydata = pv.PolyData(xyz)
     # Test each point of the cross section against groundwater body meshes
@@ -282,7 +282,6 @@ def project_hydro_features_on_slice(
                 mesh, tolerance=0.00001)
             selected_points = inside_points["SelectedPoints"].astype(np.uint16)
             matrix_gwb.append(selected_points * gwb_id_int)
-    get_current_profiler().profile('hydro_test_inside_gwbs')
 
     # Combine all gwb values into one matrix
     matrix_gwb_combine = []
@@ -304,6 +303,6 @@ def project_hydro_features_on_slice(
             matrix_gwb_combine = result.tolist()
         else:
             matrix_gwb_combine = stacked.astype(np.int32).tolist()
+    profile_step('hydro_project_gwbs')
 
-    get_current_profiler().profile('hydro_combine_gwbs')
     return drillholes_line, springs_point, matrix_gwb_combine

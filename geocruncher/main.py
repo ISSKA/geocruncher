@@ -7,7 +7,6 @@ import sys
 import os
 from collections import defaultdict
 
-from .profiler.profiler import set_is_profiling_enabled, set_profiler_output_folder
 from .computations import compute_tunnel_meshes, compute_meshes, compute_intersections, compute_faults, compute_voxels
 
 
@@ -17,22 +16,18 @@ def main():
     # It would be interresting to convert everything to argparse, to make it more robust, and take advantage of the error handling / help messages
     parser = argparse.ArgumentParser(
         prog='Geocruncher',
-        description="Computation package mostly using BRGM technologies. It can be used both as a standalone executable reading inputs from files and writing outputs to files, or as a python module.",
+        description="Computation package mostly using BRGM technologies. It can be used both" \
+        "as a standalone executable reading inputs from files and writing outputs to files, or as a python module." \
+        "Profiling can be enabled and configured using environment variables. See the ProfilerConfig class.",
         epilog="Stable command line arguments are still WIP. Currently, flag arguments must be passed last, and not everything is documented above."
     )
     parser.add_argument('computation', choices=[
                         'tunnel_meshes', 'meshes', 'intersections', 'faults', 'voxels'], help="the type of computation to perform")
-    parser.add_argument('--enable-profiling',
-                        action='store_true', help="enable profiling for this computation (default: disabled)")
-    parser.add_argument('--profiler-output', type=Path,
-                        help="custom folder for the output of the profiler (default: working directory)", default=Path.cwd())
+
     p = parser.parse_known_args()[0]
 
     if not p.profiler_output.exists() or not p.profiler_output.is_dir():
         parser.error("Profiler output either doesn't exist or isn't a folder")
-
-    set_is_profiling_enabled(p.enable_profiling)
-    set_profiler_output_folder(p.profiler_output)
 
     run_geocruncher(p.computation, sys.argv)
 
@@ -46,6 +41,8 @@ def run_geocruncher(computation: str, args: list[str]):
         for key, value in meshes.items():
             with open(os.path.join(args[3], key + '.off'), 'w', encoding='utf8') as f:
                 f.write(value)
+        # with open(f'{args[3]}/mesh_tunnel_outputs_cli.json', 'w') as f:
+        #     json.dump(meshes, f, indent=2)
         return
 
     if computation == 'meshes':
@@ -100,6 +97,8 @@ def run_geocruncher(computation: str, args: list[str]):
                 full_path = Path(args[5]).joinpath(fp)
                 with open(full_path, encoding='utf8') as f:
                     gwb_meshes[gwb_id].append(f.read())
+            # with open(args[5], encoding='utf8') as f:
+            #     gwb_meshes = json.load(f)
 
         outputs = compute_intersections(data, xml, dem, gwb_meshes)
 

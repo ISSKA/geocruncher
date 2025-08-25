@@ -4,7 +4,7 @@ GeoAlgo is a set of C++ algorithms that enable the computation of ground water b
 from typing import TypedDict
 import PyGeoAlgo as ga
 
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 
 class GwbMeshesResult(TypedDict):
     """Data returned by the gwb meshes computation"""
@@ -28,11 +28,11 @@ class GeoAlgo:
 
         m = [ga.UnitMesh(ga.FileIO.load_from_bytes(
             mesh), int(unit_id)) for unit_id, mesh in unit_meshes.items()]
-        get_current_profiler().profile('load_off')
+        profile_step('load_mesh')
 
         aquifer_calc = ga.AquiferCalc(m, s)
         aquifers = aquifer_calc.calculate()
-        get_current_profiler().profile('compute')
+        profile_step('compute')
 
         metadata = []
         meshes = []
@@ -44,5 +44,5 @@ class GeoAlgo:
             })
             meshes.append(ga.FileIO.write_to_bytes(aquifer.mesh))
 
-        get_current_profiler().profile('generate_off')
+        profile_step("generate_mesh")
         return {"metadata": metadata, "meshes": meshes}
