@@ -13,8 +13,8 @@ class ProfilerConfig:
         self.output_folder = Path(os.environ.get('PROFILER_OUTPUT_FOLDER', Path.cwd()))
         self.redis_host = os.environ.get('REDIS_HOST', 'localhost')
         self.redis_port = int(os.environ.get('REDIS_PORT', '6379'))
-        # Per default this uses db 3 because db 1 and 2 are already
-        # getting used by celery.
+        # Per default this uses db 3 because db 0, 1 and 2 are already
+        # getting used by geocruncher/celery.
         self.redis_db = int(os.environ.get('REDIS_DB', '3'))
 
     def create_storage(self) -> Optional[ProfilerStorage]:

@@ -16,7 +16,6 @@ class VkProfiler():
         self._settings = settings
         self._storage = storage
         # dictionnary where each step's name maps to the total fractional seconds spent on that step (time)
-        # TODO: as well as the top function calls calculated by cProfile (profile)
         # make the dictionnary with a default value for each step
         self._steps = {step: {'profile': [], 'time': 0} for step in settings.steps}
         # make the dictionnary with a default value for each metadata

@@ -50,8 +50,8 @@ class RedisStorage(ProfilerStorage):
     """Redis storage for profiler results"""
 
     def __init__(self, host: str, port: int = 6379, db: int = 3):
-        # Per default this uses db 3 because db 1 and 2 are already
-        # getting used by celery.
+        # Per default this uses db 3 because db 0, 1 and 2 are already
+        # getting used by geocruncher/celery.
         self._client = redis.StrictRedis(host=host, port=port, db=db)
 
     def save(self, computation: str, version: int, metadata: dict[str, Any], steps: dict[str, dict[str, float]]) -> None:
