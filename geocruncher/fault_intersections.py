@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 from gmlib.GeologicalModel3D import GeologicalModel
-from .profiler.profiler import get_current_profiler
+from .profiler import profile_step
 
 CLIP_VALUE = np.nan
 
@@ -112,7 +112,7 @@ class FaultIntersector:
             fault_potentials[name] = np.where(
                 np.isnan(transposed), None, transposed).tolist()
 
-        get_current_profiler().profile('fault_cross_section_tesselate')
+        profile_step('tesselate_faults')
         return fault_potentials
 
 
