@@ -1,7 +1,16 @@
+[project]
+name = "pykarstnsim"
+version = "0.1.64"
+description = "A Python interface for the KarstNSim C++ library"
+requires-python = ">=3.9"
+dependencies = []
+
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{wheel_tag}"
-build.targets = ["pykarstnsim"]
+build.targets = ["pykarstnsim_core"]
+wheel.packages = ["src/pykarstnsim"]
+cmake.build-type = "Release"
 
 [tool.uv.sources]
 pykarstnsim = { workspace = true }
@@ -14,13 +23,6 @@ build = "cp3{10,11,12,13}-manylinux*"
 [build-system]
 requires = ["scikit-build-core>=0.10", "pybind11", "pybind11-stubgen"]
 build-backend = "scikit_build_core.build"
-
-[project]
-name = "pykarstnsim"
-version = "0.1.61"
-description = "A Python interface for the KarstNSim C++ library"
-requires-python = ">=3.9"
-dependencies = []
 
 [dependency-groups]
 dev = [

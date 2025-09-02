@@ -3,6 +3,8 @@
 #include <pybind11/functional.h>
 #include <pybind11/operators.h>
 
+#include <memory>
+
 #include <KarstNSim/vec.h>
 #include <KarstNSim/basics.h>
 #include <KarstNSim/geostats.h>
@@ -12,13 +14,22 @@
 #include "KarstNSim/ghost_rocks.h"     // Ghost-rock helpers (used indirectly)
 #include "KarstNSim/randomgenerator.h" // RNG initialization
 
+// Lifetime ownership helpers (see note in module body). We place them in an anonymous namespace
+// at translation unit scope so they are available inside the binding lambdas.
+namespace {
+    std::vector<std::unique_ptr<KarstNSim::Surface>> g_owned_surfaces; // individual surfaces kept alive
+    std::vector<std::unique_ptr<std::vector<KarstNSim::Surface>>> g_owned_surface_vectors; // vectors kept alive
+}
+
 namespace py = pybind11;
 
 using namespace KarstNSim;
 
-PYBIND11_MODULE(pykarstnsim, m)
+PYBIND11_MODULE(pykarstnsim_core, m)
 {
     m.doc() = "KarstNSim Python bindings";
+    // Lifetime safety note: the original API stores raw pointers to surfaces/vectors provided by
+    // the caller. Python temporaries would dangle; safe_* wrapper methods below copy & retain.
 
     // Vector3
     py::class_<Vector3>(m, "Vector3", R"doc(3D vector with float components (x, y, z). Utility type for geometry and sampling.)doc")
@@ -129,7 +140,7 @@ PYBIND11_MODULE(pykarstnsim, m)
         .def(py::init<>(), R"doc(Default-initialize all parameters (matching C++ defaults).)doc")
         // Names
         .def_readwrite("karstic_network_name", &ParamsSource::karstic_network_name, R"doc(Name of simulation; prefix for outputs.)doc")
-        .def_readwrite("save_repertory", &ParamsSource::save_repertory, R"doc(Output directory name.)doc")
+        .def_readwrite("save_repository", &ParamsSource::save_repository, R"doc(Output directory name.)doc")
         // General parameters
         .def_readwrite("domain", &ParamsSource::domain, R"doc(Background grid / spatial domain (Box).)doc")
         .def_readwrite("selected_seed", &ParamsSource::selected_seed, R"doc(Base seed for RNG.)doc")
@@ -334,7 +345,20 @@ PYBIND11_MODULE(pykarstnsim, m)
         .def_readwrite("waypoints_weight", &GeologicalParameters::waypoints_weight)
         .def_readwrite("waypointsimpactradius", &GeologicalParameters::waypointsimpactradius, R"doc(List[PropIdx]: impact radius entries for waypoints (prop = radius, index = waypoint keypoint index).)doc")
         .def_readwrite("z_list", &GeologicalParameters::z_list, R"doc(List[PropIdx]: Z coordinate entries for each spring (prop = z, index = spring keypoint index).)doc")
-        .def_readwrite("propspringswtindex", &GeologicalParameters::propspringswtindex, R"doc(List[PropIdx]: Water table index for each spring (prop = wt index as float, index = spring keypoint index).)doc");
+        .def_readwrite("propspringswtindex", &GeologicalParameters::propspringswtindex, R"doc(List[PropIdx]: Water table index for each spring (prop = wt index as float, index = spring keypoint index).)doc")
+        .def("set_connectivity_matrix", [](GeologicalParameters &self, const std::vector<std::vector<int>> &matrix){
+            // Resize internal Array2D to match matrix shape and copy values.
+            if(matrix.empty()) return; // allow clearing by passing [] (no change)
+            int rows = static_cast<int>(matrix.size());
+            int cols = static_cast<int>(matrix[0].size());
+            self.connectivity_matrix.resize(rows, cols, 0);
+            for(int r=0;r<rows;++r){
+                if(static_cast<int>(matrix[r].size()) != cols) throw std::runtime_error("Jagged connectivity matrix");
+                for(int c=0;c<cols;++c){
+                    self.connectivity_matrix[r][c] = matrix[r][c];
+                }
+            }
+        }, py::arg("matrix"), R"doc(Set sink x spring connectivity matrix (list[list[int]]). Rows = sinks, Cols = springs. Values per C++ semantics (e.g. 0/1 allowed; 2 = use shortest-distance heuristic).)doc");
 
     // KarsticConnection (needed for KarsticNode.connections vector)
     py::class_<KarsticConnection>(m, "KarsticConnection", R"doc(Connection between skeleton nodes (destination index + final branch id).)doc")
@@ -368,22 +392,16 @@ PYBIND11_MODULE(pykarstnsim, m)
 
     // KarsticNetwork binding (high-level façade)
     py::class_<KarsticNetwork>(m, "KarsticNetwork", R"doc(Façade class to configure and run KarstNSim simulations (sampling, graph, skeleton, amplification, section properties).)doc")
-        .def(py::init<const std::string &, Box *, GeologicalParameters &, const std::vector<KeyPoint> &, std::vector<Surface> *>(),
-             py::arg("karstic_network_name"), py::arg("box"), py::arg("params"), py::arg("keypoints"), py::arg("water_tables"),
-             R"doc(Construct a KarsticNetwork.
-
-Parameters
-----------
-karstic_network_name : str
-    Scenario / network name.
-box : Box
-    Simulation domain (Box instance kept alive externally).
-params : GeologicalParameters
-    Geological & algorithmic parameters (copied internally).
-keypoints : list[KeyPoint]
-    Initial inlets / outlets / waypoints.
-water_tables : list[Surface] | None
-    Optional water table surfaces.)doc")
+        // Only expose a lifetime-safe constructor: copies water_tables list into owned storage.
+        .def(py::init([](const std::string &karstic_network_name, Box *box, GeologicalParameters &params,
+                         const std::vector<KeyPoint> &keypoints, const std::vector<Surface> &water_tables){
+                auto owned_vec = std::make_unique<std::vector<Surface>>(water_tables); // copy
+                auto *raw = owned_vec.get();
+                g_owned_surface_vectors.push_back(std::move(owned_vec));
+                return new KarsticNetwork(karstic_network_name, box, params, keypoints, raw);
+            }),
+            py::arg("karstic_network_name"), py::arg("box"), py::arg("params"), py::arg("keypoints"), py::arg("water_tables"),
+            R"doc(Safe constructor variant: copies provided water table surfaces so their lifetime extends for the duration of the module. Prevents dangling pointer to a temporary Python list.)doc")
         .def("set_sinks", [](KarsticNetwork &self, const std::vector<Vector3> &sinks, const std::vector<int> &indices, const std::vector<int> &order, bool use_radius, const std::vector<float> &radii)
              { self.set_sinks(&sinks, indices, order, use_radius, radii); }, py::arg("sinks"), py::arg("indices"), py::arg("order"), py::arg("use_radius"), py::arg("radii"), R"doc(Add sink key points with ordering + optional radii.)doc")
         .def("set_springs", [](KarsticNetwork &self, const std::vector<Vector3> &springs, const std::vector<int> &indices, bool allow_single_outlet, bool use_radius, const std::vector<float> &radii, const std::vector<int> &wt_indices)
@@ -395,8 +413,22 @@ water_tables : list[Surface] | None
         .def("set_inception_surfaces_sampling", &KarsticNetwork::set_inception_surfaces_sampling, py::arg("network_name"), py::arg("surfaces"), py::arg("refine"), py::arg("create_vset_sampling"))
         .def("set_wt_surfaces_sampling", &KarsticNetwork::set_wt_surfaces_sampling, py::arg("network_name"), py::arg("water_table_surfaces"), py::arg("refine"))
         .def("set_topo_surface", &KarsticNetwork::set_topo_surface, py::arg("topographic_surface"))
+        // Safe ownership-preserving variant: copies the surface and stores it so the pointer remains valid.
+        .def("safe_set_topo_surface", [](KarsticNetwork &self, const Surface &topographic_surface){
+            auto owned = std::make_unique<Surface>(topographic_surface); // copy
+            Surface* raw = owned.get();
+            g_owned_surfaces.push_back(std::move(owned));
+            self.set_topo_surface(raw);
+        }, py::arg("topographic_surface"), R"doc(Safe version of set_topo_surface that preserves lifetime of the passed Surface.)doc")
         .def("set_ghost_rocks", &KarsticNetwork::set_ghost_rocks, py::arg("grid"), py::arg("ikp"), py::arg("alteration_lines"), py::arg("interpolate_lines"), py::arg("ghostrock_max_vertical_size"), py::arg("use_max_depth_constraint"), py::arg("ghost_rock_weight"), py::arg("max_depth_horizon"), py::arg("ghostrock_width"))
         .def("set_inception_horizons_parameters", &KarsticNetwork::set_inception_horizons_parameters, py::arg("horizons"), py::arg("weight"))
+        // Safe ownership-preserving variant for inception horizons vector.
+        .def("safe_set_inception_horizons_parameters", [](KarsticNetwork &self, const std::vector<Surface> &horizons, float weight){
+            auto owned_vec = std::make_unique<std::vector<Surface>>(horizons); // copy
+            auto *raw = owned_vec.get();
+            g_owned_surface_vectors.push_back(std::move(owned_vec));
+            self.set_inception_horizons_parameters(raw, weight);
+        }, py::arg("horizons"), py::arg("weight"), R"doc(Safe version copying the horizons vector to ensure it lives for the duration of the network.)doc")
         .def("disable_inception_horizon", &KarsticNetwork::disable_inception_horizon)
         .def("set_karstification_potential_parameters", &KarsticNetwork::set_karstification_potential_parameters, py::arg("weight"))
         .def("set_fracture_constraint_parameters", &KarsticNetwork::set_fracture_constraint_parameters, py::arg("orientations"), py::arg("tolerances"), py::arg("weight"))
@@ -405,7 +437,7 @@ water_tables : list[Surface] | None
         .def("set_simulation_parameters", &KarsticNetwork::set_simulation_parameters, py::arg("nghb_count"), py::arg("use_max_nghb_radius"), py::arg("nghb_radius"), py::arg("poisson_radius"), py::arg("gamma"), py::arg("multiply_costs"), py::arg("vadose_cohesion"))
         .def("set_domain_geometry", &KarsticNetwork::set_domain_geometry)
         .def("just_sampling", &KarsticNetwork::just_sampling)
-        .def("read_connectivity_matrix", &KarsticNetwork::read_connectivity_matrix, py::arg("sinks"), py::arg("springs"))
+    // read_connectivity_matrix removed from Python API; build connectivity in Python via params.connectivity_matrix
         // Wrap noise parameters to hide raw std::mt19937 type from Python API (uses globalRng declared in randomgenerator.h)
         .def("set_noise_parameters", [](KarsticNetwork &self, bool use_noise, bool use_noise_on_all, int frequency, int octaves, float noise_weight){
             self.set_noise_parameters(use_noise, use_noise_on_all, frequency, octaves, noise_weight, globalRng);

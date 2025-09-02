@@ -15,7 +15,7 @@ include(FetchContent)
 FetchContent_Declare(
     karstnsim_repo
     GIT_REPOSITORY https://github.com/ISSKA/KarstNSim_Public.git
-    GIT_TAG main
+    GIT_TAG fd31889086909e63b9b45bdcd280bc77dd844d49
 )
 FetchContent_GetProperties(karstnsim_repo)
 if (NOT karstnsim_repo_POPULATED)
@@ -49,27 +49,25 @@ target_include_directories(karstnsim_objs PUBLIC ${KARSTNSIM_PATH}/KarstNSim/inc
 set_property(TARGET karstnsim_objs PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 # Create the Python extension
-pybind11_add_module(pykarstnsim karstnsim_bindings.cpp $<TARGET_OBJECTS:karstnsim_objs>)
-target_include_directories(pykarstnsim PRIVATE ${KARSTNSIM_PATH}/KarstNSim/include)
+pybind11_add_module(pykarstnsim_core karstnsim_bindings.cpp $<TARGET_OBJECTS:karstnsim_objs>)
+target_include_directories(pykarstnsim_core PRIVATE ${KARSTNSIM_PATH}/KarstNSim/include)
 
 # Find a Python interpreter to run stub generation
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
 # Generate .pyi stubs for the built extension and install them into the wheel
 set(PYKARSTNSIM_STUB_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/stubs)
-set(PYKARSTNSIM_STUB_PYI ${PYKARSTNSIM_STUB_OUT_DIR}/pykarstnsim.pyi)
+set(PYKARSTNSIM_STUB_PYI ${PYKARSTNSIM_STUB_OUT_DIR}/pykarstnsim_core.pyi)
 
-add_custom_command(TARGET pykarstnsim POST_BUILD
+add_custom_command(TARGET pykarstnsim_core POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${PYKARSTNSIM_STUB_OUT_DIR}
     COMMAND ${CMAKE_COMMAND} -E env
-            PYTHONPATH=$<TARGET_FILE_DIR:pykarstnsim>
-            ${Python3_EXECUTABLE} -m pybind11_stubgen pykarstnsim -o ${PYKARSTNSIM_STUB_OUT_DIR}
+            PYTHONPATH=$<TARGET_FILE_DIR:pykarstnsim_core>
+            ${Python3_EXECUTABLE} -m pybind11_stubgen pykarstnsim_core -o ${PYKARSTNSIM_STUB_OUT_DIR}
     BYPRODUCTS ${PYKARSTNSIM_STUB_PYI}
-    COMMENT "Generating .pyi stubs for pykarstnsim"
+    COMMENT "Generating .pyi stubs for pykarstnsim_core"
 )
 
 # Install the Python extension and stubs
-install(TARGETS pykarstnsim DESTINATION .)
+install(TARGETS pykarstnsim_core DESTINATION .)
 install(FILES ${PYKARSTNSIM_STUB_PYI} DESTINATION .)
-
-
