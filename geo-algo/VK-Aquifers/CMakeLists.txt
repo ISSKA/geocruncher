@@ -3,29 +3,14 @@ project(VK-Aquifers)
 
 set(CMAKE_CXX_STANDARD 17) # Draco requires C++14+
 
-# Explicit Draco configuration
-# Configurable Draco configuration with default
-if(NOT DEFINED DRACO_INSTALL_DIR)
-    set(DRACO_INSTALL_DIR "/opt/draco")
-endif()
-set(DRACO_INCLUDE_DIR "${DRACO_INSTALL_DIR}/include")
-set(DRACO_LIB_DIR "${DRACO_INSTALL_DIR}/lib")
-
-# Verify Draco headers
-if(NOT EXISTS "${DRACO_INCLUDE_DIR}/draco/compression/decode.h")
-    message(FATAL_ERROR "Draco headers not found at ${DRACO_INCLUDE_DIR}/draco")
-endif()
-
-# Find Draco library
-find_library(DRACO_LIBRARY
-    NAMES draco
-    PATHS ${DRACO_LIB_DIR}
-    NO_DEFAULT_PATH
-    REQUIRED
+# Add Draco library
+include(FetchContent)
+FetchContent_Declare(
+    draco
+    GIT_REPOSITORY https://github.com/google/draco
+    GIT_TAG 4e12ab27d0fe690cf98e96dc33c2bd52e1485163
 )
-
-# Add Draco include directory to all targets
-include_directories(${DRACO_INCLUDE_DIR})
+FetchContent_MakeAvailable(draco)
 
 # CGAL
 find_package(CGAL QUIET COMPONENTS Core)
@@ -58,7 +43,7 @@ target_link_libraries(viskar-geo-algo
     PRIVATE
     ${CGAL_LIBRARIES}
     ${CGAL_3RD_PARTY_LIBRARIES}
-    ${DRACO_LIBRARY} # Link the Draco library
+    draco
 )
 
 add_to_cached_list(CGAL_EXECUTABLE_TARGETS viskar-geo-algo)
