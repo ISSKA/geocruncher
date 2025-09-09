@@ -10,6 +10,7 @@ dependencies = []
 pygeoalgo = { workspace = true }
 pykarstnsim = { workspace = true }
 geocruncher-api = { workspace = true }
+geocruncher-common = { workspace = true }
 geocruncher-worker = { workspace = true }
 
 [tool.uv.workspace]
@@ -17,10 +18,16 @@ members = [
     "geo-algo/VK-Aquifers",
     "pykarstnsim",
     "geocruncher-api",
+    "geocruncher-common",
     "geocruncher-worker",
 ]
 
 [dependency-groups]
 dev = [
+    "geocruncher-api",
+    "geocruncher-common",
+    "geocruncher-worker",
+    "pykarstnsim",
+    "pygeoalgo",
     "watchdog[watchmedo]>=6.0.0",
 ]

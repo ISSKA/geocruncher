@@ -1,11 +1,12 @@
-from io import BytesIO
-import tarfile
 import json
-from flask import Flask, request, send_file, Response
-from .redis import redis_client as r
-from .utils import generate_key
-from . import tasks
-from .celery import app as celery
+import tarfile
+from io import BytesIO
+
+from flask import Flask, Response, request, send_file
+from geocruncher_common import tasks
+from geocruncher_common.celery_app import app as celery
+from geocruncher_common.redis import redis_client as r
+from geocruncher_common.utils import generate_key
 
 app = Flask(__name__)
 

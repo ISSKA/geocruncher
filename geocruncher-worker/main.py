@@ -1,3 +1,3 @@
-from geocruncher_worker.main import main
+from geocruncher_common.celery_app import app
 
-main()
+app.start()

@@ -3,61 +3,31 @@
     These functions take data as input and return data as output, with no Disk interaction
 """
 
-import numpy as np
 import math
-from typing import TypedDict
-from enum import Enum
-from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.GeologicalModel3D import Box
 
-from .ComputeIntersections import compute_vertical_slice_points, project_hydro_features_on_slice, compute_map_points, compute_cross_section_ranks, calculate_resolution
+import numpy as np
+from geocruncher_common.models import (
+    FaultIntersectionsResult,
+    IntersectionsData,
+    IntersectionsResult,
+    MeshesData,
+    MeshesResult,
+    MeshIntersectionsResult,
+    Spring,
+    TunnelMeshesData,
+    TunnelShape,
+)
+from gmlib.GeologicalModel3D import Box, GeologicalModel
+
+from .ComputeIntersections import calculate_resolution, compute_cross_section_ranks, compute_map_points, compute_vertical_slice_points, project_hydro_features_on_slice
 from .fault_intersections import compute_fault_intersections
-from .MeshGeneration import generate_volumes, generate_faults_files
+from .geo_algo import GeoAlgo, GeoAlgoOutput
 from .geomodeller_import import extract_project_data
+from .MeshGeneration import generate_faults_files, generate_volumes
+from .profiler import PROFILES, get_current_profiler, profile_step, set_profiler
+from .profiler.util import MetadataHelpers
 from .tunnel_shape_generation import get_circle_segment, get_elliptic_segment, get_rectangle_segment, tunnel_to_meshes
 from .voxel_computation import Voxels
-from .geo_algo import GeoAlgo, GeoAlgoOutput
-
-from .profiler import PROFILES, set_profiler, get_current_profiler, profile_step
-from .profiler.util import MetadataHelpers
-
-
-class TunnelShape(str, Enum):
-    """Possible shapes for tunnels"""
-    CIRCLE = 'Circle'
-    RECTANGLE = 'Rectangle'
-    ELLIPTIC = 'Elliptic'
-
-
-class TunnelFunction(TypedDict):
-    """Tunnel functions in all three dimensions"""
-    x: str
-    y: str
-    z: str
-
-
-class Tunnel(TypedDict):
-    """Data defining a tunnel"""
-    name: str
-    shape: TunnelShape
-    functions: list[TunnelFunction]
-    # Optional
-    radius: float
-    # Optional
-    width: float
-    # Optional
-    height: float
-
-
-class TunnelMeshesData(TypedDict):
-    """Data given to the tunnel meshes computation"""
-    tunnels: list[Tunnel]
-    nb_vertices: int
-    step: float
-    idxStart: int
-    idxEnd: int
-    tStart: float
-    tEnd: float
 
 
 def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, bytes]:
@@ -93,36 +63,6 @@ def compute_tunnel_meshes(data: TunnelMeshesData) -> dict[str, bytes]:
         # write profiler result before moving on to the next tunnel
         get_current_profiler().save_results()
     return output
-
-
-class BoxDict(TypedDict):
-    """3D Box"""
-    xMin: float
-    yMin: float
-    zMin: float
-    xMax: float
-    yMax: float
-    zMax: float
-
-
-class Vec3Int(TypedDict):
-    """3D Integer vector"""
-    x: int
-    y: int
-    z: int
-
-
-class MeshesData(TypedDict):
-    """Data given to the meshes computation"""
-    resolution: Vec3Int
-    # Optional
-    box: BoxDict
-
-
-class MeshesResult(TypedDict):
-    """Data returned by the meshes computation"""
-    mesh: dict[str, bytes]
-    fault: dict[str, bytes]
 
 
 def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
@@ -171,61 +111,6 @@ def compute_meshes(data: MeshesData, xml: str, dem: str) -> MeshesResult:
     output = generate_volumes(model, shape, box)
     get_current_profiler().save_results()
     return output
-
-
-class Vec3Float(TypedDict):
-    """3D Float vector"""
-    x: float
-    y: float
-    z: float
-
-
-class Rectangle3D(TypedDict):
-    """Rectangle defined by it's bounds. Could be replaced with Box"""
-    lowerLeft: Vec3Float
-    upperRight: Vec3Float
-
-
-class Line3D(TypedDict):
-    """Line defined by it's start and end"""
-    start: Vec3Float
-    end: Vec3Float
-
-
-class IntersectionsData(TypedDict):
-    """Data given to the intersections computation"""
-    # Optional. ID as string to 3D point
-    springs: dict[str, Vec3Float]
-    # Optional. ID as string to 3D line
-    drillholes: dict[str, Line3D]
-    resolution: int
-    # cross sections, ID as string to lowerLeft - upperRight bounds. Could be replaced with Box
-    toCompute: dict[str, Rectangle3D]
-    computeMap: bool
-
-
-class MeshIntersectionsResult(TypedDict):
-    """Data returned by the mesh intersections computation"""
-    forCrossSections: dict[str, list[list[int]]]
-    drillholes: dict[str, dict[str, list[list[float]]]]
-    springs: dict[str, dict[str, list[float]]]
-    matrixGwb: dict[str, list[int]]
-    # Optional
-    forMaps: list[list[int]]
-
-
-class FaultIntersectionsResult(TypedDict):
-    """Data returned by the fault intersections computation"""
-    # TODO: For standard intersections, Scala uses the int type, but for this one, the float (double) type. Find out why and make consistant
-    forCrossSections: dict[str, dict[str, list[list[float]]]]
-    # Optional
-    forMaps: dict[str, list[list[float]]]
-
-
-class IntersectionsResult(TypedDict):
-    """Combined result of mesh and fault intersections computation"""
-    mesh: MeshIntersectionsResult
-    fault: FaultIntersectionsResult
 
 
 RATIO_MAX_DIST_PROJ = 0.2
@@ -416,20 +301,6 @@ def compute_voxels(data: MeshesData, xml: str, dem: str, gwb_meshes: dict[str, l
     output = Voxels.output(model, shape, box, gwb_meshes)
     get_current_profiler().save_results()
     return output
-
-
-class Spring(TypedDict):
-    """Spring data needed for the gwb meshes computation"""
-    id: int
-    location: Vec3Float
-    unit_id: int
-
-
-class UnitMesh(TypedDict):
-    """UnitMesh"""
-    unit_id: int
-    mesh: str
-
 
 
 def compute_gwb_meshes(unit_meshes: dict[str, bytes], springs: list[Spring]) -> GeoAlgoOutput:

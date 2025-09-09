@@ -1,13 +1,15 @@
-from collections import defaultdict
 import json
-from geocruncher import computations
-from .celery import app
-from .redis import redis_client as r
-from .utils import get_and_delete
+from collections import defaultdict
+
+import geocruncher_common.models as models
+import geocruncher_worker.computations as computations
+from geocruncher_common.celery_app import app
+from geocruncher_common.redis import redis_client as r
+from geocruncher_common.utils import get_and_delete
 
 
 @app.task
-def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str) -> str:
+def compute_tunnel_meshes(data: models.TunnelMeshesData, output_key: str) -> str:
     meshes = computations.compute_tunnel_meshes(data)
     for field, value in meshes.items():
         r.hset(output_key, field, value)
@@ -15,7 +17,7 @@ def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str) 
 
 
 @app.task
-def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
+def compute_meshes(data: models.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -34,7 +36,7 @@ def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, ou
 
 
 @app.task
-def compute_intersections(data: computations.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
+def compute_intersections(data: models.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -54,7 +56,7 @@ def compute_intersections(data: computations.IntersectionsData, xml_key: str, de
 
 
 @app.task
-def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
+def compute_faults(data: models.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -68,7 +70,7 @@ def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, ou
 
 
 @app.task
-def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
+def compute_voxels(data: models.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -86,7 +88,7 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
 
 @app.task
-def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str) -> str:
+def compute_gwb_meshes(data: list[models.Spring], meshes_key: str, output_key: str) -> str:
 
     # get existing meshes for groundwater bodies
     unit_meshes: dict[str, bytes] = {}

@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "geocruncher",
     "geocruncher-api",
+    "geocruncher-common",
     "geocruncher-worker",
     "pygeoalgo",
     "pykarstnsim",
@@ -73,6 +74,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bb/7d/6c289f407d219ba36d8b384b42489ebdd0c84ce9c413875a8aae0c85f35b/celery-5.5.3.tar.gz", hash = "sha256:6c972ae7968c2b5281227f01c3a3f984037d21c5129d07bf3550cc2afc6b10a5", size = 1667144, upload-time = "2025-06-01T11:08:12.563Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c9/af/0dcccc7fdcdf170f9a1585e5e96b6fb0ba1749ef6be8c89a6202284759bd/celery-5.5.3-py3-none-any.whl", hash = "sha256:0b5761a07057acee94694464ca482416b959568904c9dfa41ce8413a7d65d525", size = 438775, upload-time = "2025-06-01T11:08:09.94Z" },
+]
+
+[[package]]
+name = "celery-types"
+version = "0.23.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/d1/0823e71c281e4ad0044e278cf1577d1a68e05f2809424bf94e1614925c5d/celery_types-0.23.0.tar.gz", hash = "sha256:402ed0555aea3cd5e1e6248f4632e4f18eec8edb2435173f9e6dc08449fa101e", size = 31479, upload-time = "2025-03-03T23:56:51.547Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/8b/92bb54dd74d145221c3854aa245c84f4dc04cc9366147496182cec8e88e3/celery_types-0.23.0-py3-none-any.whl", hash = "sha256:0cc495b8d7729891b7e070d0ec8d4906d2373209656a6e8b8276fe1ed306af9a", size = 50189, upload-time = "2025-03-03T23:56:50.458Z" },
 ]
 
 [[package]]
@@ -615,28 +628,55 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 dev = [
+    { name = "geocruncher-api" },
+    { name = "geocruncher-common" },
+    { name = "geocruncher-worker" },
+    { name = "pygeoalgo" },
+    { name = "pykarstnsim" },
     { name = "watchdog", extra = ["watchmedo"] },
 ]
 
 [package.metadata]
 
 [package.metadata.requires-dev]
-dev = [{ name = "watchdog", extras = ["watchmedo"], specifier = ">=6.0.0" }]
+dev = [
+    { name = "geocruncher-api", editable = "geocruncher-api" },
+    { name = "geocruncher-common", editable = "geocruncher-common" },
+    { name = "geocruncher-worker", editable = "geocruncher-worker" },
+    { name = "pygeoalgo", editable = "geo-algo/VK-Aquifers" },
+    { name = "pykarstnsim", editable = "pykarstnsim" },
+    { name = "watchdog", extras = ["watchmedo"], specifier = ">=6.0.0" },
+]
 
 [[package]]
 name = "geocruncher-api"
 version = "0.1.0"
 source = { editable = "geocruncher-api" }
 dependencies = [
-    { name = "celery" },
     { name = "flask" },
+    { name = "geocruncher-common" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "flask", specifier = ">=3.1.1" },
+    { name = "geocruncher-common", editable = "geocruncher-common" },
+]
+
+[[package]]
+name = "geocruncher-common"
+version = "0.1.0"
+source = { editable = "geocruncher-common" }
+dependencies = [
+    { name = "celery" },
+    { name = "celery-types" },
     { name = "redis" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = ">=5.5.3" },
-    { name = "flask", specifier = ">=3.1.1" },
+    { name = "celery-types", specifier = ">=0.23.0" },
     { name = "redis", specifier = ">=6.4.0" },
 ]
 
