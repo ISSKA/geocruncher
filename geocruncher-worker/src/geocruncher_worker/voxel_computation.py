@@ -1,4 +1,3 @@
-from io import StringIO
 import numpy as np
 import pyvista as pv
 import meshio

@@ -1,9 +1,7 @@
-from typing import Awaitable
 import uuid
-import redis
+from .redis import RedisClient
 
-
-def get_and_delete(r: redis.Redis, key: str) -> bytes:
+def get_and_delete(r: RedisClient, key: str) -> bytes:
     """Get a key from the Redis Client, then delete it, and raise a ValueError if it doesn't exist.
 
     Parameters
@@ -21,8 +19,6 @@ def get_and_delete(r: redis.Redis, key: str) -> bytes:
     data = r.get(key)
     if data is None:
         raise ValueError(f"Key not found {key}")
-    if isinstance(data, Awaitable):
-        raise ValueError("Please use the sync version of this function")
     r.delete(key)
     return data
 
