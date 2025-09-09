@@ -7,7 +7,7 @@ import sys
 import os
 from collections import defaultdict
 
-from .computations import compute_tunnel_meshes, compute_meshes, compute_intersections, compute_faults, compute_voxels
+from geocruncher_worker.computations import compute_tunnel_meshes, compute_meshes, compute_intersections, compute_faults, compute_voxels
 
 
 def main():

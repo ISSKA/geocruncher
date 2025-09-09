@@ -1,0 +1,29 @@
+[project]
+name = "geocruncher-worker"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.9"
+dependencies = [
+    "dracopy>=1.5.0",
+    "gmlib>=0.3.22",
+    "meshio>=5.3.5",
+    "meshtools>=0.0.0",
+    "pycgal>=0.3.14",
+    "pygeoalgo",
+    "pyvista>=0.46.1",
+    "redis>=6.4.0",
+    "scikit-image>=0.24.0",
+    "sympy>=1.14.0",
+    "vtkwriters>=0.0.10",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+pygeoalgo = { workspace = true }
+meshtools = { path = "../geocruncher-dist/MeshTools-0.0.0-cp39-cp39-linux_x86_64.whl" }
+pycgal = { path = "../geocruncher-dist/pycgal-0.3.14-cp39-cp39-linux_x86_64.whl" }
+vtkwriters = { path = "../geocruncher-dist/vtkwriters-0.0.10-py3-none-any.whl" }
+gmlib = { path = "../geocruncher-dist/gmlib-0.3.22-cp39-cp39-linux_x86_64.whl" }

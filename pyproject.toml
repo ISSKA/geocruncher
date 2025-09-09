@@ -4,38 +4,20 @@ version = "0.1.0"
 description = "Standalone application for Geological Computations"
 readme = "README.md"
 requires-python = "~=3.9"
-dependencies = [
-    "celery>=5.5.3",
-    "dracopy>=1.5.0",
-    "flask>=3.1.1",
-    "gmlib",
-    "gunicorn>=23.0.0",
-    "lxml>=6.0.0",
-    "meshio>=5.3.5",
-    "meshtools",
-    "numpy>=2.0.2",
-    "pycgal",
-    "pygeoalgo",
-    "pykarstnsim",
-    "pyvista>=0.46.1",
-    "redis>=6.4.0",
-    "scipy>=1.13.1",
-    "sympy>=1.14.0",
-    "vtkwriters",
-]
+dependencies = []
 
 [tool.uv.sources]
-meshtools = { path = "geocruncher-dist/MeshTools-0.0.0-cp39-cp39-linux_x86_64.whl" }
-pycgal = { path = "geocruncher-dist/pycgal-0.3.14-cp39-cp39-linux_x86_64.whl" }
-vtkwriters = { path = "geocruncher-dist/vtkwriters-0.0.10-py3-none-any.whl" }
-gmlib = { path = "geocruncher-dist/gmlib-0.3.22-cp39-cp39-linux_x86_64.whl" }
 pygeoalgo = { workspace = true }
 pykarstnsim = { workspace = true }
+geocruncher-api = { workspace = true }
+geocruncher-worker = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "geo-algo/VK-Aquifers",
     "pykarstnsim",
+    "geocruncher-api",
+    "geocruncher-worker",
 ]
 
 [dependency-groups]

@@ -45,6 +45,7 @@ target_link_libraries(viskar-geo-algo
     ${CGAL_3RD_PARTY_LIBRARIES}
     draco
 )
+set_property(TARGET viskar-geo-algo PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_to_cached_list(CGAL_EXECUTABLE_TARGETS viskar-geo-algo)
 file(COPY res DESTINATION ${CMAKE_BINARY_DIR})
@@ -60,7 +61,10 @@ pybind11_add_module(PyGeoAlgo
 
 # Add Draco library to Python bindings
 target_link_libraries(PyGeoAlgo PRIVATE
-    ${DRACO_LIBRARY}
+    draco
     ${CGAL_LIBRARIES}
     ${CGAL_3RD_PARTY_LIBRARIES}
 )
+
+# Install the Python extension
+install(TARGETS PyGeoAlgo DESTINATION .)
