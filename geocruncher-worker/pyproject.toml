@@ -27,3 +27,8 @@ meshtools = { path = "../geocruncher-dist/MeshTools-0.0.0-cp39-cp39-linux_x86_64
 pycgal = { path = "../geocruncher-dist/pycgal-0.3.14-cp39-cp39-linux_x86_64.whl" }
 vtkwriters = { path = "../geocruncher-dist/vtkwriters-0.0.10-py3-none-any.whl" }
 gmlib = { path = "../geocruncher-dist/gmlib-0.3.22-cp39-cp39-linux_x86_64.whl" }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]

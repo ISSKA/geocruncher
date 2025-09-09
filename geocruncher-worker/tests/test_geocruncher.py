@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import geocruncher.main as main
+import geocruncher_worker.main as main
 
 
 def test_geocruncher():

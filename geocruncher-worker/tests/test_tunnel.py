@@ -1,7 +1,7 @@
 import pytest
 
 import numpy as np
-from geocruncher.tunnel_shape_generation import _project_points
+from geocruncher_worker.tunnel_shape_generation import _project_points
 from random import uniform, randint
 
 def _make_straight_segment(length, nb_vertices):

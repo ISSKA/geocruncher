@@ -39,7 +39,7 @@ def run_geocruncher(computation: str, args: list[str]):
             data = json.load(f)
         meshes = compute_tunnel_meshes(data)
         for key, value in meshes.items():
-            with open(os.path.join(args[3], key + '.off'), 'w', encoding='utf8') as f:
+            with open(os.path.join(args[3], key + '.off'), 'wb') as f:
                 f.write(value)
         # with open(f'{args[3]}/mesh_tunnel_outputs_cli.json', 'w') as f:
         #     json.dump(meshes, f, indent=2)
@@ -63,7 +63,7 @@ def run_geocruncher(computation: str, args: list[str]):
         for rank, off_mesh in generated_meshes['mesh'].items():
             filename = f"rank_{rank}.off"
             full_path = os.path.join(out_dir, filename)
-            with open(full_path, 'w', encoding='utf8') as f:
+            with open(full_path, 'wb') as f:
                 f.write(off_mesh)
             generated_meshes_paths['mesh'][rank].append(full_path)
 
@@ -71,7 +71,7 @@ def run_geocruncher(computation: str, args: list[str]):
         for name, off_mesh in generated_meshes['fault'].items():
             filename = f"fault_{name}.off"
             full_path = os.path.join(out_dir, filename)
-            with open(full_path, 'w', encoding='utf8') as f:
+            with open(full_path, 'wb') as f:
                 f.write(off_mesh)
             generated_meshes_paths['fault'][name].append(full_path)
 
@@ -123,7 +123,7 @@ def run_geocruncher(computation: str, args: list[str]):
         for name, off_mesh in generated_meshes['fault'].items():
             filename = f"fault_{name}.off"
             full_path = os.path.join(out_dir, filename)
-            with open(full_path, 'w', encoding='utf8') as f:
+            with open(full_path, 'wb') as f:
                 f.write(off_mesh)
             generated_meshes_paths['fault'][name].append(full_path)
 
