@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #include <pybind11/operators.h>
+#include <pybind11/iostream.h>
 
 #include <memory>
 
@@ -230,6 +231,7 @@ PYBIND11_MODULE(pykarstnsim_core, m)
         .def_readwrite("create_vset_sampling", &ParamsSource::create_vset_sampling, R"doc(Save sampling point set.)doc")
         .def_readwrite("create_nghb_graph", &ParamsSource::create_nghb_graph, R"doc(Save nearest neighbor graph (large).)doc")
         .def_readwrite("create_nghb_graph_property", &ParamsSource::create_nghb_graph_property, R"doc(Save per-edge property (very large).)doc")
+        .def_readwrite("create_solved_connectivity_matrix", &ParamsSource::create_solved_connectivity_matrix, R"doc(Save \"solved\" connectivity matrix (with resolved \"uncertain\" connections))doc")
         .def_readwrite("create_grid", &ParamsSource::create_grid, R"doc(Save grid data.)doc")
         // Properties loaded externally
         .def_readwrite("propdensity", &ParamsSource::propdensity, R"doc(Density property values from domain box.)doc")
@@ -446,10 +448,10 @@ PYBIND11_MODULE(pykarstnsim_core, m)
         R"doc(Set noise parameters (rng handled internally).)doc")
         .def("create_sections", &KarsticNetwork::create_sections, py::arg("skeleton"))
         .def("run_simulation_properties", &KarsticNetwork::run_simulation_properties, py::arg("skeleton"), py::arg("alteration_lines"), py::arg("use_ghost_rocks"), py::arg("ghostrock_max_vertical_size"), py::arg("use_max_depth_constraint"), py::arg("max_depth_horizon"), py::arg("ghostrock_width"))
-        .def("run_simulation", [](KarsticNetwork &self, bool sections_simulation_only, bool create_nghb_graph, bool create_nghb_graph_property, bool use_amplification, bool use_sampling_points, float fraction_karst_perm, float fraction_old_karst_perm, float max_inception_surface_distance, std::vector<Vector3> &sampling_points, bool create_vset_sampling, bool use_density_property, int k_pts, const std::vector<float> &propdensity, const std::vector<float> &propikp)
-             { return self.run_simulation(sections_simulation_only, create_nghb_graph, create_nghb_graph_property, use_amplification, use_sampling_points,
+        .def("run_simulation", [](KarsticNetwork &self, bool sections_simulation_only, bool create_nghb_graph, bool create_nghb_graph_property, bool create_solved_connectivity_matrix, bool use_amplification, bool use_sampling_points, float fraction_karst_perm, float fraction_old_karst_perm, float max_inception_surface_distance, std::vector<Vector3> &sampling_points, bool create_vset_sampling, bool use_density_property, int k_pts, const std::vector<float> &propdensity, const std::vector<float> &propikp)
+             { return self.run_simulation(sections_simulation_only, create_nghb_graph, create_nghb_graph_property, create_solved_connectivity_matrix, use_amplification, use_sampling_points,
                                           fraction_karst_perm, fraction_old_karst_perm, max_inception_surface_distance, &sampling_points, create_vset_sampling,
-                                          use_density_property, k_pts, propdensity, propikp); }, py::arg("sections_simulation_only"), py::arg("create_nghb_graph"), py::arg("create_nghb_graph_property"), py::arg("use_amplification"), py::arg("use_sampling_points"), py::arg("fraction_karst_perm"), py::arg("fraction_old_karst_perm"), py::arg("max_inception_surface_distance"), py::arg("sampling_points"), py::arg("create_vset_sampling"), py::arg("use_density_property"), py::arg("k_pts"), py::arg("propdensity"), py::arg("propikp"), R"doc(Run full (or sections-only) simulation; returns elapsed wall time (s). sampling_points is updated in-place if used.)doc")
+                                          use_density_property, k_pts, propdensity, propikp); }, py::arg("sections_simulation_only"), py::arg("create_nghb_graph"), py::arg("create_nghb_graph_property"), py::arg("create_solved_connectivity_matrix"), py::arg("use_amplification"), py::arg("use_sampling_points"), py::arg("fraction_karst_perm"), py::arg("fraction_old_karst_perm"), py::arg("max_inception_surface_distance"), py::arg("sampling_points"), py::arg("create_vset_sampling"), py::arg("use_density_property"), py::arg("k_pts"), py::arg("propdensity"), py::arg("propikp"), R"doc(Run full (or sections-only) simulation; returns elapsed wall time (s). sampling_points is updated in-place if used.)doc")
         .def("set_save_directory", &KarsticNetwork::set_save_directory, py::arg("directory"))
         .def("save_painted_box", &KarsticNetwork::save_painted_box, py::arg("propdensity"), py::arg("propikp"))
         .def("set_geostat_params", &KarsticNetwork::set_geostat_params, py::arg("geostat_params"))
@@ -462,4 +464,6 @@ PYBIND11_MODULE(pykarstnsim_core, m)
     // RNG
     // void initializeRng(const std::vector<std::uint32_t>& seed) from randomgenerator.h (not a class, just a helper)
     m.def("initializeRng", &initializeRng, py::arg("seed"), R"doc(Initializes the random number generator with a given seed.)doc");
+
+    py::add_ostream_redirect(m, "ostream_redirect");
 }

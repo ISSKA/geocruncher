@@ -89,12 +89,12 @@ class KarstConfig:
     water_table_constraint_weight_phreatic: float = 1.0
 
     # Deadend points amplification
-    use_deadend_points: bool = True
+    use_deadend_points: bool = False
     nb_deadend_points: int = 15
     max_distance_of_deadend_pts: int = 50
 
     # Cycle amplification
-    use_cycle_amplification: bool = True
+    use_cycle_amplification: bool = False
     max_distance_amplification: int = 150
     min_distance_amplification: int = 50
     nb_cycles: int = 20
@@ -135,7 +135,8 @@ class KarstConfig:
     multiply_costs: bool = False
 
     # Save parameters
-    create_vset_sampling: bool = True
+    create_vset_sampling: bool = False
     create_nghb_graph: bool = False
     create_nghb_graph_property: bool = False
+    create_solved_connectivity_matrix: bool = False
     create_grid: bool = False

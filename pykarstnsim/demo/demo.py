@@ -1,4 +1,5 @@
 import logging
+import signal
 
 import pykarstnsim_core
 from pykarstnsim.loaders import (
@@ -318,23 +319,30 @@ if CONFIG.use_karstification_potential and not run_propikp:
     LOGGER.warning("Karstification potential requested but IKP values missing; placeholder IKP values will be used.")
     run_propikp = [1.0] * cell_count
 
+# allow Ctrl-C to interrupt simulation
+# see: https://stackoverflow.com/a/68441714
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 LOGGER.info("Starting simulation, will output to %s", save_dir)
-res = karst.run_simulation(
-    sections_simulation_only=CONFIG.sections_simulation_only,
-    create_nghb_graph=CONFIG.create_nghb_graph,
-    create_nghb_graph_property=CONFIG.create_nghb_graph_property,
-    use_amplification=CONFIG.use_cycle_amplification,
-    use_sampling_points=CONFIG.use_sampling_points,
-    fraction_karst_perm=CONFIG.fraction_karst_perm,
-    fraction_old_karst_perm=CONFIG.fraction_old_karst_perm,
-    max_inception_surface_distance=CONFIG.max_inception_surface_distance,
-    sampling_points=sampling_points,
-    create_vset_sampling=CONFIG.create_vset_sampling,
-    use_density_property=CONFIG.use_density_property,
-    k_pts=CONFIG.k_pts,
-    propdensity=run_propdensity,
-    propikp=run_propikp
-)
+# redirect cout/cerr to Python sys.stdout/stderr (seems broken)
+with pykarstnsim_core.ostream_redirect():
+    res = karst.run_simulation(
+        sections_simulation_only=CONFIG.sections_simulation_only,
+        create_nghb_graph=CONFIG.create_nghb_graph,
+        create_nghb_graph_property=CONFIG.create_nghb_graph_property,
+        create_solved_connectivity_matrix=CONFIG.create_solved_connectivity_matrix,
+        use_amplification=CONFIG.use_cycle_amplification,
+        use_sampling_points=CONFIG.use_sampling_points,
+        fraction_karst_perm=CONFIG.fraction_karst_perm,
+        fraction_old_karst_perm=CONFIG.fraction_old_karst_perm,
+        max_inception_surface_distance=CONFIG.max_inception_surface_distance,
+        sampling_points=sampling_points,
+        create_vset_sampling=CONFIG.create_vset_sampling,
+        use_density_property=CONFIG.use_density_property,
+        k_pts=CONFIG.k_pts,
+        propdensity=run_propdensity,
+        propikp=run_propikp
+    )
 
 
 print("Simulation result:", res)

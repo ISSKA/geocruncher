@@ -1,6 +1,6 @@
 [project]
 name = "pykarstnsim"
-version = "0.1.64"
+version = "0.1.67"
 description = "A Python interface for the KarstNSim C++ library"
 requires-python = ">=3.9"
 dependencies = []
