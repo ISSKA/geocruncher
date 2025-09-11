@@ -29,5 +29,4 @@ dev = [
     "geocruncher-worker",
     "pykarstnsim",
     "pygeoalgo",
-    "watchdog[watchmedo]>=6.0.0",
 ]

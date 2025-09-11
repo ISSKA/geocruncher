@@ -4,16 +4,21 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
     depends_on:
       - redis
-    # override to start using flask
-    command: ["main.py"]
+    # override to start using flask dev server
+    command: ["python", "geocruncher-api/main.py"]
     ports:
       - "5000:5000"
-    volumes:
-      # Hot reload by linking to on-disk code
-      - ../geocruncher-api/:/app/geocruncher-api/
-      - ../geocruncher-common/:/app/geocruncher-common/
+    develop:
+        watch:
+          - action: sync
+            path: ../geocruncher-api
+            target: /app/geocruncher-api
+          - action: sync
+            path: ../geocruncher-common
+            target: /app/geocruncher-common
     environment:
       - REDIS_HOST=redis
   worker:
@@ -21,12 +26,18 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.worker
+    restart: unless-stopped
     depends_on:
       - redis
-    #command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
-    #volumes:
-      # Avoid packaging api / geocruncher on every change by linking to on-disk code
-      #- $PWD:/home/build
+    command: ["watchmedo", "auto-restart", "--directory=./", "--pattern=*.py", "--recursive", "--", "celery", "-A", "geocruncher_common.celery_app", "worker", "-l", "INFO", "-Q", "geocruncher:long_running,geocruncher:priority"]
+    develop:
+        watch:
+          - action: sync
+            path: ../geocruncher-worker
+            target: /app/geocruncher-worker
+          - action: sync
+            path: ../geocruncher-common
+            target: /app/geocruncher-common
     environment:
       - REDIS_HOST=redis
       - PROFILING_ENABLED=true

@@ -1,10 +1,11 @@
-version: "3"
 services:
   api:
-    image: geocruncher/geocruncher-dev:latest
+    image: geocruncher/geocruncher-api-dev:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/api.sh"]
     ports:
       - "5001:5000"
     environment:
@@ -15,10 +16,12 @@ services:
         tag: "geocruncher.dev"
         labels: "api"
   worker:
-    image: geocruncher/geocruncher-dev:latest
+    image: geocruncher/geocruncher-worker-dev:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/worker.sh"]
     environment:
       - REDIS_HOST=redis
       - PROFILING_ENABLED=true

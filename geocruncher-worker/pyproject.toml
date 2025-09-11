@@ -33,4 +33,5 @@ gmlib = { path = "../geocruncher-dist/gmlib-0.3.22-cp39-cp39-linux_x86_64.whl" }
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
+    "watchdog[watchmedo]>=6.0.0",
 ]

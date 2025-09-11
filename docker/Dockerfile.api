@@ -1,18 +1,37 @@
-FROM python:3.9-slim-bookworm AS base
-COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
+# Builder: install deps into a venv using uv
+FROM ghcr.io/astral-sh/uv:python3.9-bookworm-slim AS builder
+ENV UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_COMPILE_BYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
+# copy lockfiles first for caching
 COPY pyproject.toml uv.lock ./
-ENTRYPOINT ["/bin/uv", "run", "--no-sync"]
 
-FROM base AS api
+# preinstall API deps without sources
+WORKDIR /app/geocruncher-api
+COPY geocruncher-api/pyproject.toml ./pyproject.toml
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-install-workspace
 
+# copy sources and finish install
 COPY geocruncher-common/ /app/geocruncher-common/
 COPY geocruncher-api/ /app/geocruncher-api/
-WORKDIR /app/geocruncher-api
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen
+
+# Final runtime image
+FROM python:3.9-slim-bookworm AS runtime
+WORKDIR /app
+
+# copy app and .venv from builder
+COPY --from=builder /app /app
+
+# ensure venv is active
+ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+
 EXPOSE 5000
 
 CMD ["gunicorn", "-b", "0.0.0.0:5000", "-w", "4", "geocruncher_api.api:app", "--access-logfile=-"]

@@ -276,7 +276,6 @@ dev = [
     { name = "geocruncher-worker" },
     { name = "pygeoalgo" },
     { name = "pykarstnsim" },
-    { name = "watchdog", extra = ["watchmedo"] },
 ]
 
 [package.metadata]
@@ -288,7 +287,6 @@ dev = [
     { name = "geocruncher-worker", editable = "geocruncher-worker" },
     { name = "pygeoalgo", editable = "geo-algo/VK-Aquifers" },
     { name = "pykarstnsim", editable = "pykarstnsim" },
-    { name = "watchdog", extras = ["watchmedo"], specifier = ">=6.0.0" },
 ]
 
 [[package]]
@@ -347,6 +345,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "watchdog", extra = ["watchmedo"] },
 ]
 
 [package.metadata]
@@ -366,7 +365,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.4.2" }]
+dev = [
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "watchdog", extras = ["watchmedo"], specifier = ">=6.0.0" },
+]
 
 [[package]]
 name = "gmlib"

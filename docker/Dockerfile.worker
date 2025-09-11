@@ -1,48 +1,66 @@
-FROM python:3.9-bookworm AS base
-COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
+# Builder: use uv image to create .venv and build native wheels
+FROM ghcr.io/astral-sh/uv:python3.9-bookworm-slim AS builder
+ENV UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_COMPILE_BYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-ENV PYTHONUNBUFFERED=1
-ENV UV_LINK_MODE=copy
 WORKDIR /app
 
+# copy lockfiles first to maximize cache
 COPY pyproject.toml uv.lock ./
-ENTRYPOINT ["/bin/uv", "run", "--no-sync"]
 
-FROM base AS worker
-
-# install build prerequisites
+# Install native build deps in builder only
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         git \
         ninja-build \
-        gdb \
         libcgal-dev \
         libboost-all-dev \
         libgmp-dev \
         libmpfr-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY geocruncher-dist/ /app/geocruncher-dist/
+# copy folders required for prebuilds (keeps layers cacheable)
 COPY geo-algo/ /app/geo-algo/
+COPY geocruncher-dist/ /app/geocruncher-dist/
 
-# Preinstall dependencies
+# build / preinstall geo-algo native component
 WORKDIR /app/geo-algo/VK-Aquifers
-ENV SKBUILD_BUILD_DIR "/root/.cache/build"
+ENV SKBUILD_BUILD_DIR="/root/.cache/build"
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/root/.cache/build \
-    uv sync --frozen --no-dev
+    uv sync --frozen
 
+# preinstall worker deps (without project sources)
 WORKDIR /app/geocruncher-worker
 COPY geocruncher-worker/pyproject.toml ./pyproject.toml
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project --no-install-workspace
+    uv sync --frozen --no-install-project --no-install-workspace
 
+# copy remaining project sources and install the project into the venv
 COPY geocruncher-common/ /app/geocruncher-common/
 COPY geocruncher-worker/ /app/geocruncher-worker/
+WORKDIR /app/geocruncher-worker
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/root/.cache/build \
-    uv sync --frozen --no-dev
+    uv sync --frozen
 
-EXPOSE 5000
+# Final runtime image: smaller, no uv tool included
+FROM python:3.9-slim-bookworm AS runtime
+WORKDIR /app
+
+# Install only the shared libs needed at runtime for the native PyGeoAlgo extension.
+# (Keeping build toolchain & headers out of the final image.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libmpfr6 \
+    libgmp10 \
+    && rm -rf /var/lib/apt/lists/*
+
+# copy application + .venv produced by builder
+COPY --from=builder /app /app
+
+# ensure the venv bin is on PATH
+ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 
 CMD ["celery", "-A", "geocruncher_common.celery_app", "worker", "-Q", "geocruncher:long_running,geocruncher:priority"]
