@@ -7,6 +7,7 @@
 #include <CGAL/AABB_tree.h>
 #include <CGAL/exceptions.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <queue>
 
 typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> AABB_primitive;
 typedef CGAL::AABB_traits<Kernel, AABB_primitive> AABB_traits;
@@ -51,8 +52,8 @@ Input: Spring, Origin (aquifer mesh belonging to spring)
 * meshes: List of triangle meshes. The meshes must be closed and manifold.
 * spring_to_mesh: location of a spring and its assignment to a mesh ID. Invalid mesh IDs will throw a exception during calculation.
 */
-AquiferCalc::AquiferCalc(std::vector<UnitMesh>&& meshes, std::vector<Spring>&& springs)
-  : meshes(meshes), springs(springs) { }
+AquiferCalc::AquiferCalc(std::vector<UnitMesh> meshes, std::vector<Spring> springs)
+  : meshes(std::move(meshes)), springs(std::move(springs)) { }
 
 
 /**
@@ -163,7 +164,8 @@ std::vector<UnitMesh> AquiferCalc::findConnectedGroundwaterBodyParts(const UnitM
 
 std::vector<Mesh> AquiferCalc::findConnectedComponents(Mesh& mesh) {
   const std::string facemap_name = "f:ConnectedComponent";
-  Mesh::Property_map<Mesh::Face_index, std::size_t> face_component_map = mesh.add_property_map<Mesh::Face_index, std::size_t>(facemap_name).first;
+  auto pm_pair = mesh.add_property_map<Mesh::Face_index, std::size_t>(facemap_name);
+  auto face_component_map = pm_pair.first;
   const size_t num_components = PMP::connected_components(mesh, face_component_map);
 
   std::vector<Mesh> components;

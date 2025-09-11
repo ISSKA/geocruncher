@@ -1,31 +1,32 @@
-version: "3"
 services:
   api:
-    image: geocruncher/geocruncher-local:latest
+    image: geocruncher/geocruncher-api:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile.api
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/api-local.sh"]
+    # override to start using flask
+    command: ["main.py"]
     ports:
       - "5000:5000"
     volumes:
-      # Avoid packaging api / geocruncher on every change by linking to on-disk code
-      - $PWD:/home/build
+      # Hot reload by linking to on-disk code
+      - ../geocruncher-api/:/app/geocruncher-api/
+      - ../geocruncher-common/:/app/geocruncher-common/
     environment:
       - REDIS_HOST=redis
   worker:
-    image: geocruncher/geocruncher-local:latest
+    image: geocruncher/geocruncher-worker:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile.worker
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
-    volumes:
+    #command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
+    #volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
-      - $PWD:/home/build
+      #- $PWD:/home/build
     environment:
       - REDIS_HOST=redis
       - PROFILING_ENABLED=true

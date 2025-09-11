@@ -9,7 +9,7 @@ PYBIND11_MODULE(PyGeoAlgo, m) {
     m.doc() = "GeoAlgo pybind11 python bindings";
 
     py::class_<AquiferCalc>(m, "AquiferCalc")
-        .def(py::init<std::vector<UnitMesh>&&, std::vector<Spring>&&>())
+        .def(py::init<std::vector<UnitMesh>, std::vector<Spring>>())
         .def("calculate", &AquiferCalc::calculate);
 
     py::class_<FileIO>(m, "FileIO")

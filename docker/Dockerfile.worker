@@ -1,0 +1,48 @@
+FROM python:3.9-bookworm AS base
+COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
+
+ENV PYTHONUNBUFFERED=1
+ENV UV_LINK_MODE=copy
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+ENTRYPOINT ["/bin/uv", "run", "--no-sync"]
+
+FROM base AS worker
+
+# install build prerequisites
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        ninja-build \
+        gdb \
+        libcgal-dev \
+        libboost-all-dev \
+        libgmp-dev \
+        libmpfr-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY geocruncher-dist/ /app/geocruncher-dist/
+COPY geo-algo/ /app/geo-algo/
+
+# Preinstall dependencies
+WORKDIR /app/geo-algo/VK-Aquifers
+ENV SKBUILD_BUILD_DIR "/root/.cache/build"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/root/.cache/build \
+    uv sync --frozen --no-dev
+
+WORKDIR /app/geocruncher-worker
+COPY geocruncher-worker/pyproject.toml ./pyproject.toml
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project --no-install-workspace
+
+COPY geocruncher-common/ /app/geocruncher-common/
+COPY geocruncher-worker/ /app/geocruncher-worker/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/root/.cache/build \
+    uv sync --frozen --no-dev
+
+EXPOSE 5000
+
+CMD ["celery", "-A", "geocruncher_common.celery_app", "worker", "-Q", "geocruncher:long_running,geocruncher:priority"]

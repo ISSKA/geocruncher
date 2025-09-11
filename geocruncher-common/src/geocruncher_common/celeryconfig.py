@@ -2,7 +2,7 @@ import os
 
 broker_url = f"redis://{os.environ['REDIS_HOST']}:6379/1"
 result_backend = f"redis://{os.environ['REDIS_HOST']}:6379/2"
-imports = ('api.tasks')
+imports = ('geocruncher_worker.tasks',)
 # Task hard time limit in seconds. Set to 6 hours
 task_time_limit = 6 * 60 * 60
 # Time after which the results are automatically deleted in seconds. Set to 8 hours
@@ -13,7 +13,7 @@ result_expires = 8 * 60 * 60
 worker_prefetch_multiplier = 1
 task_default_queue = 'geocruncher:long_running'
 task_routes = {
-    'api.tasks.compute_intersections': 'geocruncher:priority',
+    'geocruncher.compute.intersections': 'geocruncher:priority',
 }
 broker_connection_retry_on_startup = True
 task_track_started = True

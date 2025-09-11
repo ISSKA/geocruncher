@@ -5,6 +5,7 @@ description = "Add your description here"
 requires-python = ">=3.9"
 dependencies = [
     "dracopy>=1.5.0",
+    "geocruncher-common",
     "gmlib>=0.3.22",
     "meshio>=5.3.5",
     "meshtools>=0.0.0",
@@ -22,6 +23,7 @@ requires = ["uv_build>=0.8.15,<0.9.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
+geocruncher-common = { workspace = true }
 pygeoalgo = { workspace = true }
 meshtools = { path = "../geocruncher-dist/MeshTools-0.0.0-cp39-cp39-linux_x86_64.whl" }
 pycgal = { path = "../geocruncher-dist/pycgal-0.3.14-cp39-cp39-linux_x86_64.whl" }

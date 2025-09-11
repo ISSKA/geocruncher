@@ -1,3 +1,9 @@
+"""Celery tasks for geocruncher computations.
+This file contains the real implementation of the tasks, which are executed by the worker.
+@see geocruncher_common.tasks for the stub file.
+These should be kept in sync with the stub implementation in geocruncher-common.
+The names must match exactly, or the worker will not be able to find the tasks.
+"""
 import json
 from collections import defaultdict
 
@@ -8,7 +14,7 @@ from geocruncher_common.redis import redis_client as r
 from geocruncher_common.utils import get_and_delete
 
 
-@app.task
+@app.task(name="geocruncher.compute.tunnel_meshes")
 def compute_tunnel_meshes(data: models.TunnelMeshesData, output_key: str) -> str:
     meshes = computations.compute_tunnel_meshes(data)
     for field, value in meshes.items():
@@ -16,7 +22,7 @@ def compute_tunnel_meshes(data: models.TunnelMeshesData, output_key: str) -> str
     return output_key
 
 
-@app.task
+@app.task(name="geocruncher.compute.meshes")
 def compute_meshes(data: models.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
@@ -35,7 +41,7 @@ def compute_meshes(data: models.MeshesData, xml_key: str, dem_key: str, output_k
     return output_key
 
 
-@app.task
+@app.task(name="geocruncher.compute.intersections")
 def compute_intersections(data: models.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
@@ -55,7 +61,7 @@ def compute_intersections(data: models.IntersectionsData, xml_key: str, dem_key:
     return output_key
 
 
-@app.task
+@app.task(name="geocruncher.compute.faults")
 def compute_faults(data: models.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
@@ -69,7 +75,7 @@ def compute_faults(data: models.MeshesData, xml_key: str, dem_key: str, output_k
     return output_key
 
 
-@app.task
+@app.task(name="geocruncher.compute.voxels")
 def compute_voxels(data: models.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
@@ -87,7 +93,7 @@ def compute_voxels(data: models.MeshesData, xml_key: str, dem_key: str, gwb_mesh
     return output_key
 
 
-@app.task
+@app.task(name="geocruncher.compute.gwb_meshes")
 def compute_gwb_meshes(data: list[models.Spring], meshes_key: str, output_key: str) -> str:
 
     # get existing meshes for groundwater bodies

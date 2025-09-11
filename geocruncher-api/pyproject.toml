@@ -6,6 +6,7 @@ requires-python = ">=3.9"
 dependencies = [
     "flask>=3.1.1",
     "geocruncher-common",
+    "gunicorn>=23.0.0",
 ]
 
 [build-system]

@@ -1,0 +1,18 @@
+FROM python:3.9-slim-bookworm AS base
+COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
+
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+COPY pyproject.toml uv.lock ./
+ENTRYPOINT ["/bin/uv", "run", "--no-sync"]
+
+FROM base AS api
+
+COPY geocruncher-common/ /app/geocruncher-common/
+COPY geocruncher-api/ /app/geocruncher-api/
+WORKDIR /app/geocruncher-api
+RUN uv sync --frozen --no-dev
+EXPOSE 5000
+
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "-w", "4", "geocruncher_api.api:app", "--access-logfile=-"]
