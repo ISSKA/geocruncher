@@ -344,5 +344,9 @@ with pykarstnsim_core.ostream_redirect():
         propikp=run_propikp
     )
 
+if res is None:
+    LOGGER.error("Simulation failed, no result returned.")
+    exit(1)
 
 print("Simulation result:", res)
+print(res.to_string())

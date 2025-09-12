@@ -14,6 +14,7 @@
 #include "KarstNSim/geology.h"         // GeologicalParameters, KeyPoint, CostTerm, KeyPointType
 #include "KarstNSim/ghost_rocks.h"     // Ghost-rock helpers (used indirectly)
 #include "KarstNSim/randomgenerator.h" // RNG initialization
+#include "KarstNSim/models/results.h"  // ResultPoint, ResultSegment, KarstNetworkResult
 
 // Lifetime ownership helpers (see note in module body). We place them in an anonymous namespace
 // at translation unit scope so they are available inside the binding lambdas.
@@ -249,6 +250,41 @@ PYBIND11_MODULE(pykarstnsim_core, m)
              { return "ParamsSource()"; });
 
     // ---------------------------------------------------------------------------
+    // Result structs for KarstNetworkResult API
+    // ---------------------------------------------------------------------------
+
+    // ResultPoint
+    py::class_<ResultPoint>(m, "ResultPoint", R"doc(Point result containing spatial coordinates and simulation properties.)doc")
+        .def_readonly("p", &ResultPoint::p, R"doc(3D coordinates of the point (Vector3).)doc")
+        .def_readonly("cost", &ResultPoint::cost, R"doc(Cost associated with the point during simulation.)doc")
+        .def_readonly("equivalent_radius", &ResultPoint::equivalent_radius, R"doc(Equivalent radius computed for the point.)doc")
+        .def_readonly("branch_id", &ResultPoint::branch_id, R"doc(Branch ID this point belongs to in the karst network.)doc")
+        .def_readonly("vadose_flag", &ResultPoint::vadose_flag, R"doc(Flag indicating if the point is in the vadose zone (True) or phreatic zone (False).)doc")
+        .def("__repr__", [](const ResultPoint &rp) {
+            return "ResultPoint(p=" + std::to_string(rp.p.x) + "," + std::to_string(rp.p.y) + "," + std::to_string(rp.p.z) + 
+                   ", cost=" + std::to_string(rp.cost) + ", eq_radius=" + std::to_string(rp.equivalent_radius) + 
+                   ", branch_id=" + std::to_string(rp.branch_id) + ", vadose=" + (rp.vadose_flag ? "True" : "False") + ")";
+        });
+
+    // ResultSegment
+    py::class_<ResultSegment>(m, "ResultSegment", R"doc(Segment result connecting two ResultPoint endpoints in the karst network.)doc")
+        .def_readonly("start", &ResultSegment::start, R"doc(Starting point of the segment (ResultPoint).)doc")
+        .def_readonly("end", &ResultSegment::end, R"doc(Ending point of the segment (ResultPoint).)doc")
+        .def("__repr__", [](const ResultSegment &rs) {
+            return "ResultSegment(start=(" + std::to_string(rs.start.p.x) + "," + std::to_string(rs.start.p.y) + "," + std::to_string(rs.start.p.z) + 
+                   "), end=(" + std::to_string(rs.end.p.x) + "," + std::to_string(rs.end.p.y) + "," + std::to_string(rs.end.p.z) + "))";
+        });
+
+    // KarstNetworkResult
+    py::class_<KarstNetworkResult>(m, "KarstNetworkResult", R"doc(Container for karst network simulation results, storing segments with detailed point properties.)doc")
+        .def(py::init<>(), R"doc(Default empty result.)doc")    
+        .def_readonly("segments", &KarstNetworkResult::segments, R"doc(List of segments in the karst network result. Each segment contains start and end ResultPoint objects with detailed simulation properties.)doc")
+        .def("to_string", &KarstNetworkResult::to_string, R"doc(Return a string summary of the KarstNetworkResult.)doc")
+        .def("__repr__", [](const KarstNetworkResult &knr) {
+            return "KarstNetworkResult(segments=" + std::to_string(knr.segments.size()) + ")";
+        });
+
+    // ---------------------------------------------------------------------------
     // Recursive extra bindings: geological + skeleton + network level API
     // ---------------------------------------------------------------------------
 
@@ -451,7 +487,7 @@ PYBIND11_MODULE(pykarstnsim_core, m)
         .def("run_simulation", [](KarsticNetwork &self, bool sections_simulation_only, bool create_nghb_graph, bool create_nghb_graph_property, bool create_solved_connectivity_matrix, bool use_amplification, bool use_sampling_points, float fraction_karst_perm, float fraction_old_karst_perm, float max_inception_surface_distance, std::vector<Vector3> &sampling_points, bool create_vset_sampling, bool use_density_property, int k_pts, const std::vector<float> &propdensity, const std::vector<float> &propikp)
              { return self.run_simulation(sections_simulation_only, create_nghb_graph, create_nghb_graph_property, create_solved_connectivity_matrix, use_amplification, use_sampling_points,
                                           fraction_karst_perm, fraction_old_karst_perm, max_inception_surface_distance, &sampling_points, create_vset_sampling,
-                                          use_density_property, k_pts, propdensity, propikp); }, py::arg("sections_simulation_only"), py::arg("create_nghb_graph"), py::arg("create_nghb_graph_property"), py::arg("create_solved_connectivity_matrix"), py::arg("use_amplification"), py::arg("use_sampling_points"), py::arg("fraction_karst_perm"), py::arg("fraction_old_karst_perm"), py::arg("max_inception_surface_distance"), py::arg("sampling_points"), py::arg("create_vset_sampling"), py::arg("use_density_property"), py::arg("k_pts"), py::arg("propdensity"), py::arg("propikp"), R"doc(Run full (or sections-only) simulation; returns elapsed wall time (s). sampling_points is updated in-place if used.)doc")
+                                          use_density_property, k_pts, propdensity, propikp); }, py::arg("sections_simulation_only"), py::arg("create_nghb_graph"), py::arg("create_nghb_graph_property"), py::arg("create_solved_connectivity_matrix"), py::arg("use_amplification"), py::arg("use_sampling_points"), py::arg("fraction_karst_perm"), py::arg("fraction_old_karst_perm"), py::arg("max_inception_surface_distance"), py::arg("sampling_points"), py::arg("create_vset_sampling"), py::arg("use_density_property"), py::arg("k_pts"), py::arg("propdensity"), py::arg("propikp"), R"doc(Run full (or sections-only) karst network simulation. Returns a KarstNetworkResult object containing all simulated segments with detailed point properties (coordinates, costs, equivalent radii, branch IDs, vadose flags). The sampling_points vector is updated in-place if use_sampling_points is enabled.)doc")
         .def("set_save_directory", &KarsticNetwork::set_save_directory, py::arg("directory"))
         .def("save_painted_box", &KarsticNetwork::save_painted_box, py::arg("propdensity"), py::arg("propikp"))
         .def("set_geostat_params", &KarsticNetwork::set_geostat_params, py::arg("geostat_params"))

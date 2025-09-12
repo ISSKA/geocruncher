@@ -826,7 +826,7 @@ wheels = [
 
 [[package]]
 name = "pykarstnsim"
-version = "0.1.67"
+version = "0.1.22"
 source = { editable = "pykarstnsim" }
 
 [package.dev-dependencies]

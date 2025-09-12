@@ -15,7 +15,7 @@ include(FetchContent)
 FetchContent_Declare(
     karstnsim_repo
     GIT_REPOSITORY https://github.com/ISSKA/KarstNSim_Public.git
-    GIT_TAG 75d15de4650698b5cda3957358368602962b88d6
+    GIT_TAG c1c0b6cd463acd493813381d27a44335b480dbe4
 )
 FetchContent_GetProperties(karstnsim_repo)
 if (NOT karstnsim_repo_POPULATED)
@@ -64,6 +64,7 @@ add_custom_command(TARGET pykarstnsim_core POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E env
             PYTHONPATH=$<TARGET_FILE_DIR:pykarstnsim_core>
             ${Python3_EXECUTABLE} -m pybind11_stubgen pykarstnsim_core -o ${PYKARSTNSIM_STUB_OUT_DIR}
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/fix_typings.py ${PYKARSTNSIM_STUB_PYI}
     BYPRODUCTS ${PYKARSTNSIM_STUB_PYI}
     COMMENT "Generating .pyi stubs for pykarstnsim_core"
 )
