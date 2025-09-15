@@ -15,7 +15,7 @@ include(FetchContent)
 FetchContent_Declare(
     karstnsim_repo
     GIT_REPOSITORY https://github.com/ISSKA/KarstNSim_Public.git
-    GIT_TAG c1c0b6cd463acd493813381d27a44335b480dbe4
+    GIT_TAG 7f50483c71a182d45545fa61e5e715cafd33e833
 )
 FetchContent_GetProperties(karstnsim_repo)
 if (NOT karstnsim_repo_POPULATED)
