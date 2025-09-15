@@ -1,3 +1,4 @@
 [submodule "geocruncher-dist"]
 	path = geocruncher-dist
-	url = https://github.com/ISSKA/geocruncher-dist
+	url = git@github.com:ISSKA/geocruncher-dist.git
+    branch = master
