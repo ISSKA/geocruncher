@@ -5,8 +5,10 @@ from pathlib import Path
 @dataclass
 class KarstConfig:
     """Simulation configuration (now using pathlib.Path for file system entries)."""
+
     # Name & repository roots
     karstic_network_name: str = "example"
+    save_directory: Path = Path("results")
 
     # General parameters
     domain: Path = Path("Input_files/example_box.txt")
@@ -53,10 +55,12 @@ class KarstConfig:
     # Inception surfaces
     add_inception_surfaces: bool = True
     refine_surface_sampling: int = 2
-    inception_surfaces: list[Path] = field(default_factory=lambda: [
-        Path("Input_files/example_inception_surf1.txt"),
-        Path("Input_files/example_inception_surf2.txt"),
-    ])
+    inception_surfaces: list[Path] = field(
+        default_factory=lambda: [
+            Path("Input_files/example_inception_surf1.txt"),
+            Path("Input_files/example_inception_surf2.txt"),
+        ]
+    )
     inception_surface_constraint_weight: float = 1.0
     max_inception_surface_distance: float = 50.0
 
@@ -81,10 +85,12 @@ class KarstConfig:
     sphere_centers: Path = Path("Input_files/example_nokarstspheres.txt")
 
     # Water tables & weights
-    surf_wat_table: list[Path] = field(default_factory=lambda: [
-        Path("Input_files/example_watertable_surf1.txt"),
-        Path("Input_files/example_watertable_surf2.txt"),
-    ])
+    surf_wat_table: list[Path] = field(
+        default_factory=lambda: [
+            Path("Input_files/example_watertable_surf1.txt"),
+            Path("Input_files/example_watertable_surf2.txt"),
+        ]
+    )
     water_table_constraint_weight_vadose: float = 1.0
     water_table_constraint_weight_phreatic: float = 1.0
 

@@ -1,13 +1,16 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pykarstnsim_core
 
 
 @dataclass
 class Surface:
-    vertices: list[pykarstnsim_core.Vector3]
-    triangles: list[pykarstnsim_core.Triangle]
+    surface: pykarstnsim_core.Surface
+
+    def to_string(self) -> str:
+        return self.surface.to_string()
 
     @staticmethod
     def from_file(path: Path) -> "Surface":
@@ -44,7 +47,40 @@ class Surface:
             except ValueError as e:
                 raise ValueError(f"Invalid surface line: {line}") from e
 
-        return Surface(vertices=vertices, triangles=triangles)
+        surf = pykarstnsim_core.Surface(points=vertices, triangles=triangles)
+        return Surface(surface=surf)
 
-    def as_surface(self) -> pykarstnsim_core.Surface:
-        return pykarstnsim_core.Surface(points=self.vertices, triangles=self.triangles)
+    @staticmethod
+    def from_dem_grid(grid: np.ndarray, width: float, height: float) -> "Surface":
+        """Create a plane mesh from a DEM grid, with origin at (0,0)"""
+        n_rows, n_cols = grid.shape
+        vertices: list[pykarstnsim_core.Vector3] = []
+        triangles: list[pykarstnsim_core.Triangle] = []
+        x_step = width / (n_cols - 1)
+        y_step = height / (n_rows - 1)
+        for i in range(n_rows):
+            for j in range(n_cols):
+                z = grid[i, j]
+                vx = j * x_step
+                vy = i * y_step
+                vertices.append(pykarstnsim_core.Vector3(vx, vy, z))
+        for i in range(n_rows - 1):
+            for j in range(n_cols - 1):
+                v1 = i * n_cols + j
+                v2 = v1 + 1
+                v3 = v1 + n_cols
+                v4 = v3 + 1
+                triangles.append(pykarstnsim_core.Triangle(v1, v2, v3))
+                triangles.append(pykarstnsim_core.Triangle(v2, v4, v3))
+        surf = pykarstnsim_core.Surface(points=vertices, triangles=triangles)
+        return Surface(surface=surf)
+
+    @staticmethod
+    def from_vertices_and_triangles(
+        vertices: np.ndarray, triangles: np.ndarray
+    ) -> "Surface":
+        """Create a Surface from numpy arrays of vertices and triangles"""
+        surf = pykarstnsim_core.Surface.from_vertices_and_triangles(
+            vertices=vertices, triangles=triangles
+        )
+        return Surface(surface=surf)

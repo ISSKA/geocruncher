@@ -13,6 +13,27 @@ class Spring:
     water_table_index: int
     radius: float = 0.0
 
+    def __init__(
+        self,
+        origin: tuple[float, float, float],
+        index: int,
+        water_table_index: int,
+        radius: float = 0.0,
+    ):
+        self.origin = pykarstnsim_core.Vector3(*origin)
+        self.index = index
+        self.water_table_index = water_table_index
+        self.radius = radius
+
+    @staticmethod
+    def to_string(springs: list["Spring"]) -> str:
+        lines = ["Index\tX\tYZ\tindex\tsurfindex\tradius"]
+        for spring in springs:
+            lines.append(
+                f"{spring.index} {spring.origin.x} {spring.origin.y} {spring.origin.z} {spring.index} {spring.water_table_index} {spring.radius}"
+            )
+        return "\n".join(lines)
+
     @staticmethod
     def from_file(path: Path) -> list["Spring"]:
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -35,7 +56,7 @@ class Spring:
                 radius = float(parts[6])
                 springs.append(
                     Spring(
-                        origin=pykarstnsim_core.Vector3(x, y, z),
+                        origin=(x, y, z),
                         index=index,
                         water_table_index=water_table_index,
                         radius=radius,

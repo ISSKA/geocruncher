@@ -1,10 +1,12 @@
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
+#include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include <memory>
+#include <sstream>
 
 // clang-format off
 // changing the order breaks compilation...
@@ -88,7 +90,12 @@ PYBIND11_MODULE(pykarstnsim_core, m) {
            R"doc(Return i-th vertex index (0..2).)doc")
       .def("contains_vertex", &Triangle::containsVertex,
            py::arg("vertex_index"),
-           R"doc(Check if given point index belongs to the triangle.)doc");
+           R"doc(Check if given point index belongs to the triangle.)doc")
+      .def("__repr__", [](const Triangle &t) {
+        return "Triangle(" + std::to_string(t.point(0)) + ", " +
+               std::to_string(t.point(1)) + ", " + std::to_string(t.point(2)) +
+               ")";
+      });
 
   // Surface (lightweight subset)
   py::class_<Surface>(
@@ -107,8 +114,7 @@ PYBIND11_MODULE(pykarstnsim_core, m) {
       .def("get_nb_pts", &Surface::get_nb_pts, R"doc(Number of points.)doc")
       .def("is_empty", &Surface::is_empty,
            R"doc(True if no points or triangles.)doc")
-      .def("get_triangle",
-           py::overload_cast<const int &>(&Surface::get_triangle), py::arg("i"),
+      .def("get_triangle", &Surface::get_triangle, py::arg("i"),
            R"doc(Return i-th triangle.)doc")
       .def("get_node", &Surface::get_node, py::arg("i"),
            R"doc(Return i-th point (Vector3).)doc")
@@ -122,9 +128,88 @@ PYBIND11_MODULE(pykarstnsim_core, m) {
       .def(
           "get_nb_valid_trgls", &Surface::get_nb_valid_trgls,
           R"doc(Count of triangles considered valid during construction filtering.)doc")
+      .def_static(
+          "from_vertices_and_triangles",
+          [](py::array_t<double> vertices,
+             py::array_t<int> triangles) -> Surface {
+            // Validate input arrays
+            if (vertices.ndim() != 2 || vertices.shape(1) != 3) {
+              throw std::invalid_argument(
+                  "Vertices array must be of shape (N, 3)");
+            }
+            if (triangles.ndim() != 2 || triangles.shape(1) != 3) {
+              throw std::invalid_argument(
+                  "Triangles array must be of shape (M, 3)");
+            }
+
+            // Create vectors directly from numpy arrays
+            std::vector<Vector3> vert_list;
+            std::vector<Triangle> tri_list;
+
+            // Reserve space for efficiency
+            vert_list.reserve(vertices.shape(0));
+            tri_list.reserve(triangles.shape(0));
+
+            // Access numpy data directly
+            auto vert_ptr = static_cast<const double *>(vertices.data());
+            auto tri_ptr = static_cast<const int *>(triangles.data());
+
+            // Fill vertices
+            for (py::ssize_t i = 0; i < vertices.shape(0); ++i) {
+              const double *row = vert_ptr + i * 3;
+              vert_list.emplace_back(static_cast<float>(row[0]),
+                                     static_cast<float>(row[1]),
+                                     static_cast<float>(row[2]));
+            }
+
+            // Fill triangles
+            for (py::ssize_t i = 0; i < triangles.shape(0); ++i) {
+              const int *row = tri_ptr + i * 3;
+              tri_list.emplace_back(row[0], row[1], row[2]);
+            }
+
+            return Surface(vert_list, tri_list);
+          },
+          py::arg("vertices"), py::arg("triangles"),
+          R"doc(Create a Surface from numpy arrays of vertices and triangles.
+          
+          Parameters:
+            vertices: numpy array of shape (N, 3) containing vertex coordinates
+            triangles: numpy array of shape (M, 3) containing triangle indices
+            
+          Returns:
+            Surface: A new Surface object
+          )doc")
+      .def(
+          "to_string",
+          [](const Surface &s) -> std::string {
+            std::ostringstream oss;
+            oss << "Type\tIndex\tX\tY\tZ";
+
+            // Add vertices
+            for (int i = 0; i < s.get_nb_pts(); ++i) {
+              const auto &v = s.get_node(i);
+              oss << "\nVRTX\t" << i << "\t" << v.x << "\t" << v.y << "\t"
+                  << v.z;
+            }
+
+            // Add triangles
+            for (int i = 0; i < s.get_nb_trgls(); ++i) {
+              const auto &t = s.get_triangle(i);
+              oss << "\nTRGL\t" << i << "\t" << t.point(0) << "\t" << t.point(1)
+                  << "\t" << t.point(2);
+            }
+
+            return oss.str();
+          },
+          R"doc(Convert surface to string representation with vertices and triangles.
+      
+      Returns:
+          str: String with format "Type\tIndex\tX\tY\tZ" header followed by
+               VRTX lines for vertices and TRGL lines for triangles.
+      )doc")
       .def("__repr__", [](const Surface &s) {
-        return "Surface(nb_pts=" +
-               std::to_string(const_cast<Surface &>(s).get_nb_pts()) + ")";
+        return "Surface(nb_pts=" + std::to_string(s.get_nb_pts()) + ")";
       });
 
   // Box (subset of API)

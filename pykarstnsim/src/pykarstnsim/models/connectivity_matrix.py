@@ -14,6 +14,13 @@ class ConnectivityMatrix:
     # matrix of size (num_springs x num_sinks) with values from ConnectivityType
     matrix: list[list[ConnectivityType]]
 
+    def to_string(self) -> str:
+        lines = []
+        for row in self.matrix:
+            line = "\t".join(str(int(val)) for val in row)
+            lines.append(line)
+        return "\n".join(lines)
+
     @staticmethod
     def from_file(path: Path) -> "ConnectivityMatrix":
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()

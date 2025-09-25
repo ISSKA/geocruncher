@@ -47,8 +47,10 @@ def run_simulation(
         box=project_box.as_box(),
         params=params,
         keypoints=keypoints,
-        water_tables=[water_table.as_surface() for water_table in water_tables],
+        water_tables=[water_table.surface for water_table in water_tables],
     )
+    if (config.save_directory is not None) and (config.save_directory != ""):
+        karst.set_save_directory(config.save_directory.absolute().as_posix())
     karst.set_sinks(
         sinks=[s.origin for s in sinks],
         indices=[s.index for s in sinks],
@@ -108,7 +110,7 @@ def run_simulation(
 
     karst.set_wt_surfaces_sampling(
         network_name=config.karstic_network_name,
-        water_table_surfaces=[wt.as_surface() for wt in water_tables],
+        water_table_surfaces=[wt.surface for wt in water_tables],
         refine=config.refine_surface_sampling,
     )
 
@@ -118,14 +120,14 @@ def run_simulation(
             pass
 
         karst.set_inception_horizons_parameters(
-            horizons=[surf.as_surface() for surf in inception_surfaces],
+            horizons=[surf.surface for surf in inception_surfaces],
             weight=config.inception_surface_constraint_weight,
         )
     else:
         karst.disable_inception_horizon()
 
     karst.set_topo_surface(
-        topographic_surface=topo_surface.as_surface(),
+        topographic_surface=topo_surface.surface,
     )
 
     if config.use_fracture_constraints:
@@ -181,16 +183,16 @@ def run_simulation(
     with pykarstnsim_core.ostream_redirect():
         return karst.run_simulation(
             sections_simulation_only=False,
-            create_nghb_graph=False,
-            create_nghb_graph_property=False,
-            create_solved_connectivity_matrix=False,
+            create_nghb_graph=config.create_nghb_graph,
+            create_nghb_graph_property=config.create_nghb_graph_property,
+            create_solved_connectivity_matrix=config.create_solved_connectivity_matrix,
             use_amplification=config.use_cycle_amplification,
             use_sampling_points=len(sampling_points) > 0,
             fraction_karst_perm=config.fraction_karst_perm,
             fraction_old_karst_perm=config.fraction_old_karst_perm,
             max_inception_surface_distance=config.max_inception_surface_distance,
             sampling_points=sampling_points,
-            create_vset_sampling=False,
+            create_vset_sampling=config.create_vset_sampling,
             use_density_property=config.use_density_property,
             k_pts=config.k_pts,
             propdensity=project_box.density,
