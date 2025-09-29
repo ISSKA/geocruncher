@@ -3,7 +3,7 @@ import tarfile
 import json
 from flask import Flask, request, send_file, Response
 from .redis import redis_client as r
-from .utils import generate_key
+from .utils import generate_key, parse_metadata_from_request
 from . import tasks
 from .celery import app as celery
 
@@ -25,6 +25,8 @@ def compute_meshes_or_faults(is_meshes: bool):
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
         # TODO: validate data
         data = json.loads(request.form['data'])
+        metadata = parse_metadata_from_request()
+        
         # TODO: check files exists
         xml = request.files.get('xml').read()
         dem = request.files.get('dem').read()
@@ -34,7 +36,7 @@ def compute_meshes_or_faults(is_meshes: bool):
         r.set(dem_key, dem)
         output_key = generate_key()
         res = (tasks.compute_meshes if is_meshes else tasks.compute_faults).delay(
-            data, xml_key, dem_key, output_key)
+            data, xml_key, dem_key, output_key, metadata)
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
@@ -58,11 +60,12 @@ def compute_meshes_or_faults(is_meshes: bool):
 @app.route("/compute/tunnel_meshes", methods=['POST', 'GET'])
 def compute_tunnel_meshes():
     if request.method == 'POST':
-        # when there are no files, we receive an application/json, and the body is the data directly
         # TODO: validate data
-        data = request.json
+        data = json.loads(request.form['data'])
+        metadata = parse_metadata_from_request()
+        
         output_key = generate_key()
-        res = tasks.compute_tunnel_meshes.delay(data, output_key)
+        res = tasks.compute_tunnel_meshes.delay(data, output_key, metadata)
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
@@ -94,6 +97,8 @@ def compute_intersections():
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
         # TODO: validate data
         data = json.loads(request.form['data'])
+        metadata = parse_metadata_from_request()
+        
         # TODO: check files exists
         xml = request.files.get('xml').read()
         dem = request.files.get('dem').read()
@@ -111,7 +116,7 @@ def compute_intersections():
         output_key = generate_key()
 
         res = tasks.compute_intersections.delay(
-            data, xml_key, dem_key, gwb_meshes_key, output_key)
+            data, xml_key, dem_key, gwb_meshes_key, output_key, metadata)
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
@@ -141,7 +146,9 @@ def compute_voxels():
     if request.method == 'POST':
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
         # TODO: validate data
-        data = json.loads(request.form['data'])
+        data = json.loads(request.form['data']) 
+        metadata = parse_metadata_from_request()
+        
         # TODO: check files exists
         xml = request.files.get('xml').read()
         dem = request.files.get('dem').read()
@@ -157,7 +164,7 @@ def compute_voxels():
             r.hset(gwb_meshes_key, key, value.read())
         output_key = generate_key()
         res = tasks.compute_voxels.delay(
-            data, xml_key, dem_key, gwb_meshes_key, output_key)
+            data, xml_key, dem_key, gwb_meshes_key, output_key, metadata)
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
@@ -183,6 +190,7 @@ def compute_gwb_meshes():
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
         # TODO: validate data
         data = json.loads(request.form['data'])
+        metadata = parse_metadata_from_request()
 
         meshes_key = generate_key()
         for key, value in request.files.items():
@@ -190,7 +198,7 @@ def compute_gwb_meshes():
             r.hset(meshes_key, key, value.read())
         output_key = generate_key()
 
-        res = tasks.compute_gwb_meshes.delay(data, meshes_key, output_key)
+        res = tasks.compute_gwb_meshes.delay(data, meshes_key, output_key, metadata)
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == 'GET':
