@@ -2,9 +2,10 @@
 # the code will then append the stats to an appropriate file, not mixing between versions
 from ..util import VkProfilerSettings
 
-PROFILER_MESHES_V4 = VkProfilerSettings(
+PROFILER_MESHES_V4 = VkProfilerSettings.create_with_common_metadata(
     4,
     'meshes',
     ['load_model', 'ranks', 'volume',
         'marching_cubes', 'tesselate_faults', 'generate_mesh'],
-    ['start_time', 'num_series', 'num_units', 'num_finite_faults', 'num_infinite_faults', 'num_contact_data', 'num_dips', 'resolution'])
+    ['num_series', 'num_units', 'num_finite_faults', 'num_infinite_faults', 'num_contact_data',
+      'num_dips', 'resolution'])

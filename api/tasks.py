@@ -7,19 +7,19 @@ from .utils import get_and_delete
 
 
 @app.task
-def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str) -> str:
-    meshes = computations.compute_tunnel_meshes(data)
+def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str, metadata: dict = None) -> str:
+    meshes = computations.compute_tunnel_meshes(data, metadata)
     for field, value in meshes.items():
         r.hset(output_key, field, value)
     return output_key
 
 
 @app.task
-def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
+def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str, metadata: dict = None) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
-    generated_meshes = computations.compute_meshes(data, xml, dem)
+    generated_meshes = computations.compute_meshes(data, xml, dem, metadata)
 
     # write unit files
     for rank, mesh in generated_meshes['mesh'].items():
@@ -34,7 +34,7 @@ def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, ou
 
 
 @app.task
-def compute_intersections(data: computations.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
+def compute_intersections(data: computations.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str, metadata: dict = None) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -47,18 +47,18 @@ def compute_intersections(data: computations.IntersectionsData, xml_key: str, de
             gwb_meshes[gwb_id].append(mesh)
         r.delete(gwb_meshes_key)
 
-    outputs = computations.compute_intersections(data, xml, dem, gwb_meshes)
+    outputs = computations.compute_intersections(data, xml, dem, gwb_meshes, metadata)
 
     r.set(output_key, json.dumps(outputs, separators=(',', ':')))
     return output_key
 
 
 @app.task
-def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str) -> str:
+def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str, metadata: dict = None) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
-    generated_meshes = computations.compute_faults(data, xml, dem)
+    generated_meshes = computations.compute_faults(data, xml, dem, metadata)
 
     # write fault files
     for name, mesh in generated_meshes['fault'].items():
@@ -68,7 +68,7 @@ def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, ou
 
 
 @app.task
-def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str) -> str:
+def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str, metadata: dict = None) -> str:
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode('utf-8')
 
@@ -79,14 +79,14 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
         gwb_meshes[gwb_id].append(mesh)
     r.delete(gwb_meshes_key)
 
-    voxels = computations.compute_voxels(data, xml, dem, gwb_meshes)
+    voxels = computations.compute_voxels(data, xml, dem, gwb_meshes, metadata)
 
     r.set(output_key, voxels)
     return output_key
 
 
 @app.task
-def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str) -> str:
+def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str, metadata: dict = None) -> str:
 
     # get existing meshes for groundwater bodies
     unit_meshes: dict[str, bytes] = {}
@@ -95,7 +95,7 @@ def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_
         unit_meshes[unit_id.decode('utf-8')] = mesh
     r.delete(meshes_key)
 
-    results = computations.compute_gwb_meshes(unit_meshes, data)
+    results = computations.compute_gwb_meshes(unit_meshes, data, metadata)
 
     # write metadata
     r.hset(output_key, "metadata", json.dumps(results["metadata"], separators=(',', ':')))
