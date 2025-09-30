@@ -18,8 +18,7 @@ class VkProfiler():
         # dictionnary where each step's name maps to the total fractional seconds spent on that step (time)
         # make the dictionnary with a default value for each step
         self._steps = {step: {'profile': [], 'time': 0} for step in settings.steps}
-        # make the dictionnary with a default value for each metadata
-        self._metadata = {meta: None for meta in settings.metadata}
+        self._metadata = {}
 
         # set the metadata that's on every computation
         self.set_metadata(
@@ -49,8 +48,7 @@ class VkProfiler():
         return self
 
     def set_metadata(self, metadata: str, value) -> 'VkProfiler':
-        if metadata in self._metadata:
-            self._metadata[metadata] = value
+        self._metadata[metadata] = value
         return self
 
     def save_results(self) -> 'VkProfiler':
