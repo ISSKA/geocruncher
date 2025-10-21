@@ -30,8 +30,10 @@ services:
       - REDIS_HOST=redis
       - PROFILING_ENABLED=true
   redis:
-    image: redis:7.4
+    image: redis:8.2
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
 

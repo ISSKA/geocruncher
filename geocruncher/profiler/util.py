@@ -9,15 +9,6 @@ class VkProfilerSettings(NamedTuple):
     computation: str
     # list of names of the steps to record
     steps: list[str]
-    # additional metadata for this computation
-    metadata: list[str]
-
-    @classmethod
-    def create_with_common_metadata(cls, version: int, computation: str, steps: list[str], additional_metadata: list[str] = None):
-        """Create profiler settings with common metadata automatically included: start_time, project_id, environment"""
-        common_metadata = ['start_time', 'project_id', 'environment']
-        all_metadata = common_metadata + (additional_metadata or [])
-        return cls(version, computation, steps, all_metadata)
 
 class MetadataHelpers:
     """Static functions that help gather metadata for the profiling"""

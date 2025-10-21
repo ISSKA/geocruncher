@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-import json
 from typing import Any
 import redis
 
@@ -55,13 +54,25 @@ class RedisStorage(ProfilerStorage):
         self._client = redis.StrictRedis(host=host, port=port, db=db)
 
     def save(self, computation: str, version: int, metadata: dict[str, Any], steps: dict[str, dict[str, float]]) -> None:
+        """Store one profiler entry using RedisJSON at profiling:<computation>:v<version>."""
+
         key = f"profiling:{computation}:v{version}"
 
-        profiler_data = {
-            'metadata': metadata,
-            'steps': {step: {'time_ms': round(step_data['time'] * 1000, 5)}
-                      for step, step_data in steps.items()}
+        steps_flat: dict[str, float] = {
+            step: round(step_data['time'] * 1000, 5) for step, step_data in steps.items()
         }
 
-        json_data = json.dumps(profiler_data, separators=(',', ':'))
-        self._client.rpush(key, json_data)
+        entry = {
+            'metadata': metadata,
+            'steps': steps_flat,
+        }
+
+        try:
+            if not self._client.exists(key):
+                self._client.json().set(key, '$', [])
+            self._client.json().arrappend(key, '$', entry)
+        except redis.ResponseError as e:
+            raise RuntimeError(
+                'Failed to save profiler data using RedisJSON. Ensure the RedisJSON module (ReJSON) is loaded or that you use a compatible Redis version. '
+                f'Underlying error: {e}'
+            ) from e
