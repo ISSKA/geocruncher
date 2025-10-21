@@ -33,7 +33,7 @@ services:
       - /root/data/web-ci/var/lib/redis:/data
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
     logging:
       driver: "journald"
       options:
