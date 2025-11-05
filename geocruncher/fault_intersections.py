@@ -9,7 +9,12 @@ CLIP_VALUE = np.nan
 class FaultIntersector:
     """Inspired by gmlib FaultTesselator"""
 
-    def __init__(self, grid_points: np.ndarray, resolution: tuple[int, int], model: GeologicalModel):
+    def __init__(
+        self,
+        grid_points: np.ndarray,
+        resolution: tuple[int, int],
+        model: GeologicalModel,
+    ):
         self._grid_points = grid_points
         self._resolution = resolution
         self._model = model
@@ -43,7 +48,7 @@ class FaultIntersector:
     def _intersect_topography(self):
         model = self._model
 
-        if hasattr(model.topography, 'z') and isinstance(model.topography.z, float):
+        if hasattr(model.topography, "z") and isinstance(model.topography.z, float):
             # Horizontal plane case: potential = point.z - plane.z
             topography = self._grid_points[:, 2] - model.topography.z
         else:
@@ -89,8 +94,7 @@ class FaultIntersector:
 
                 # Determine valid side using mean potential
                 limit_values = model.faults[limit](points)
-                valid_side = np.mean(
-                    limit_values) if limit_values.size > 0 else 1.0
+                valid_side = np.mean(limit_values) if limit_values.size > 0 else 1.0
 
                 # Create mask for valid region (same sign)
                 valid_mask = (valid_side * limiting_potential) > 0
@@ -105,21 +109,29 @@ class FaultIntersector:
                         # Set outside ellipsoid to None
                         potential[E > 0] = CLIP_VALUE
 
+        for name in list(fault_potentials):
+            potential = fault_potentials[name]
+            # Skip faults who's potential never crosses the slice
+            # this reduces network trafic and prevents contour chart drawing errors
+            if not np.any(potential) or not (
+                (potential < 0).any() and (potential > 0).any()
+            ):
+                del fault_potentials[name]
+
         # Prepare output: transpose and convert to list
         for name, potential in fault_potentials.items():
             transposed = np.transpose(potential)
             # Setting the values to None directly doesn't work, so we use np.nan and replace it all with None at the end
             fault_potentials[name] = np.where(
-                np.isnan(transposed), None, transposed).tolist()
+                np.isnan(transposed), None, transposed
+            ).tolist()
 
-        profile_step('tesselate_faults')
+        profile_step("tesselate_faults")
         return fault_potentials
 
 
 def compute_fault_intersections(
-    grid_points: np.ndarray,
-    resolution: tuple[int, int],
-    model: GeologicalModel
+    grid_points: np.ndarray, resolution: tuple[int, int], model: GeologicalModel
 ) -> dict:
     """Compute fault intersections on a top-down or vertical geological cross section.
 
