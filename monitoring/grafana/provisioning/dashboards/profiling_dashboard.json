@@ -757,7 +757,7 @@
         "current": {},
         "datasource": {
           "type": "redis-datasource",
-          "uid": "${DS_REDIS-DATASOURCE-PROD}"
+          "uid": "${Environment}"
         },
         "definition": "KEYS profiling:${computation}:*",
         "name": "version",
