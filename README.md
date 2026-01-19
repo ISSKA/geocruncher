@@ -43,6 +43,27 @@ If using Visual Studio Code, the last step is to tell it which Python version to
 Autocompletion will now work as expected.
 Recommanded extensions: `ms-python.python`, `ms-python.pylint` and `ms-python.autopep8`
 
+## Monitoring
+
+Geocruncher includes an optional monitoring stack for observing Celery worker metrics and computation performance. The monitoring setup uses:
+
+- **Prometheus** - Time-series database for metrics collection and storage
+- **Grafana** - Visualization dashboard with pre-configured profiling dashboard
+- **Celery Exporter** - Exports Celery worker metrics to Prometheus
+
+To start the monitoring stack:
+
+```bash
+cd monitoring
+sudo docker-compose -f monitoring.docker-compose.yaml up -d
+```
+
+Once running, access Grafana at `http://localhost:3000` (default credentials: admin/admin). The pre-provisioned dashboard for of the celery-exporter displays Celery task metrics, queue lengths, worker status, and processing times. The other pre-provisioned dashboard visualize the profiling data collected by the profiler of Geocruncher.
+
+Prometheus is available at `http://localhost:9090` for direct metric queries.
+
+The monitoring stack connects to your existing Geocruncher instance via Redis on the host machine. Ensure your main Geocruncher services are running before starting monitoring.
+
 ## Deployment
 
 Inside the Docker folder you will find the deployment files for the [VisualKarsys webservice](https://visualkarsys.com)'s infrastructure. We have a dev and prod environment, and use systemd services and journalctl for logging.
