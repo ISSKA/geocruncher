@@ -58,7 +58,7 @@ cd monitoring
 sudo docker-compose -f monitoring.docker-compose.yaml up -d
 ```
 
-Once running, access Grafana at `http://localhost:3000` (default credentials: admin/admin). The pre-provisioned dashboard for of the celery-exporter displays Celery task metrics, queue lengths, worker status, and processing times. The other pre-provisioned dashboard visualize the profiling data collected by the profiler of Geocruncher.
+Once running, access Grafana at `http://localhost:3000` (default credentials: admin/admin). The pre-provisioned dashboard of the celery-exporter displays Celery task metrics, queue lengths, worker status, and processing times. The other pre-provisioned dashboard visualizes the profiling data collected by the profiler of Geocruncher.
 
 Prometheus is available at `http://localhost:9090` for direct metric queries.
 
