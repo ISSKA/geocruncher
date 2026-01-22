@@ -8,9 +8,10 @@ from gmlib.architecture import from_GeoModeller, make_evaluator
 from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
 
+
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
     """Calculates a proportional resolution where the larger dimension matches `res`.
-    
+
     The smaller dimension is scaled to maintain the original aspect ratio, with rounding
     to the nearest integer.
 
@@ -35,21 +36,22 @@ def calculate_resolution(width: float, height: float, res: int) -> tuple[int, in
         new_height = res
     return (new_width, new_height)
 
+
 def compute_vertical_slice_points(
-    x_coord: tuple[int, int],
-    y_coord: tuple[int, int],
-    z_coord: tuple[int, int],
-    resolution: tuple[int, int]
+    x_coord: tuple[float, float],
+    y_coord: tuple[float, float],
+    z_coord: tuple[float, float],
+    resolution: tuple[int, int],
 ) -> np.ndarray:
     """Calculate 3D points along a vertical slice plane.
 
     Parameters
     ----------
-    x_coord : tuple[int, int]
+    x_coord : tuple[float, float]
         Start and end x-coordinates of the slice line.
-    y_coord : tuple[int, int]
+    y_coord : tuple[float, float]
         Start and end y-coordinates of the slice line.
-    z_coord : tuple[int, int]
+    z_coord : tuple[float, float]
         Start and end z-coordinates defining the vertical range of the slice.
     resolution : tuple[int, int]
         Width resolution and Height resolution.
@@ -80,7 +82,10 @@ def compute_vertical_slice_points(
     xyz = np.stack((x.ravel(), y.ravel(), z.ravel()), axis=-1)
     return xyz
 
-def compute_map_points(box: Box, resolution: tuple[int, int], model: GeologicalModel) -> np.ndarray:
+
+def compute_map_points(
+    box: Box, resolution: tuple[int, int], model: GeologicalModel
+) -> np.ndarray:
     """Compute points for a top-down geological cross section.
 
     Parameters
@@ -91,12 +96,12 @@ def compute_map_points(box: Box, resolution: tuple[int, int], model: GeologicalM
         Width resolution and Height resolution.
     model : gmlib.GeologicalModel3D.GeologicalModel
         The GeologicalModel from gmlib to use for the topography evaluation.
-    
+
     Returns
     -------
     np.ndarray
         A numpy array of shape (resolution[0]*resolution[1], 3) containing the (x, y, z) coordinates of the points.
-    
+
     Notes
     -----
     The z coordinate is evaluated using the topography of the geological model.
@@ -111,11 +116,12 @@ def compute_map_points(box: Box, resolution: tuple[int, int], model: GeologicalM
     xyz = np.column_stack((xy, z))
     return xyz
 
+
 def compute_cross_section_ranks(
     xyz: np.ndarray,
     resolution: tuple[int, int],
     model: GeologicalModel,
-    topography: bool = False
+    topography: bool = False,
 ) -> list:
     """Compute formation ranks for a geological cross section.
 
@@ -148,13 +154,13 @@ def compute_cross_section_ranks(
     else:
         evaluator = make_evaluator(cppmodel)
 
-    is_base = model.pile.reference == 'base'
+    is_base = model.pile.reference == "base"
     rank_offset = -1 if is_base else 0
 
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
     ranks = ranks.tolist()
-    profile_step('ranks')
+    profile_step("ranks")
     return ranks
 
 
@@ -163,9 +169,9 @@ def project_hydro_features_on_slice(
     upper_right: np.ndarray,
     xyz: np.ndarray,
     spring_map: dict,
-    drillhole_map: dict,
+    drillhole_map: dict[str, Box],
     gwb_meshes: dict[str, list[bytes]],
-    max_dist_proj: float
+    max_dist_proj: float,
 ) -> tuple[dict, dict, list]:
     """Project hydrogeological features onto a vertical cross section plane.
 
@@ -248,21 +254,20 @@ def project_hydro_features_on_slice(
     matrix_gwb = []
     drillholes_line = {}
     springs_point = {}
-    profile_step('hydro_setup')
+    profile_step("hydro_setup")
 
     if drillhole_map:
         for d_id, line in drillhole_map.items():
-            start_point = np.array(
-                [line["start"]["x"], line["start"]["y"], line["start"]["z"]])
-            end_point = np.array(
-                [line["end"]["x"], line["end"]["y"], line["end"]["z"]])
+            line = Box(**line)
+            start_point = np.array([line.xmin, line.ymin, line.zmin])
+            end_point = np.array([line.xmax, line.ymax, line.zmax])
 
             s_proj, s_valid = _proj_point_on_plane(start_point)
             e_proj, e_valid = _proj_point_on_plane(end_point)
 
             if s_valid or e_valid:
                 drillholes_line[d_id] = [s_proj, e_proj]
-    profile_step('hydro_project_drillholes')
+    profile_step("hydro_project_drillholes")
 
     if spring_map:
         for s_id, p in spring_map.items():
@@ -270,7 +275,7 @@ def project_hydro_features_on_slice(
             p_proj, valid = _proj_point_on_plane(point)
             if valid:
                 springs_point[s_id] = p_proj
-    profile_step('hydro_project_springs')
+    profile_step("hydro_project_springs")
 
     points_polydata = pv.PolyData(xyz)
     # Test each point of the cross section against groundwater body meshes
@@ -279,7 +284,8 @@ def project_hydro_features_on_slice(
         for data in meshes:
             mesh = read_mesh_to_polydata(data)
             inside_points = points_polydata.select_enclosed_points(
-                mesh, tolerance=0.00001)
+                mesh, tolerance=0.00001
+            )
             selected_points = inside_points["SelectedPoints"].astype(np.uint16)
             matrix_gwb.append(selected_points * gwb_id_int)
 
@@ -287,8 +293,7 @@ def project_hydro_features_on_slice(
     matrix_gwb_combine = []
     if matrix_gwb:
         # Stack matrices into a 2D array where each column is a GWB matrix
-        stacked = np.column_stack(matrix_gwb) if len(
-            matrix_gwb) > 1 else matrix_gwb[0]
+        stacked = np.column_stack(matrix_gwb) if len(matrix_gwb) > 1 else matrix_gwb[0]
 
         if len(matrix_gwb) > 1:
             nonzero_mask = stacked > 0
@@ -303,6 +308,6 @@ def project_hydro_features_on_slice(
             matrix_gwb_combine = result.tolist()
         else:
             matrix_gwb_combine = stacked.astype(np.int32).tolist()
-    profile_step('hydro_project_gwbs')
+    profile_step("hydro_project_gwbs")
 
     return drillholes_line, springs_point, matrix_gwb_combine
