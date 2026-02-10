@@ -13,21 +13,29 @@ class VkProfilerSettings(NamedTuple):
 class MetadataHelpers:
     """Static functions that help gather metadata for the profiling"""
     @staticmethod
-    def num_series(model) -> int:
-        return len(model.pile.all_series)
+    def num_erode_series(model: GeologicalModel) -> int:
+        return len([s for s in model.pile.all_series if s.relation == "erode"])
 
     @staticmethod
-    def num_units(model) -> int:
+    def num_onlap_series(model: GeologicalModel) -> int:
+        return len([s for s in model.pile.all_series if s.relation == "onlap"])
+
+    @staticmethod
+    def num_units(model: GeologicalModel) -> int:
         # remove 1 from nbformations because it always includes the dummy
         return model.nbformations() - 1
 
     @staticmethod
-    def num_finite_faults(model) -> int:
+    def num_finite_faults(model: GeologicalModel) -> int:
         return len([x for name, x in model.faults_data.items() if not x.infinite])
 
     @staticmethod
-    def num_infinite_faults(model) -> int:
+    def num_infinite_faults(model: GeologicalModel) -> int:
         return len([x for name, x in model.faults_data.items() if x.infinite])
+
+    @staticmethod
+    def num_stops_on_relations(model: GeologicalModel) -> int:
+        return sum([len(x.stops_on) for name, x in model.faults_data.items()])
 
     @staticmethod
     def num_contact_data(model: GeologicalModel, unit=True, fault=True) -> int:

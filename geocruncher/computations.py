@@ -192,12 +192,18 @@ def compute_meshes(
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
     profiler = get_current_profiler()
-    profiler.set_metadata("num_series", MetadataHelpers.num_series(model)).set_metadata(
+    profiler.set_metadata(
+        "num_erode_series", MetadataHelpers.num_erode_series(model)
+    ).set_metadata(
+        "num_onlap_series", MetadataHelpers.num_onlap_series(model)
+    ).set_metadata(
         "num_units", MetadataHelpers.num_units(model)
     ).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
+    ).set_metadata(
+        "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
     ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model)
     ).set_metadata(
@@ -326,12 +332,18 @@ def compute_intersections(
     fault_output: FaultIntersectionsResult = {"forCrossSections": {}, "forMaps": {}}
 
     profiler = get_current_profiler()
-    profiler.set_metadata("num_series", MetadataHelpers.num_series(model)).set_metadata(
+    profiler.set_metadata(
+        "num_erode_series", MetadataHelpers.num_erode_series(model)
+    ).set_metadata(
+        "num_onlap_series", MetadataHelpers.num_onlap_series(model)
+    ).set_metadata(
         "num_units", MetadataHelpers.num_units(model)
     ).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
+    ).set_metadata(
+        "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
     ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model, fault=False)
     ).set_metadata(
@@ -458,6 +470,8 @@ def compute_faults(
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
     ).set_metadata(
+        "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
+    ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model, unit=False)
     ).set_metadata(
         "num_dips", MetadataHelpers.num_dips(model, unit=False)
@@ -511,9 +525,15 @@ def compute_voxels(
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
     profiler = get_current_profiler()
-    profiler.set_metadata("num_series", MetadataHelpers.num_series(model)).set_metadata(
+    profiler.set_metadata(
+        "num_erode_series", MetadataHelpers.num_erode_series(model)
+    ).set_metadata(
+        "num_onlap_series", MetadataHelpers.num_onlap_series(model)
+    ).set_metadata(
         "num_units", MetadataHelpers.num_units(model)
-    ).set_metadata("num_gwb_parts", len(gwb_meshes)).set_metadata(
+    ).set_metadata(
+        "num_gwb_parts", len(gwb_meshes)
+    ).set_metadata(
         "resolution", shape[0] * shape[1] * shape[2]
     )
     if metadata:
