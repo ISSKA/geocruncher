@@ -1,11 +1,18 @@
 """
-    Adapted from GMLIB geomodeller_project.py and topography_reader.py
-    to allow importing from strings instead of files
+Adapted from gmlib geomodeller_project.py and topography_reader.py
+to allow importing from strings instead of files
 """
 
 import numpy as np
 import lxml.etree as etree
-from gmlib.geomodeller_project import nsmap, extract_crs, read_box, read_modeled_faults_data, read_pile, read_formations
+from forgeo.gmlib.geomodeller_project import (
+    nsmap,
+    extract_crs,
+    read_box,
+    read_modeled_faults_data,
+    read_pile,
+    read_formations,
+)
 from .topography_reader import ascii_grid_to_implicit_dtm
 
 

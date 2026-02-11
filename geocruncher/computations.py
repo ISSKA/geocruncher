@@ -7,8 +7,8 @@ import numpy as np
 import math
 from typing import TypedDict
 from enum import Enum
-from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.GeologicalModel3D import Box
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
 
 from .ComputeIntersections import (
     compute_vertical_slice_points,

@@ -1,14 +1,32 @@
 import numpy as np
 
-from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.GeologicalModel3D import Box
-from gmlib.tesselate import tesselate_faults
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
+
+# from forgeo.gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes
-from gmlib.architecture import from_GeoModeller, make_evaluator, grid
-from gmlib.utils.tools import BBox3
+# from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator, grid
+from forgeo.gmlib.utils.tools import BBox3
 
 from .profiler import profile_step
 from .mesh_io.mesh_io import generate_mesh
+
+
+def from_GeoModeller():
+    return None
+
+
+def make_evaluator():
+    return None
+
+
+def grid():
+    return None
+
+
+def tesselate_faults():
+    return None
+
 
 # Constants
 RANK_SKY = 0
