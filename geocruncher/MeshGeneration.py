@@ -1,6 +1,6 @@
 import numpy as np
 
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from .GeologicalModel3D import GeologicalModel
 from forgeo.gmlib.GeologicalModel3D import Box
 
 # from forgeo.gmlib.tesselate import tesselate_faults
@@ -10,6 +10,7 @@ from forgeo.gmlib.utils.tools import BBox3
 
 from .profiler import profile_step
 from .mesh_io.mesh_io import generate_mesh
+from .rigs import extract
 
 
 def from_GeoModeller():
@@ -32,7 +33,7 @@ def tesselate_faults():
 RANK_SKY = 0
 
 
-def compute_ranks(res: (int, int, int), model: GeologicalModel, box: Box = None):
+def compute_ranks(res: tuple[int, int, int], model: GeologicalModel, box: Box = None):
     """"
     :param res: resolution (supposed to be a tuple)
     :param model: gmlib.GeologicalModel object
@@ -48,7 +49,7 @@ def compute_ranks(res: (int, int, int), model: GeologicalModel, box: Box = None)
     return evaluator(grid(box, res))
 
 
-def rescale_to_grid(verts, box: Box, shape: (int, int, int)):
+def rescale_to_grid(verts, box: Box, shape: tuple[int, int, int]):
     step_size = np.array([
         (box.xmax - box.xmin) / (shape[0] - 1),
         (box.ymax - box.ymin) / (shape[1] - 1),
@@ -59,7 +60,9 @@ def rescale_to_grid(verts, box: Box, shape: (int, int, int)):
     return (verts * step_size) - step_size + np.array([box.xmin, box.ymin, box.zmin])
 
 
-def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
+def generate_volumes(
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box
+) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
 
     Parameters:
@@ -123,7 +126,34 @@ def generate_volumes(model: GeologicalModel, shape: (int, int, int), box: Box) -
     return out_files
 
 
-def generate_faults_files(model: GeologicalModel, shape: (int, int, int), box: Box = None) -> dict[str, bytes]:
+def generate_rigs_volumes(
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box
+) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
+    """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
+
+    Parameters:
+        model: A valid GeologicalModel with a loaded surface model (DEM).
+        shape: Number of samples for marching cubes (x,y,z)
+        box: Custom box
+    """
+
+    print("before extract")
+    v, f, part_id, _ = extract(model, shape, box)
+    print("extracted!")
+
+    mesh = generate_mesh(v, f)
+    print("generated mesh!")
+
+    out_files = {"mesh": {}, "fault": {}}
+
+    out_files["mesh"][str(0)] = mesh
+
+    return out_files
+
+
+def generate_faults_files(
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
+) -> dict[str, bytes]:
     box = box or model.getbox()
     faults = tesselate_faults(box, shape, model)
 

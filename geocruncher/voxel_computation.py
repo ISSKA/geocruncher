@@ -1,6 +1,7 @@
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from .GeologicalModel3D import GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
 
 # from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
 
@@ -18,7 +19,12 @@ def make_evaluator():
 
 class Voxels:
     @staticmethod
-    def output(model: GeologicalModel, shape: (int, int, int), box: Box, gwb_meshes: dict[str, list[bytes]]) -> str:
+    def output(
+        model: GeologicalModel,
+        shape: tuple[int, int, int],
+        box: Box,
+        gwb_meshes: dict[str, list[bytes]],
+    ) -> str:
         # we use numpy meshgrid to produce a regular grid
         # the output is a list containing a 3D array for each coordinate
         # if we want an evaluation on the center of the voxels

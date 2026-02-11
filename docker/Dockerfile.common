@@ -7,7 +7,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # always run apt update/upgrade in the same command as an apt install to avoid invalid apt cache due to docker cache
 RUN apt-get update && apt-get upgrade -y && apt-get install cmake -y -q
 
-RUN conda create -n geocruncher python=3.9 -y
+RUN conda create -n geocruncher python=3.12 -y
 
 RUN echo "conda activate geocruncher" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
@@ -21,6 +21,7 @@ RUN pip install \
     flask \
     forgeo \
     forgeo-gmlib \
+    forgeo-rigs \
     lxml \
     meshio \
     numpy \

@@ -1,6 +1,6 @@
 from collections import defaultdict
 import numpy as np
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from .GeologicalModel3D import GeologicalModel
 from .profiler import profile_step
 
 CLIP_VALUE = np.nan

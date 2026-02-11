@@ -12,7 +12,7 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
     Args:
         functions (list((str, str, str))): the functions that define the tunnel (separated for x, y, z and for t between 0 and 1)
         step (float): size of a step between 0 and 1
-        xy_points (list((int, int, int))): points representing a segment of the tunnel on the xy plane
+        xy_points (list(tuple[int, int, int])): points representing a segment of the tunnel on the xy plane
     """
     vertices = []
     t = symbols("t")
@@ -50,7 +50,7 @@ def get_circle_segment(radius, nb_vertices):
         nb_vertices (int): number of vertices that will define the segment
 
     Returns:
-        list((int, int, int)): the vertices that represent the segment on the xy plane
+        list(tuple[int, int, int]): the vertices that represent the segment on the xy plane
     """
     points = []
     for i in reversed(range(nb_vertices)):
@@ -67,7 +67,7 @@ def get_rectangle_segment(width, height, nb_vertices):
         nb_vertices (int): number of vertices that will define the segment
 
     Returns:
-        list((int, int, int)): the vertices that represent the segment on the xy plane
+        list(tuple[int, int, int]): the vertices that represent the segment on the xy plane
     """
     length = 2 * width + 2 * height
     points = []
@@ -109,7 +109,7 @@ def get_elliptic_segment(width, height, nb_vertices):
         nb_vertices (int): number of vertices that will define the segment
 
     Returns:
-        list((int, int, int)): the vertices that represent the segment on the xy plane
+        list(tuple[int, int, int]): the vertices that represent the segment on the xy plane
     """
     a = width / 2
     b = height

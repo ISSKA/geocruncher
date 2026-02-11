@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from .GeologicalModel3D import GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
 
 # from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
 

@@ -7,7 +7,7 @@ import numpy as np
 import math
 from typing import TypedDict
 from enum import Enum
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from .GeologicalModel3D import GeologicalModel
 from forgeo.gmlib.GeologicalModel3D import Box
 
 from .ComputeIntersections import (
@@ -18,7 +18,7 @@ from .ComputeIntersections import (
     calculate_resolution,
 )
 from .fault_intersections import compute_fault_intersections
-from .MeshGeneration import generate_volumes, generate_faults_files
+from .MeshGeneration import generate_rigs_volumes, generate_faults_files
 from .geomodeller_import import extract_project_data
 from .tunnel_shape_generation import (
     get_circle_segment,
@@ -221,7 +221,7 @@ def compute_meshes(
         box = Box(**data["box"])
     else:
         box = model.getbox()
-    output = generate_volumes(model, shape, box)
+    output = generate_rigs_volumes(model, shape, box)
     get_current_profiler().save_results()
     return output
 

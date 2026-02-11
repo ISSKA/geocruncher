@@ -1,5 +1,5 @@
 from typing import NamedTuple
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+from ..GeologicalModel3D import GeologicalModel
 
 
 class VkProfilerSettings(NamedTuple):
