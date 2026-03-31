@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(VK-Aquifers)
 
 set(CMAKE_CXX_STANDARD 17) # Draco requires C++14+
+set(CGAL_DIR "/opt/CGAL-6.1.1-library")
 
 # Explicit Draco configuration
 # Configurable Draco configuration with default
@@ -28,23 +29,10 @@ find_library(DRACO_LIBRARY
 include_directories(${DRACO_INCLUDE_DIR})
 
 # CGAL
-find_package(CGAL QUIET COMPONENTS Core)
-
-if(NOT CGAL_FOUND)
-    message(STATUS "This project requires the CGAL library, and will not be compiled.")
-    return()
-endif()
-
-# include helper file
-include(${CGAL_USE_FILE})
+find_package(CGAL 6.1 REQUIRED COMPONENTS Core)
 
 # Boost
 find_package(Boost REQUIRED)
-
-if(NOT Boost_FOUND)
-    message(STATUS "This project requires the Boost library, and will not be compiled.")
-    return()
-endif()
 
 # Main executable
 add_executable(viskar-geo-algo
@@ -56,8 +44,8 @@ add_executable(viskar-geo-algo
 
 target_link_libraries(viskar-geo-algo
     PRIVATE
-    ${CGAL_LIBRARIES}
-    ${CGAL_3RD_PARTY_LIBRARIES}
+    CGAL::CGAL 
+    CGAL::CGAL_Core 
     ${DRACO_LIBRARY} # Link the Draco library
 )
 
@@ -76,6 +64,6 @@ pybind11_add_module(PyGeoAlgo
 # Add Draco library to Python bindings
 target_link_libraries(PyGeoAlgo PRIVATE
     ${DRACO_LIBRARY}
-    ${CGAL_LIBRARIES}
-    ${CGAL_3RD_PARTY_LIBRARIES}
+    CGAL::CGAL 
+    CGAL::CGAL_Core 
 )

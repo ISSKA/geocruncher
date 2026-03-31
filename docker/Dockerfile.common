@@ -7,26 +7,38 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # always run apt update/upgrade in the same command as an apt install to avoid invalid apt cache due to docker cache
 RUN apt-get update && apt-get upgrade -y && apt-get install cmake -y -q
 
-RUN conda create -n geocruncher python=3.9 -y
+RUN conda create -n geocruncher python=3.12 -y
 
 RUN echo "conda activate geocruncher" >> ~/.bashrc
 SHELL ["/bin/bash", "--login", "-c"]
 
-RUN conda install -c conda-forge compilers cgal boost eigen mpfr occt libxcrypt -y
+RUN conda install -c conda-forge compilers eigen mpfr occt libxcrypt -y
 RUN conda install -c anaconda gmp -y
 
-# standard python libraries
-RUN pip install lxml scipy sympy pyyaml meshio pyvista scikit-image verstr numpy pillow flask redis celery "pybind11[global]" DracoPy
-# pre-build python libaries
-COPY \
-  geocruncher-dist/MeshTools-5a02671-*$cpu.whl \
-  geocruncher-dist/vtkwriters-0.0.10-*.whl \
-  geocruncher-dist/gmlib-0.3.22-*$cpu.whl \
-  geocruncher-dist/pycgal-0.3.14-*$cpu.whl dist/
-RUN pip install dist/vtkwriters*.whl
-RUN pip install dist/gmlib*.whl
-RUN pip install dist/MeshTools*.whl
-RUN pip install dist/pycgal*.whl
+WORKDIR /opt
+RUN wget https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz
+RUN tar -xzf boost_1_90_0.tar.gz
+RUN cd boost_1_90_0 && ./bootstrap.sh --prefix=/usr/local && ./b2 && ./b2 install
+
+RUN wget https://github.com/CGAL/cgal/releases/download/v6.1.1/CGAL-6.1.1-library.tar.xz
+RUN tar -xf CGAL-*.tar.xz
+
+RUN pip install \
+    celery \
+    DracoPy \
+    flask \
+    forgeo \
+    forgeo-gmlib \
+    lxml \
+    meshio \
+    numpy \
+    pyvista \
+    pyyaml \
+    redis \
+    scikit-image \
+    scipy \
+    sympy \
+    verstr
 
 # Copy start scripts
 COPY /scripts/* /home/build/scripts/

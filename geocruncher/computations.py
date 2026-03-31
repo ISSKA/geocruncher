@@ -7,8 +7,7 @@ import numpy as np
 import math
 from typing import TypedDict
 from enum import Enum
-from gmlib.GeologicalModel3D import GeologicalModel
-from gmlib.GeologicalModel3D import Box
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
 
 from .ComputeIntersections import (
     compute_vertical_slice_points,
@@ -187,7 +186,7 @@ def compute_meshes(
         Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
     set_profiler(PROFILES["meshes"])
-    model = GeologicalModel(extract_project_data(xml, dem))
+    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -320,7 +319,7 @@ def compute_intersections(
         TODO: find a more complete explanation of what is returned and simplify return type.
     """
     set_profiler(PROFILES["intersections"])
-    model = GeologicalModel(extract_project_data(xml, dem))
+    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
     box = model.getbox()
     max_dist_proj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
     mesh_output: MeshIntersectionsResult = {
@@ -460,7 +459,7 @@ def compute_faults(
         Dictionnary with mesh, an empty map, and fault, a map from fault name to OFF mesh file.
     """
     set_profiler(PROFILES["faults"])
-    model = GeologicalModel(extract_project_data(xml, dem))
+    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -520,7 +519,7 @@ def compute_voxels(
         The VOX mesh file
     """
     set_profiler(PROFILES["voxels"])
-    model = GeologicalModel(extract_project_data(xml, dem))
+    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 

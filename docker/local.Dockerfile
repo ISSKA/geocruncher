@@ -1,8 +1,8 @@
 # syntax = edrevo/dockerfile-plus
 INCLUDE+ docker/Dockerfile.common
 
-# Used for hot reloading celery worker
-RUN pip install "watchdog[watchmedo]"
+# Used for hot reloading celery worker, used for geo-algo local build
+RUN pip install "watchdog[watchmedo]" "pybind11[global]"
 
 # Build Draco first
 WORKDIR /home/build/

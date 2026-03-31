@@ -1,6 +1,6 @@
 from collections import defaultdict
 import numpy as np
-from gmlib.GeologicalModel3D import GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 from .profiler import profile_step
 
 CLIP_VALUE = np.nan
@@ -142,7 +142,7 @@ def compute_fault_intersections(
     resolution : tuple[int, int]
         x is the width resolution, y is the height resolution.
     model : gmlib.GeologicalModel3D.GeologicalModel
-        GeologicalModel from gmlib containing the faults data
+        GeologicalModel from forgeo.gmlib containing the faults data
 
     Returns
     -------

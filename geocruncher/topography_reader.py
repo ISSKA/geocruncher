@@ -9,7 +9,7 @@ import re
 from io import StringIO
 
 import numpy as np
-from gmlib.topography_reader import ImplicitDTM
+from forgeo.gmlib.topography_reader import ImplicitDTM
 
 logger = logging.getLogger(__name__)
 
