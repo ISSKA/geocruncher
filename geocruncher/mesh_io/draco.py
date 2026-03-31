@@ -2,7 +2,7 @@ import numpy as np
 import pyvista as pv
 import DracoPy
 
-DRACO_COMPRESSION_LEVEL = 5
+DRACO_COMPRESSION_LEVEL = 6
 DRACO_QUANTIZATION_BITS = 14
 
 

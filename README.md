@@ -45,11 +45,13 @@ Recommanded extensions: `ms-python.python`, `ms-python.pylint` and `ms-python.au
 
 ## Monitoring
 
-Geocruncher includes an optional monitoring stack for observing Celery worker metrics and computation performance. The monitoring setup uses:
+Geocruncher includes an optional monitoring stack for observing Celery worker metrics, computation performance and logs. The monitoring setup uses:
 
 - **Prometheus** - Time-series database for metrics collection and storage
-- **Grafana** - Visualization dashboard with pre-configured profiling dashboard
+- **Grafana** - Visualization interface with pre-configured dashboards and datasources
 - **Celery Exporter** - Exports Celery worker metrics to Prometheus
+- **Loki** - Log aggregation backend for container logs collected from the monitoring environment
+- **Alloy** - Collects Docker container logs and forwards them to Loki
 
 To start the monitoring stack:
 
@@ -62,7 +64,9 @@ Once running, access Grafana at `http://localhost:3000` (default credentials: ad
 
 Prometheus is available at `http://localhost:9090` for direct metric queries.
 
-The monitoring stack connects to your existing Geocruncher instance via Redis on the host machine. Ensure your main Geocruncher services are running before starting monitoring.
+Loki is available at `http://localhost:3100` for direct log queries. In Grafana, the Loki datasource can be used to explore logs collected by Alloy from Docker containers, alongside the Prometheus and Redis datasources already provisioned.
+
+The monitoring stack connects to your existing Geocruncher instance via Redis on the host machine. Alloy also needs access to the Docker socket to discover containers and ship their logs to Loki. Ensure your main Geocruncher services are running before starting monitoring.
 
 ## Deployment
 
