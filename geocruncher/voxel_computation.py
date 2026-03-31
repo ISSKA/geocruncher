@@ -1,20 +1,11 @@
 import numpy as np
 import pyvista as pv
-from .GeologicalModel3D import GeologicalModel
-from forgeo.gmlib.GeologicalModel3D import Box
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
 
-# from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
+from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
 
 from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
-
-
-def from_GeoModeller():
-    return None
-
-
-def make_evaluator():
-    return None
 
 
 class Voxels:

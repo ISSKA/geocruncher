@@ -1,32 +1,14 @@
 import numpy as np
 
-from .GeologicalModel3D import GeologicalModel
-from forgeo.gmlib.GeologicalModel3D import Box
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
 
-# from forgeo.gmlib.tesselate import tesselate_faults
+from forgeo.gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes
-# from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator, grid
+from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from forgeo.gmlib.utils.tools import BBox3
 
 from .profiler import profile_step
 from .mesh_io.mesh_io import generate_mesh
-from .rigs import extract
-
-
-def from_GeoModeller():
-    return None
-
-
-def make_evaluator():
-    return None
-
-
-def grid():
-    return None
-
-
-def tesselate_faults():
-    return None
 
 
 # Constants
@@ -122,31 +104,6 @@ def generate_volumes(
         # don't waste time generating faults if there are none
         # the setup for the generation takes a considerable amount of time, even if there is nothing to generate
         out_files['fault'] = generate_faults_files(model, shape, box)
-
-    return out_files
-
-
-def generate_rigs_volumes(
-    model: GeologicalModel, shape: tuple[int, int, int], box: Box
-) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
-    """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
-
-    Parameters:
-        model: A valid GeologicalModel with a loaded surface model (DEM).
-        shape: Number of samples for marching cubes (x,y,z)
-        box: Custom box
-    """
-
-    print("before extract")
-    v, f, part_id, _ = extract(model, shape, box)
-    print("extracted!")
-
-    mesh = generate_mesh(v, f)
-    print("generated mesh!")
-
-    out_files = {"mesh": {}, "fault": {}}
-
-    out_files["mesh"][str(0)] = mesh
 
     return out_files
 

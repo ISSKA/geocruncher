@@ -1,7 +1,7 @@
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 #include "AquiferCalc.h"
 #include "FileIO.h"
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -29,24 +29,24 @@ PYBIND11_MODULE(PyGeoAlgo, m) {
             return py::bytes(vec.data(), vec.size());
         }, py::arg("mesh"), py::arg("use_off") = false);
 
-    py::class_<Point_3>(m, "Point_3")
+    py::class_<Point_3>(m, "Point_3", py::module_local())
         .def(py::init<double, double, double>());
 
-    py::class_<Mesh>(m, "Mesh");
+    py::class_<Mesh>(m, "Mesh", py::module_local());
 
-    py::class_<Spring>(m, "Spring")
+    py::class_<Spring>(m, "Spring", py::module_local())
         .def(py::init<>())
-        .def(py::init<const int&, const Point_3&, const int&>())
+        .def(py::init<const int &, const Point_3 &, const int &>())
         .def_readwrite("id", &Spring::id)
         .def_readwrite("location", &Spring::location)
         .def_readwrite("meshId", &Spring::meshId);
 
-    py::class_<VkUnitMesh<Mesh>>(m, "UnitMesh")
+    py::class_<VkUnitMesh<Mesh>>(m, "UnitMesh", py::module_local())
         .def(py::init<>())
-        .def(py::init<const Mesh&>())
-        .def(py::init<const VkUnitMesh<Mesh>&>())
-        .def(py::init<const Mesh&, const int>())
-        .def(py::init<const Mesh&, const int, const Spring&>())
+        .def(py::init<const Mesh &>())
+        .def(py::init<const VkUnitMesh<Mesh> &>())
+        .def(py::init<const Mesh &, const int>())
+        .def(py::init<const Mesh &, const int, const Spring &>())
         .def_readwrite("unit_id", &VkUnitMesh<Mesh>::unit_id)
         .def_readwrite("spring", &VkUnitMesh<Mesh>::spring)
         .def_readwrite("volume", &VkUnitMesh<Mesh>::volume)

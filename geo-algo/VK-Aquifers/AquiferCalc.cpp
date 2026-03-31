@@ -1,15 +1,15 @@
 #include "AquiferCalc.h"
+#include <CGAL/AABB_face_graph_triangle_primitive.h>
+#include <CGAL/AABB_traits_3.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/Polygon_mesh_processing/clip.h>
 #include <CGAL/Polygon_mesh_processing/connected_components.h>
 #include <CGAL/Polygon_mesh_processing/measure.h>
-#include <CGAL/Polygon_mesh_processing/clip.h>
-#include <CGAL/AABB_face_graph_triangle_primitive.h>
-#include <CGAL/AABB_traits.h>
-#include <CGAL/AABB_tree.h>
-#include <CGAL/exceptions.h>
 #include <CGAL/boost/graph/helpers.h>
+#include <CGAL/exceptions.h>
 
 typedef CGAL::AABB_face_graph_triangle_primitive<Mesh> AABB_primitive;
-typedef CGAL::AABB_traits<Kernel, AABB_primitive> AABB_traits;
+typedef CGAL::AABB_traits_3<Kernel, AABB_primitive> AABB_traits;
 typedef CGAL::AABB_tree<AABB_traits> AABB_tree;
 
 namespace PMP = CGAL::Polygon_mesh_processing;
@@ -171,7 +171,10 @@ std::vector<Mesh> AquiferCalc::findConnectedComponents(Mesh& mesh) {
   for (size_t id = 0; id < num_components; id++) {
     Mesh component(mesh);
     // Important: We need to work on a new copy of the property map, otherwise it's overwritten.
-    PMP::keep_connected_components(component, std::vector<size_t>{ id }, component.property_map<Mesh::Face_index, std::size_t>(facemap_name).first);
+    auto opt_facemap =
+        component.property_map<Mesh::Face_index, std::size_t>(facemap_name);
+    PMP::keep_connected_components(component, std::vector<size_t>{id},
+                                   opt_facemap.value());
     component.collect_garbage();
     components.push_back(std::move(component));
   }  
