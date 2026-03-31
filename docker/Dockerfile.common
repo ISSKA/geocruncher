@@ -29,6 +29,7 @@ RUN pip install \
     flask \
     forgeo \
     forgeo-gmlib \
+    forgeo-rigs \
     lxml \
     meshio \
     numpy \

@@ -6,10 +6,52 @@ DRACO_COMPRESSION_LEVEL = 6
 DRACO_QUANTIZATION_BITS = 14
 
 
+def triangulate_faces(faces):
+    """
+    Convert mixed triangles, quads, and ngons to all triangles.
+    Uses fan triangulation for ngons.
+
+    Args:
+        faces: List of faces, each being a list of vertex indices
+
+    Returns:
+        numpy array of triangles with shape (N, 3)
+    """
+    triangles = []
+
+    for face in faces:
+        n_verts = len(face)
+
+        if n_verts == 3:
+            # Triangle - keep as is
+            triangles.append(face)
+
+        elif n_verts == 4:
+            # Quad - split into two triangles
+            triangles.append([face[0], face[1], face[2]])
+            triangles.append([face[0], face[2], face[3]])
+
+        elif n_verts >= 5:
+            # Ngon - fan triangulation around first vertex
+            # Creates triangles: (0,1,2), (0,2,3), (0,3,4), ...
+            for i in range(1, n_verts - 1):
+                triangles.append([face[0], face[i], face[i + 1]])
+
+        else:
+            raise ValueError(
+                f"Invalid face with {n_verts} vertices (minimum 3 required)"
+            )
+
+    return np.array(triangles, dtype=np.int32)
+
+
 def generate_draco(verts: np.array, faces: np.array) -> bytes:
-    return DracoPy.encode(verts, faces,
-                          quantization_bits=DRACO_QUANTIZATION_BITS,
-                          compression_level=DRACO_COMPRESSION_LEVEL)
+    return DracoPy.encode(
+        verts,
+        triangulate_faces(faces),
+        quantization_bits=DRACO_QUANTIZATION_BITS,
+        compression_level=DRACO_COMPRESSION_LEVEL,
+    )
 
 
 def read_draco_to_polydata(draco_bytes: bytes) -> pv.PolyData:

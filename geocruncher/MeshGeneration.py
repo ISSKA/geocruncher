@@ -2,13 +2,13 @@ import numpy as np
 
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
 
-from forgeo.gmlib.tesselate import tesselate_faults
 from skimage.measure import marching_cubes
 from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator, grid
 from forgeo.gmlib.utils.tools import BBox3
 
 from .profiler import profile_step
 from .mesh_io.mesh_io import generate_mesh
+from .rigs import extract
 
 
 # Constants
@@ -108,18 +108,89 @@ def generate_volumes(
     return out_files
 
 
+# Currently unused, for future reference and testing. Drop-in replacement for "generate_volumes", but currently returns surfaces and not volumes (not yet implemented in rigs)
+def generate_rigs_volumes(
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
+) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
+    """Generates topologically valid meshes for each unit in the model. Meshes are output in Draco format.
+
+    Parameters:
+        model: A valid GeologicalModel with a loaded surface model (DEM).
+        shape: Size of the regular grid of tesselated cubes. (x,y,z)
+        box: Custom box. Optional
+    """
+    out_files = {"mesh": {}, "fault": {}}
+    is_top = model.pile.reference == "top"
+
+    # Create a map from unit name to unit id, as we want to return the meshes indexed by this id, but in rigs we identify them through their name
+    unit_names = model.pile_formations
+    unit_id = {}
+    for i, n in enumerate(unit_names):
+        unit_id[n] = i + 1 if is_top else i
+    # Rigs returns units and faults mixed up, so we need to know which faults exist
+    fault_names = list(model.faults.keys())
+
+    # The rigs name is the pile reference dash the unit name
+    prefix = model.pile.reference + "-"
+
+    # The biggest par of the job is done here. Convert to rigs data structure and extract surfaces
+    v, f, parts, surface_names = extract(model, shape, box)
+
+    # Then separate the result into the relevant units/faults and generate Draco meshes for each
+    for part in np.unique(parts):
+        try:
+            prefixed_name = surface_names[part]
+            print(f"Extracting part {part} with name {prefixed_name}")
+        except IndexError:
+            # Can happen when messing with rigs input parameters. should not happen in prod
+            print(f"Ignoring part {part} with unknown name")
+            continue
+
+        # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
+        faces = [fi for i, fi in enumerate(f) if parts[i] == part]
+        mesh = generate_mesh(v, faces)
+
+        # We can know which unit/fault the part represents, as the identifier is the index in surface_names
+        # Since units and faults are mixed, we need to figure out which type this is
+        if prefixed_name in fault_names:
+            # faults are indexed by their name
+            out_files["fault"][prefixed_name] = mesh
+        else:
+            try:
+                # Remove the prefix in order to look up the unit id from the original name
+                name = prefixed_name[len(prefix) :]
+                # Units are indexed by their unit id (sequence based on pile order)
+                out_files["mesh"][str(unit_id[name])] = mesh
+            except KeyError:
+                # The list can also contain "topography", which represents the DEM. We don't want to save that
+                # Can be saved to index 0 for debug, this makes it the dummy mesh
+                # out_files["mesh"][str(0)] = mesh
+                continue
+
+    return out_files
+
+
 def generate_faults_files(
     model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
 ) -> dict[str, bytes]:
-    box = box or model.getbox()
-    faults = tesselate_faults(box, shape, model)
+    # For now, the resolution of faults is 10x lower than the mesh, with a minimum of 10, as with RIGS, we see no improvements with increased resolution except for conformity with the DEM and higher resolutions are extremely slow
+    rigs_shape = (
+        int(max(10, shape[0] / 10)),
+        int(max(10, shape[1] / 10)),
+        int(max(10, shape[2] / 10)),
+    )
+    v, f, parts, surface_names = extract(model, rigs_shape, box, faults_only=True)
 
     profile_step('tesselate_faults')
 
     out_files = {}
-    for name, fault in faults.items():
-        if not fault.is_empty():
-            fault_arr = fault.as_arrays()
-            out_files[name] = generate_mesh(fault_arr[0], fault_arr[1][0])
-            profile_step('generate_mesh')
+    for part in np.unique(parts):
+        name = surface_names[part]
+        # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
+        # We can know which unit/fault the part represents, as the identifier is the index in surface_names
+        # Here we only computed faults therefore we assume every returned part is a valid fault. There is a bit more checking if we compute both units & faults
+        faces = [fi for i, fi in enumerate(f) if parts[i] == part]
+        mesh = generate_mesh(v, faces)
+        out_files[name] = mesh
+
     return out_files
