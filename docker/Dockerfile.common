@@ -18,7 +18,25 @@ RUN conda install -c anaconda gmp -y
 WORKDIR /opt
 RUN wget https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz
 RUN tar -xzf boost_1_90_0.tar.gz
-RUN cd boost_1_90_0 && ./bootstrap.sh --prefix=/usr/local && ./b2 && ./b2 install
+RUN cd boost_1_90_0 && \
+    if [ "$(uname -m)" = "x86_64" ]; then \
+        flags=$(cat /proc/cpuinfo | grep flags | head -1) && \
+        march="x86-64" && \
+        if echo "$flags" | grep -q "avx512f"; then \
+            march="x86-64-v4"; \
+        elif echo "$flags" | grep -q "avx2"; then \
+            march="x86-64-v3"; \
+        elif echo "$flags" | grep -q "sse4_2"; then \
+            march="x86-64-v2"; \
+        fi && \
+        echo "Using march=$march based on CPU flags"; \
+    else \
+        march="x86-64"; \
+        echo "Non-x86_64 architecture, using baseline -march=$march"; \
+    fi && \
+    CXXFLAGS="-march=$march" ./bootstrap.sh --prefix=/usr/local && \
+    ./b2 cxxflags="-march=$march" && \
+    ./b2 install
 
 RUN wget https://github.com/CGAL/cgal/releases/download/v6.1.1/CGAL-6.1.1-library.tar.xz
 RUN tar -xf CGAL-*.tar.xz
