@@ -10,7 +10,7 @@ def extract(
     shape: tuple[int, int, int],
     box: Box = None,
     faults_only=False,
-) -> tuple[list, list, list, list[str]]:
+) -> tuple[list, list, list, list]:
     """Generate a regular grid of tesselated cubes, convert the model to RIGS and evaluate it on the grid, returning surfaces
 
     Returns vertices, faces, parts and surface_names
@@ -23,6 +23,13 @@ def extract(
         shape: Size of the regular grid of tesselated cubes. (x,y,z)
         box: Custom box. Optional
         faults_only: If True, only faults will be computed and returned. Defaults to False
+
+    Returns:
+        Tuple[list, list, list, list]: (vertices, faces, parts, surface_names)
+        1) 3d points representing mesh vertices
+        2) references to vertices that form polygons (tris, quads & ngons possible)
+        3) index in surface_names for each face, to determine to which surface it belongs
+        4) the list of surfaces that might be present in the output
     """
 
     box = model.getbox() if box is None else box

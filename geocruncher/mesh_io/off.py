@@ -56,7 +56,7 @@ def read_off(string: str) -> Mesh:
     return Mesh(verts, cells)
 
 
-def generate_off(verts: np.array, faces: np.array, precision=3):
+def generate_off(verts: np.ndarray | list, faces: np.ndarray | list, precision=3):
     """Generates a valid OFF string from the given verts and faces.
 
     Parameters
@@ -78,7 +78,7 @@ def generate_off(verts: np.array, faces: np.array, precision=3):
     num_verts = len(verts)
     num_faces = len(faces)
 
-    verts_rounded = np.round(verts.astype(float), precision)
+    verts_rounded = np.round(np.asarray(verts, dtype=np.float64), precision)
     verts_str = '\n'.join(' '.join(map(str, vertex)) for vertex in verts_rounded)
     faces_str = '\n'.join(f"{len(face)} {' '.join(map(str, face))}" for face in faces)
     return f"OFF\n{num_verts} {num_faces} 0\n{verts_str}\n{faces_str}\n"

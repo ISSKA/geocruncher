@@ -6,16 +6,16 @@ DRACO_COMPRESSION_LEVEL = 6
 DRACO_QUANTIZATION_BITS = 14
 
 
-def triangulate_faces(faces):
+def triangulate_faces(faces: list) -> np.ndarray:
     """
     Convert mixed triangles, quads, and ngons to all triangles.
     Uses fan triangulation for ngons.
 
     Args:
-        faces: List of faces, each being a list of vertex indices
+        faces: np.array of faces, each being a list of vertex indices
 
     Returns:
-        numpy array of triangles with shape (N, 3)
+        np.array of triangles with shape (N, 3)
     """
     triangles = []
 
@@ -45,10 +45,16 @@ def triangulate_faces(faces):
     return np.array(triangles, dtype=np.int32)
 
 
-def generate_draco(verts: np.array, faces: np.array) -> bytes:
+def generate_draco(verts: np.ndarray | list, faces: np.ndarray | list) -> bytes:
+    # numpy array have homogeneous shapes, so check if it is an numpy array of correct shape. otherwise assume not and triangulate
+    f = (
+        faces
+        if isinstance(faces, np.ndarray) and faces.shape[1] == 3
+        else triangulate_faces(faces)
+    )
     return DracoPy.encode(
         verts,
-        triangulate_faces(faces),
+        f,
         quantization_bits=DRACO_QUANTIZATION_BITS,
         compression_level=DRACO_COMPRESSION_LEVEL,
     )

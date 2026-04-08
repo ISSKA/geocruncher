@@ -1,4 +1,5 @@
 import numpy as np
+from collections import defaultdict
 
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
 
@@ -136,8 +137,13 @@ def generate_rigs_volumes(
     # The biggest par of the job is done here. Convert to rigs data structure and extract surfaces
     v, f, parts, surface_names = extract(model, shape, box)
 
+    # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
+    grouped = defaultdict(list)
+    for i, fi in enumerate(f):
+        grouped[parts[i]].append(fi)
+
     # Then separate the result into the relevant units/faults and generate Draco meshes for each
-    for part in np.unique(parts):
+    for part in grouped.keys():
         try:
             prefixed_name = surface_names[part]
             print(f"Extracting part {part} with name {prefixed_name}")
@@ -146,9 +152,7 @@ def generate_rigs_volumes(
             print(f"Ignoring part {part} with unknown name")
             continue
 
-        # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
-        faces = [fi for i, fi in enumerate(f) if parts[i] == part]
-        mesh = generate_mesh(v, faces)
+        mesh = generate_mesh(v, grouped[part])
 
         # We can know which unit/fault the part represents, as the identifier is the index in surface_names
         # Since units and faults are mixed, we need to figure out which type this is
@@ -183,14 +187,18 @@ def generate_faults_files(
 
     profile_step('tesselate_faults')
 
+    # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
+    grouped = defaultdict(list)
+    for i, fi in enumerate(f):
+        grouped[parts[i]].append(fi)
+
     out_files = {}
-    for part in np.unique(parts):
-        name = surface_names[part]
-        # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
+
+    for part in grouped.keys():
         # We can know which unit/fault the part represents, as the identifier is the index in surface_names
         # Here we only computed faults therefore we assume every returned part is a valid fault. There is a bit more checking if we compute both units & faults
-        faces = [fi for i, fi in enumerate(f) if parts[i] == part]
-        mesh = generate_mesh(v, faces)
+        name = surface_names[part]
+        mesh = generate_mesh(v, grouped[part])
         out_files[name] = mesh
 
     return out_files
