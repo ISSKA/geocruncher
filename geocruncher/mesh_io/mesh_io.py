@@ -10,7 +10,9 @@ def is_off_file(data: bytes) -> bool:
     return len(data) >= 3 and data[:3] == b"OFF"
 
 
-def generate_mesh(verts: np.array, faces: np.array, use_off=False) -> bytes:
+def generate_mesh(
+    verts: np.ndarray | list, faces: np.ndarray | list, use_off=False
+) -> bytes:
     if use_off:
         return generate_off(verts, faces)
     else:
