@@ -201,4 +201,6 @@ def generate_faults_files(
         mesh = generate_mesh(v, grouped[part])
         out_files[name] = mesh
 
+    profile_step("generate_mesh")
+
     return out_files
