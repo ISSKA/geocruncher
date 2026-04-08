@@ -8,7 +8,7 @@ RUN pip install "watchdog[watchmedo]" "pybind11[global]"
 WORKDIR /home/build/
 COPY third_party/draco draco_src
 RUN mkdir draco_build && cd draco_build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/draco ../draco_src && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/draco -DCMAKE_POSITION_INDEPENDENT_CODE=ON ../draco_src && \
     make -j$(nproc) install
 
 # Build geo-algo
