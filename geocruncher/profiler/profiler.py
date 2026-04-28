@@ -1,4 +1,3 @@
-import cProfile
 import time
 import datetime
 from typing import Optional
@@ -9,8 +8,9 @@ from .storage import ProfilerStorage
 
 class VkProfiler():
 
-    def __init__(self, settings: VkProfilerSettings, storage: Optional[ProfilerStorage] = None):
-        self._pr = cProfile.Profile()
+    def __init__(
+        self, settings: VkProfilerSettings, storage: Optional[ProfilerStorage] = None
+    ):
         # set the start time, to calculate relative durations
         self._last_profiled = time.process_time()
         self._settings = settings
@@ -24,9 +24,6 @@ class VkProfiler():
         self.set_metadata(
             'start_time', datetime.datetime.now().isoformat())
 
-        if self._storage:
-            self._pr.enable()
-
     def profile(self, step: str) -> 'VkProfiler':
         """Profile a step by name. To be called when the step in question is done.
         Also works inside loops (total time per step gets summed up). For loops, it is recommended 
@@ -36,15 +33,11 @@ class VkProfiler():
             return self
         now = time.process_time()
 
-        # stop tracking previous step
-        self._pr.disable()
-
         # add for the step the difference between now and the last profiled time
         # since we add, the profile function works in loops. on each loop iteration, the step's time will be increased
         self._steps[step]['time'] += now - self._last_profiled
         self._last_profiled = now
-        # start tracking next step
-        self._pr.enable()
+
         return self
 
     def set_metadata(self, metadata: str, value) -> 'VkProfiler':
@@ -53,8 +46,6 @@ class VkProfiler():
 
     def save_results(self) -> 'VkProfiler':
         """Save profiling results using configured storage"""
-        self._pr.disable()
-        
         if self._storage:
             self._storage.save(
                 self._settings.computation,
@@ -62,7 +53,7 @@ class VkProfiler():
                 self._metadata,
                 self._steps
             )
-        
+
         return self
 
 class ProfilerManager:
