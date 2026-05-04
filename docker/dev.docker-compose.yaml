@@ -4,7 +4,7 @@ services:
     image: geocruncher/geocruncher-dev:latest
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/api.sh"]
+    command: ["bash", "/home/build/scripts/api.sh"]
     ports:
       - "5001:5000"
     environment:
@@ -18,7 +18,7 @@ services:
     image: geocruncher/geocruncher-dev:latest
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/worker.sh"]
+    command: ["bash", "/home/build/scripts/worker.sh"]
     environment:
       - REDIS_HOST=redis
       - PROFILING_ENABLED=true

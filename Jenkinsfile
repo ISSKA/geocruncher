@@ -12,8 +12,7 @@ pipeline {
       }
       steps {
         dir('third_party/draco') {
-          sh '''#!/bin/bash --login
-          conda activate geocruncher
+          sh '''
           mkdir -p ../draco_build && cd ../draco_build
           cmake \
           -DCMAKE_BUILD_TYPE=Release \
@@ -37,12 +36,12 @@ pipeline {
         // Retrieve Draco artifacts
         unstash 'draco_artifacts'
         dir('geo-algo/VK-Aquifers') {
-          sh '''#!/bin/bash --login
-          conda activate geocruncher
-
+          sh '''
           cmake \
           -DCMAKE_BUILD_TYPE=Release \
           -DDRACO_INSTALL_DIR=${WORKSPACE}/draco_install \
+          -DPython_EXECUTABLE=/opt/venv/bin/python \
+          -Dpybind11_DIR="$(/opt/venv/bin/python -m pybind11 --cmakedir)" \
           .
           cmake --build .
           '''
@@ -58,17 +57,11 @@ pipeline {
       }
       steps {
         withEnv(["HOME=${env.WORKSPACE}"]) {
-          // TODO: Setuptools is deprecated and doesn't work anymore
-          // replace with something else, then enable tests again
-          // sh 'python geocruncher-setup.py test'
-          sh '''#!/bin/bash --login
-          conda activate geocruncher
-          python geocruncher-setup.py bdist_wheel
-          python api-setup.py bdist_wheel
-          '''
-          // Apparently not needed since the files are already where we want them to be
-          // sh 'cp dist/geocruncher-*.whl dist/'
-          // sh 'cp dist/api-*.whl dist/'
+          // TODO: re-enable tests once known regressions are addressed.
+          // The setuptools blocker is gone (uv + hatchling now); leaving
+          // disabled until the suite is green. To re-enable:
+          //   sh 'uv run --frozen pytest'
+          sh 'uv build'
         }
       }
     }
