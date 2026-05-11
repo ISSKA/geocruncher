@@ -38,10 +38,25 @@ To run Geocruncher in local development mode with Hot Reloading, run the script 
 
 We recommand creating a python environment and installing the dependencies as done in the the `base` and `local` stages of [docker/Dockerfile](./docker/Dockerfile) in order to have correct syntax highlighting / autocompletion.
 
-If using Visual Studio Code, the last step is to tell it which Python version to use. With a Python file open, at the bottom right, click on the Python version. In the dropdown, choose the Python version from the conda environment.
+Recommanded extensions : `ms-python.python` and `charliermarsh.ruff`.
 
-Autocompletion will now work as expected.
-Recommanded extensions: `ms-python.python`, `ms-python.pylint` and `ms-python.autopep8`
+We use [Ruff](https://docs.astral.sh/ruff/) for both linting and formatting. It is included in the `dev` dependency group and configured in [pyproject.toml](./pyproject.toml). Run it manually with:
+
+```bash
+uv run ruff check --fix
+uv run ruff format
+```
+
+### Pre-commit hook
+
+Ruff is wired up via [pre-commit](https://pre-commit.com/) so it runs automatically on staged files before each commit. After cloning, install the hook once per checkout:
+
+```bash
+uv tool install pre-commit  # or: uv add --dev pre-commit
+pre-commit install
+```
+
+To run the hooks against the whole repository: `pre-commit run --all-files`.
 
 ## Monitoring
 
