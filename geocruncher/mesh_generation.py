@@ -1,23 +1,21 @@
-import numpy as np
 from collections import defaultdict
 
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
-
-from skimage.measure import marching_cubes
-from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator, grid
+import numpy as np
+from forgeo.gmlib.architecture import from_GeoModeller, grid, make_evaluator
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from forgeo.gmlib.utils.tools import BBox3
+from skimage.measure import marching_cubes
 
-from .profiler import profile_step
 from .mesh_io.mesh_io import generate_mesh
+from .profiler import profile_step
 from .rigs import extract
-
 
 # Constants
 RANK_SKY = 0
 
 
 def compute_ranks(res: tuple[int, int, int], model: GeologicalModel, box: Box = None):
-    """"
+    """ "
     :param res: resolution (supposed to be a tuple)
     :param model: gmlib.GeologicalModel object
     :param box: if not given will default to the bounding box of model
@@ -33,11 +31,13 @@ def compute_ranks(res: tuple[int, int, int], model: GeologicalModel, box: Box = 
 
 
 def rescale_to_grid(verts, box: Box, shape: tuple[int, int, int]):
-    step_size = np.array([
-        (box.xmax - box.xmin) / (shape[0] - 1),
-        (box.ymax - box.ymin) / (shape[1] - 1),
-        (box.zmax - box.zmin) / (shape[2] - 1)
-    ])
+    step_size = np.array(
+        [
+            (box.xmax - box.xmin) / (shape[0] - 1),
+            (box.ymax - box.ymin) / (shape[1] - 1),
+            (box.zmax - box.zmin) / (shape[2] - 1),
+        ]
+    )
     # The marching cubes uses an extended shape with a margin of one additional step on each side.
     # Thus we need to shift the mesh by one step size.
     return (verts * step_size) - step_size + np.array([box.xmin, box.ymin, box.zmin])
@@ -45,7 +45,7 @@ def rescale_to_grid(verts, box: Box, shape: tuple[int, int, int]):
 
 def generate_volumes(
     model: GeologicalModel, shape: tuple[int, int, int], box: Box
-) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
+) -> dict[str, dict[str, bytes]]:
     """Generates topologically valid meshes for each unit in the model. Meshes are output in OFF format.
 
     Parameters:
@@ -68,7 +68,7 @@ def generate_volumes(
     num_ranks = len(rank_values)
     out_files = {"mesh": {}, "fault": {}}
 
-    profile_step('ranks')
+    profile_step("ranks")
 
     # to close bodies, we put them in a slightly bigger grid
     extended_shape = tuple(n + 2 for n in shape)
@@ -87,24 +87,25 @@ def generate_volumes(
         volume = np.zeros(extended_shape, dtype=np.float32)
         volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
 
-        profile_step('volume')
+        profile_step("volume")
 
         # Using the lewiner variant leads to holes in the meshes which CGAL cannot handle
         # (Produces an error when reading the OFF in geo-algo/VK-Aquifers)
         # Gradient direction ensures normals point outwards. Otherwise, aquifers computation will be incorrect
         verts, faces = marching_cubes(
-            volume, level=0.5, gradient_direction='ascent', method='lorensen')[:2]
+            volume, level=0.5, gradient_direction="ascent", method="lorensen"
+        )[:2]
         scaled_verts = rescale_to_grid(verts, box, shape)
-        profile_step('marching_cubes')
+        profile_step("marching_cubes")
 
         mesh = generate_mesh(scaled_verts, faces)
         out_files["mesh"][str(rank_id)] = mesh
-        profile_step('generate_mesh')
+        profile_step("generate_mesh")
 
     if len(model.faults.items()) > 0:
         # don't waste time generating faults if there are none
         # the setup for the generation takes a considerable amount of time, even if there is nothing to generate
-        out_files['fault'] = generate_faults_files(model, shape, box)
+        out_files["fault"] = generate_faults_files(model, shape, box)
 
     return out_files
 
@@ -112,7 +113,7 @@ def generate_volumes(
 # Currently unused, for future reference and testing. Drop-in replacement for "generate_volumes", but currently returns surfaces and not volumes (not yet implemented in rigs)
 def generate_rigs_volumes(
     model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
-) -> {"mesh": dict[str, bytes], "fault": dict[str, bytes]}:
+) -> dict[str, dict[str, bytes]]:
     """Generates topologically valid meshes for each unit in the model. Meshes are output in Draco format.
 
     Parameters:
@@ -185,7 +186,7 @@ def generate_faults_files(
     )
     v, f, parts, surface_names = extract(model, rigs_shape, box, faults_only=True)
 
-    profile_step('tesselate_faults')
+    profile_step("tesselate_faults")
 
     # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
     grouped = defaultdict(list)

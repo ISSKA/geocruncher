@@ -1,26 +1,27 @@
-import uuid
-import redis
 import json
+import uuid
+from typing import Any, Dict, Optional
+
+import redis
 from flask import request
-from typing import Optional, Dict, Any
 
 
 def parse_metadata_from_request() -> Optional[Dict[str, Any]]:
     """Parse optional metadata from Flask request.
-    
+
     Looks for 'metadata' form field and parses as JSON
-    
+
     Returns
     -------
     Optional[Dict[str, Any]]
         Parsed metadata dictionary, or None if not provided or invalid
     """
-    if hasattr(request, 'form') and 'metadata' in request.form:
+    if hasattr(request, "form") and "metadata" in request.form:
         try:
-            return json.loads(request.form['metadata'])
+            return json.loads(request.form["metadata"])
         except (json.JSONDecodeError, ValueError):
             return None
-    
+
     return None
 
 

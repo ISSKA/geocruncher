@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
+
 import redis
 
 
@@ -8,7 +9,13 @@ class ProfilerStorage(ABC):
     """Abstract base class for profiler storage backends"""
 
     @abstractmethod
-    def save(self, computation: str, version: int, metadata: dict[str, Any], steps: dict[str, dict[str, float]]) -> None:
+    def save(
+        self,
+        computation: str,
+        version: int,
+        metadata: dict[str, Any],
+        steps: dict[str, dict[str, float]],
+    ) -> None:
         pass
 
 
@@ -18,11 +25,17 @@ class CSVStorage(ProfilerStorage):
     def __init__(self, output_folder: Path):
         self._output_folder = output_folder
 
-    def save(self, computation: str, version: int, metadata: dict[str, Any], steps: dict[str, dict[str, float]]) -> None:
+    def save(
+        self,
+        computation: str,
+        version: int,
+        metadata: dict[str, Any],
+        steps: dict[str, dict[str, float]],
+    ) -> None:
         file_name = f"{computation}_v{version}.csv"
         file_path = self._output_folder / file_name
 
-        separator = ';'
+        separator = ";"
         header = self._get_csv_header(metadata.keys(), steps.keys(), separator)
         line = self._get_csv_line(metadata, steps, separator)
 
@@ -32,17 +45,18 @@ class CSVStorage(ProfilerStorage):
                 f.write(header)
             f.write(line)
 
-    def _get_csv_header(self, metadata_keys: str, step_keys: str, separator: str=';'):
-        return separator.join(metadata_keys) + separator + separator.join(step_keys) + '\n'
+    def _get_csv_header(self, metadata_keys: str, step_keys: str, separator: str = ";"):
+        return (
+            separator.join(metadata_keys) + separator + separator.join(step_keys) + "\n"
+        )
 
-    def _get_csv_line(self, metadata: dict, steps: dict, separator: str=';'):
+    def _get_csv_line(self, metadata: dict, steps: dict, separator: str = ";"):
         metadata_values = separator.join(str(x) for x in metadata.values())
-        step_values = separator.join(
-            self._s_to_ms(x['time']) for x in steps.values())
-        return metadata_values + separator + step_values + '\n'
+        step_values = separator.join(self._s_to_ms(x["time"]) for x in steps.values())
+        return metadata_values + separator + step_values + "\n"
 
     def _s_to_ms(self, s: float) -> str:
-        return f'{s * 1000:.5f}'
+        return f"{s * 1000:.5f}"
 
 
 class RedisStorage(ProfilerStorage):
@@ -53,26 +67,33 @@ class RedisStorage(ProfilerStorage):
         # getting used by geocruncher/celery.
         self._client = redis.StrictRedis(host=host, port=port, db=db)
 
-    def save(self, computation: str, version: int, metadata: dict[str, Any], steps: dict[str, dict[str, float]]) -> None:
+    def save(
+        self,
+        computation: str,
+        version: int,
+        metadata: dict[str, Any],
+        steps: dict[str, dict[str, float]],
+    ) -> None:
         """Store one profiler entry using RedisJSON at profiling:<computation>:v<version>."""
 
         key = f"profiling:{computation}:v{version}"
 
         steps_flat: dict[str, float] = {
-            step: round(step_data['time'] * 1000, 5) for step, step_data in steps.items()
+            step: round(step_data["time"] * 1000, 5)
+            for step, step_data in steps.items()
         }
 
         entry = {
-            'metadata': metadata,
-            'steps': steps_flat,
+            "metadata": metadata,
+            "steps": steps_flat,
         }
 
         try:
             if not self._client.exists(key):
-                self._client.json().set(key, '$', [])
-            self._client.json().arrappend(key, '$', entry)
+                self._client.json().set(key, "$", [])
+            self._client.json().arrappend(key, "$", entry)
         except redis.ResponseError as e:
             raise RuntimeError(
-                'Failed to save profiler data using RedisJSON. Ensure the RedisJSON module (ReJSON) is loaded or that you use a compatible Redis version. '
-                f'Underlying error: {e}'
+                "Failed to save profiler data using RedisJSON. Ensure the RedisJSON module (ReJSON) is loaded or that you use a compatible Redis version. "
+                f"Underlying error: {e}"
             ) from e

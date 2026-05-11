@@ -1,13 +1,17 @@
-from collections import defaultdict
 import json
+from collections import defaultdict
+
 from geocruncher import computations
+
 from .celery import app
 from .redis import redis_client as r
 from .utils import get_and_delete
 
 
 @app.task
-def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str, metadata: dict = None) -> str:
+def compute_tunnel_meshes(
+    data: computations.TunnelMeshesData, output_key: str, metadata: dict = None
+) -> str:
     meshes = computations.compute_tunnel_meshes(data, metadata)
     for field, value in meshes.items():
         r.hset(output_key, field, value)
@@ -15,67 +19,93 @@ def compute_tunnel_meshes(data: computations.TunnelMeshesData, output_key: str, 
 
 
 @app.task
-def compute_meshes(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str, metadata: dict = None) -> str:
+def compute_meshes(
+    data: computations.MeshesData,
+    xml_key: str,
+    dem_key: str,
+    output_key: str,
+    metadata: dict = None,
+) -> str:
     xml = get_and_delete(r, xml_key)
-    dem = get_and_delete(r, dem_key).decode('utf-8')
+    dem = get_and_delete(r, dem_key).decode("utf-8")
 
     generated_meshes = computations.compute_meshes(data, xml, dem, metadata)
 
     # write unit files
-    for rank, mesh in generated_meshes['mesh'].items():
+    for rank, mesh in generated_meshes["mesh"].items():
         field = f"rank_{rank}"
         r.hset(output_key, field, mesh)
 
     # write fault files
-    for name, mesh in generated_meshes['fault'].items():
+    for name, mesh in generated_meshes["fault"].items():
         field = f"fault_{name}"
         r.hset(output_key, field, mesh)
     return output_key
 
 
 @app.task
-def compute_intersections(data: computations.IntersectionsData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str, metadata: dict = None) -> str:
+def compute_intersections(
+    data: computations.IntersectionsData,
+    xml_key: str,
+    dem_key: str,
+    gwb_meshes_key: str,
+    output_key: str,
+    metadata: dict = None,
+) -> str:
     xml = get_and_delete(r, xml_key)
-    dem = get_and_delete(r, dem_key).decode('utf-8')
+    dem = get_and_delete(r, dem_key).decode("utf-8")
 
     gwb_meshes = defaultdict(list)
-    if 'springs' in data or 'drillholes' in data:
+    if "springs" in data or "drillholes" in data:
         gwb = r.hgetall(gwb_meshes_key)
         for name, mesh in gwb.items():
             # Syntax: f"{id}_{subID}"
-            gwb_id = name.decode('utf-8').split('_')[0]
+            gwb_id = name.decode("utf-8").split("_")[0]
             gwb_meshes[gwb_id].append(mesh)
         r.delete(gwb_meshes_key)
 
     outputs = computations.compute_intersections(data, xml, dem, gwb_meshes, metadata)
 
-    r.set(output_key, json.dumps(outputs, separators=(',', ':')))
+    r.set(output_key, json.dumps(outputs, separators=(",", ":")))
     return output_key
 
 
 @app.task
-def compute_faults(data: computations.MeshesData, xml_key: str, dem_key: str, output_key: str, metadata: dict = None) -> str:
+def compute_faults(
+    data: computations.MeshesData,
+    xml_key: str,
+    dem_key: str,
+    output_key: str,
+    metadata: dict = None,
+) -> str:
     xml = get_and_delete(r, xml_key)
-    dem = get_and_delete(r, dem_key).decode('utf-8')
+    dem = get_and_delete(r, dem_key).decode("utf-8")
 
     generated_meshes = computations.compute_faults(data, xml, dem, metadata)
 
     # write fault files
-    for name, mesh in generated_meshes['fault'].items():
+    for name, mesh in generated_meshes["fault"].items():
         field = f"fault_{name}"
         r.hset(output_key, field, mesh)
     return output_key
 
 
 @app.task
-def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gwb_meshes_key: str, output_key: str, metadata: dict = None) -> str:
+def compute_voxels(
+    data: computations.MeshesData,
+    xml_key: str,
+    dem_key: str,
+    gwb_meshes_key: str,
+    output_key: str,
+    metadata: dict = None,
+) -> str:
     xml = get_and_delete(r, xml_key)
-    dem = get_and_delete(r, dem_key).decode('utf-8')
+    dem = get_and_delete(r, dem_key).decode("utf-8")
 
     gwb_meshes = defaultdict(list)
     gwb = r.hgetall(gwb_meshes_key)
     for name, mesh in gwb.items():
-        gwb_id = name.decode('utf-8').split('_')[0]  # Syntax: f"{id}_{subID}"
+        gwb_id = name.decode("utf-8").split("_")[0]  # Syntax: f"{id}_{subID}"
         gwb_meshes[gwb_id].append(mesh)
     r.delete(gwb_meshes_key)
 
@@ -86,19 +116,26 @@ def compute_voxels(data: computations.MeshesData, xml_key: str, dem_key: str, gw
 
 
 @app.task
-def compute_gwb_meshes(data: list[computations.Spring], meshes_key: str, output_key: str, metadata: dict = None) -> str:
+def compute_gwb_meshes(
+    data: list[computations.Spring],
+    meshes_key: str,
+    output_key: str,
+    metadata: dict = None,
+) -> str:
 
     # get existing meshes for groundwater bodies
     unit_meshes: dict[str, bytes] = {}
     stored = r.hgetall(meshes_key)
     for unit_id, mesh in stored.items():
-        unit_meshes[unit_id.decode('utf-8')] = mesh
+        unit_meshes[unit_id.decode("utf-8")] = mesh
     r.delete(meshes_key)
 
     results = computations.compute_gwb_meshes(unit_meshes, data, metadata)
 
     # write metadata
-    r.hset(output_key, "metadata", json.dumps(results["metadata"], separators=(',', ':')))
+    r.hset(
+        output_key, "metadata", json.dumps(results["metadata"], separators=(",", ":"))
+    )
 
     # write gwb files
     for id, mesh in enumerate(results["meshes"]):

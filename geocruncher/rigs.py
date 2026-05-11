@@ -1,7 +1,7 @@
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from forgeo.rigs import all_intersections
-from forgeo.rigs.tetcube import tetgrid
 from forgeo.rigs.gmconverter import convert
+from forgeo.rigs.tetcube import tetgrid
 
 
 # TODO: more accurate typings for the returned values

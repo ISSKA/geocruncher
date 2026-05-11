@@ -2,12 +2,11 @@ import math
 
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
-
 from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
-from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
+from .profiler import profile_step
 
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:

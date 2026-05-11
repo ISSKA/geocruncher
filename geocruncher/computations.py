@@ -3,22 +3,26 @@ Geocruncher computation entry points and related type definitions
 These functions take data as input and return data as output, with no Disk interaction
 """
 
-import numpy as np
 import math
-from typing import TypedDict
 from enum import Enum
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from typing import TypedDict
 
-from .ComputeIntersections import (
+import numpy as np
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
+
+from .compute_intersections import (
+    calculate_resolution,
+    compute_cross_section_ranks,
+    compute_map_points,
     compute_vertical_slice_points,
     project_hydro_features_on_slice,
-    compute_map_points,
-    compute_cross_section_ranks,
-    calculate_resolution,
 )
 from .fault_intersections import compute_fault_intersections
-from .MeshGeneration import generate_volumes, generate_faults_files
+from .geo_algo import GeoAlgo, GeoAlgoOutput
 from .geomodeller_import import extract_project_data
+from .mesh_generation import generate_faults_files, generate_volumes
+from .profiler import PROFILES, get_current_profiler, profile_step, set_profiler
+from .profiler.util import MetadataHelpers
 from .tunnel_shape_generation import (
     get_circle_segment,
     get_elliptic_segment,
@@ -26,10 +30,6 @@ from .tunnel_shape_generation import (
     tunnel_to_meshes,
 )
 from .voxel_computation import Voxels
-from .geo_algo import GeoAlgo, GeoAlgoOutput
-
-from .profiler import PROFILES, set_profiler, get_current_profiler, profile_step
-from .profiler.util import MetadataHelpers
 
 
 class TunnelShape(str, Enum):
@@ -195,9 +195,7 @@ def compute_meshes(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
-    ).set_metadata(
-        "num_units", MetadataHelpers.num_units(model)
-    ).set_metadata(
+    ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
@@ -205,9 +203,7 @@ def compute_meshes(
         "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
     ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model)
-    ).set_metadata(
-        "num_dips", MetadataHelpers.num_dips(model)
-    ).set_metadata(
+    ).set_metadata("num_dips", MetadataHelpers.num_dips(model)).set_metadata(
         "resolution", shape[0] * shape[1] * shape[2]
     )
     if metadata:
@@ -335,9 +331,7 @@ def compute_intersections(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
-    ).set_metadata(
-        "num_units", MetadataHelpers.num_units(model)
-    ).set_metadata(
+    ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
@@ -347,19 +341,13 @@ def compute_intersections(
         "num_contact_data", MetadataHelpers.num_contact_data(model, fault=False)
     ).set_metadata(
         "num_dips", MetadataHelpers.num_dips(model, fault=False)
-    ).set_metadata(
-        "resolution", data["resolution"]
-    ).set_metadata(
+    ).set_metadata("resolution", data["resolution"]).set_metadata(
         "num_sections", len(data["toCompute"])
-    ).set_metadata(
-        "compute_map", data["computeMap"]
-    ).set_metadata(
+    ).set_metadata("compute_map", data["computeMap"]).set_metadata(
         "num_springs", len(data["springs"]) if "springs" in data else 0
     ).set_metadata(
         "num_drillholes", len(data["drillholes"]) if "drillholes" in data else 0
-    ).set_metadata(
-        "num_gwb_parts", len(gwb_meshes)
-    )
+    ).set_metadata("num_gwb_parts", len(gwb_meshes))
     if metadata:
         for key in metadata:
             profiler.set_metadata(key, metadata[key])
@@ -474,9 +462,7 @@ def compute_faults(
         "num_contact_data", MetadataHelpers.num_contact_data(model, unit=False)
     ).set_metadata(
         "num_dips", MetadataHelpers.num_dips(model, unit=False)
-    ).set_metadata(
-        "resolution", shape[0] * shape[1] * shape[2]
-    )
+    ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
     if metadata:
         for key in metadata:
             profiler.set_metadata(key, metadata[key])
@@ -528,13 +514,9 @@ def compute_voxels(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
-    ).set_metadata(
-        "num_units", MetadataHelpers.num_units(model)
-    ).set_metadata(
+    ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
         "num_gwb_parts", len(gwb_meshes)
-    ).set_metadata(
-        "resolution", shape[0] * shape[1] * shape[2]
-    )
+    ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
     if metadata:
         for key in metadata:
             profiler.set_metadata(key, metadata[key])

@@ -1,11 +1,10 @@
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
-
 from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
-from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
+from .profiler import profile_step
 
 
 class Voxels:
@@ -35,42 +34,46 @@ class Voxels:
         xyz = np.stack((x, y, z), axis=-1)
         xyz.shape = (-1, 3)
 
-        profile_step('grid')
+        profile_step("grid")
 
         gwb_tags = [0] * xyz.shape[0]
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_data in meshes:
                 mesh = read_mesh_to_polydata(mesh_data)
                 points = pv.PolyData(xyz)
-                profile_step('read_gwbs')
+                profile_step("read_gwbs")
 
-                inside_points = points.select_enclosed_points(
-                    mesh, tolerance=0.00001)
+                inside_points = points.select_enclosed_points(mesh, tolerance=0.00001)
                 selected_points = inside_points["SelectedPoints"].astype(
-                    np.uint16)  # cast array to int16 to avoid overflow error
-                gwb_tags = [max(new_id, _id) for new_id, _id in zip(
-                    selected_points * int(gwb_id), gwb_tags)]
-                profile_step('test_inside_gwbs')
+                    np.uint16
+                )  # cast array to int16 to avoid overflow error
+                gwb_tags = [
+                    max(new_id, _id)
+                    for new_id, _id in zip(selected_points * int(gwb_id), gwb_tags)
+                ]
+                profile_step("test_inside_gwbs")
 
         cppmodel = from_GeoModeller(model)
         topography = model.implicit_topography()
         evaluator = make_evaluator(cppmodel, topography)
         ranks = evaluator(xyz)
-        profile_step('ranks')
+        profile_step("ranks")
 
         ranks_tags = list(zip(ranks, gwb_tags))
 
         # We sort the arrays in reverse-nested loop order where z is the outer loop, y the middle and x the inner loop
         # So that we don't have to write index in the output file
-        xyz, ranks_tags = zip(*sorted(zip(xyz, ranks_tags),
-                              key=lambda tup: (tup[0][2], tup[0][1], tup[0][0])))
+        xyz, ranks_tags = zip(
+            *sorted(
+                zip(xyz, ranks_tags), key=lambda tup: (tup[0][2], tup[0][1], tup[0][0])
+            )
+        )
 
-        data = ''.join([(str(r_t[0]) + ' ' + str(r_t[1]) + '\n')
-                       for r_t in ranks_tags])
+        data = "".join([(str(r_t[0]) + " " + str(r_t[1]) + "\n") for r_t in ranks_tags])
         vox = f"\
 XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} ZMAX={box.zmax} \
 NUMBERX={shape[0]} NUMBERY={shape[1]} NUMBERZ={shape[2]} NOVALUE=0\n\
 rank gwb_id\n\
 {data}"
-        profile_step('generate_vox')
+        profile_step("generate_vox")
         return vox

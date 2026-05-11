@@ -13,6 +13,7 @@ from forgeo.gmlib.topography_reader import ImplicitDTM
 
 logger = logging.getLogger(__name__)
 
+
 def ascii_grid_to_implicit_dtm(dem: str) -> ImplicitDTM:
     """Read ASCIIGrid DEM datapoints and return a GMLIB ImplicitDTM."""
 
@@ -23,11 +24,11 @@ def ascii_grid_to_implicit_dtm(dem: str) -> ImplicitDTM:
     cellsize = float(re.search(r"\d+\.?\d*", lines[4])[0])
 
     offset = 6  # Skip the first 6 lines (header)
-    if lines[offset].startswith('NODATA_value'):
+    if lines[offset].startswith("NODATA_value"):
         logger.warning("Skipping NODATA_value line")
         offset += 1
 
-    data_string = '\n'.join(lines[offset:])
+    data_string = "\n".join(lines[offset:])
     zmap = np.loadtxt(StringIO(data_string), dtype=np.float64)
     zmap = zmap[::-1].T
 

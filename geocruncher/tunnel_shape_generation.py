@@ -1,12 +1,17 @@
 import math
+
 import numpy as np
-from sympy.parsing.sympy_parser import parse_expr
-from sympy import diff, symbols
 import scipy.integrate as integrate
+from sympy import diff, symbols
+from sympy.parsing.sympy_parser import parse_expr
+
 from .mesh_io.mesh_io import generate_mesh
 from .profiler import profile_step
 
-def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd) -> bytes:
+
+def tunnel_to_meshes(
+    functions, step, xy_points, idxStart, tStart, idxEnd, tEnd
+) -> bytes:
     """Generate a mesh for a tunnel
 
     Args:
@@ -19,7 +24,10 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
     nb_series = 0
     # NOTE: the 3 above lines are timed with the next profile on first loop iteration, but not subsequent
     # to avoid that, we would need to profile right here. but since these 3 lines are insignificant, we don't
-    for j in np.arange(idxStart if idxStart != -1 else 0, idxEnd + 1 if idxEnd != -1 else len(functions)):
+    for j in np.arange(
+        idxStart if idxStart != -1 else 0,
+        idxEnd + 1 if idxEnd != -1 else len(functions),
+    ):
         f = functions[j]
         fx = parse_expr(f["x"].replace("^", "**"))
         dfx = diff(fx, t)
@@ -28,9 +36,15 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
         fz = parse_expr(f["z"].replace("^", "**"))
         dfz = diff(fz, t)
         profile_step("sympy_parse_diff_function")
-        for i in np.arange(tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step):
-            normal = np.array([float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))])
-            bottom = np.array([float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))])
+        for i in np.arange(
+            tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step
+        ):
+            normal = np.array(
+                [float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))]
+            )
+            bottom = np.array(
+                [float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))]
+            )
             profile_step("interpolate_function")
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
@@ -41,6 +55,7 @@ def tunnel_to_meshes(functions, step, xy_points, idxStart, tStart, idxEnd, tEnd)
     mesh = generate_mesh(np.array(vertices), np.array(triangles))
     profile_step("generate_mesh")
     return mesh
+
 
 def get_circle_segment(radius, nb_vertices):
     """Get a segment on the xy plane of a circle
@@ -54,9 +69,14 @@ def get_circle_segment(radius, nb_vertices):
     """
     points = []
     for i in reversed(range(nb_vertices)):
-        angle = (math.pi*2) * i / nb_vertices 
-        points.append(np.array([-(radius * math.sin(angle) + radius), -(radius * math.cos(angle)), 0]))
+        angle = (math.pi * 2) * i / nb_vertices
+        points.append(
+            np.array(
+                [-(radius * math.sin(angle) + radius), -(radius * math.cos(angle)), 0]
+            )
+        )
     return points
+
 
 def get_rectangle_segment(width, height, nb_vertices):
     """Get a segment on the xy plane of a rectangle
@@ -72,33 +92,38 @@ def get_rectangle_segment(width, height, nb_vertices):
     length = 2 * width + 2 * height
     points = []
     current_state = -1
-    for i in range(nb_vertices): 
+    for i in range(nb_vertices):
         distance = length * i / nb_vertices
         if distance < height:
             if current_state == -1:
-                points.append(np.array([0, width/2, 0]))
+                points.append(np.array([0, width / 2, 0]))
                 current_state += 1
             else:
                 points.append(np.array([-distance, width / 2, 0]))
         elif distance < height + width:
             if current_state == 0:
-                points.append(np.array([-height, width/2, 0]))
+                points.append(np.array([-height, width / 2, 0]))
                 current_state += 1
             else:
                 points.append(np.array([-height, -(distance - height - width / 2), 0]))
         elif distance < 2 * height + width:
             if current_state == 1:
-                points.append(np.array([-height, -width/2, 0]))
+                points.append(np.array([-height, -width / 2, 0]))
                 current_state += 1
             else:
-                points.append(np.array([-(2 * height + width - distance), -width / 2, 0]))
+                points.append(
+                    np.array([-(2 * height + width - distance), -width / 2, 0])
+                )
         else:
             if current_state == 2:
-                points.append(np.array([0, -width/2, 0]))
+                points.append(np.array([0, -width / 2, 0]))
                 current_state += 1
             else:
-                points.append(np.array([0, -(2 * height + 3 * width / 2 - distance), 0]))
+                points.append(
+                    np.array([0, -(2 * height + 3 * width / 2 - distance), 0])
+                )
     return points
+
 
 def get_elliptic_segment(width, height, nb_vertices):
     """Get a segment on the xy plane of an elliptic curve
@@ -113,7 +138,14 @@ def get_elliptic_segment(width, height, nb_vertices):
     """
     a = width / 2
     b = height
-    ellipse_length = 2 * integrate.quad(lambda t: math.sqrt(a**2 * math.cos(t)**2 + b**2 * math.sin(t)**2), 0, np.pi / 2)[0]
+    ellipse_length = (
+        2
+        * integrate.quad(
+            lambda t: math.sqrt(a**2 * math.cos(t) ** 2 + b**2 * math.sin(t) ** 2),
+            0,
+            np.pi / 2,
+        )[0]
+    )
     nb_vertices_ellipse = int((ellipse_length * nb_vertices) / (width + ellipse_length))
     nb_vertices_width = nb_vertices - nb_vertices_ellipse
     points = []
@@ -123,6 +155,7 @@ def get_elliptic_segment(width, height, nb_vertices):
     for t in np.linspace(-np.pi / 2, np.pi / 2, nb_vertices_ellipse):
         points.append(np.array([-b * math.cos(t), -a * math.sin(t), 0]))
     return points
+
 
 def _project_points(normal, bottom, xy_points):
     ANGLE_EPSILON = 0.01
@@ -156,24 +189,64 @@ def _project_points(normal, bottom, xy_points):
             verts.append((p + bottom).tolist())
     return verts
 
+
 def _rotation_matrix(ax, t):
     x, y, z = ax
-    return np.array([
-        [math.cos(t) + x**2 * (1 - math.cos(t)), x * y * (1 - math.cos(t)) - z * math.sin(t), x * z * (1 - math.cos(t)) + y * math.sin(t)],
-        [y * x * (1 - math.cos(t)) + z * math.sin(t), math.cos(t) + y**2 * (1 - math.cos(t)), y * z * (1 - math.cos(t)) - x * math.sin(t)],
-        [z * x * (1 - math.cos(t)) - y * math.sin(t), z * y * (1 - math.cos(t)) + x * math.sin(t), math.cos(t) + z**2 * (1 - math.cos(t))]
-    ])
+    return np.array(
+        [
+            [
+                math.cos(t) + x**2 * (1 - math.cos(t)),
+                x * y * (1 - math.cos(t)) - z * math.sin(t),
+                x * z * (1 - math.cos(t)) + y * math.sin(t),
+            ],
+            [
+                y * x * (1 - math.cos(t)) + z * math.sin(t),
+                math.cos(t) + y**2 * (1 - math.cos(t)),
+                y * z * (1 - math.cos(t)) - x * math.sin(t),
+            ],
+            [
+                z * x * (1 - math.cos(t)) - y * math.sin(t),
+                z * y * (1 - math.cos(t)) + x * math.sin(t),
+                math.cos(t) + z**2 * (1 - math.cos(t)),
+            ],
+        ]
+    )
+
 
 def _connect_vertices(nb_vertices, nb_serie):
     tri = []
     for curr_serie in range(nb_serie - 1):
         for i in range(nb_vertices):
             if i != nb_vertices - 1:
-                tri.append([curr_serie * nb_vertices + i, (curr_serie + 1) * nb_vertices + i, (curr_serie + 1) * nb_vertices + i + 1])
+                tri.append(
+                    [
+                        curr_serie * nb_vertices + i,
+                        (curr_serie + 1) * nb_vertices + i,
+                        (curr_serie + 1) * nb_vertices + i + 1,
+                    ]
+                )
             if i != 0:
-                tri.append([curr_serie * nb_vertices + i, curr_serie * nb_vertices + i - 1, (curr_serie + 1) * nb_vertices + i])
-        tri.append([curr_serie * nb_vertices, (curr_serie + 1) * nb_vertices - 1, (curr_serie + 1) * nb_vertices])
-        tri.append([(curr_serie + 1) * nb_vertices - 1, (curr_serie + 2) * nb_vertices - 1, (curr_serie + 1) * nb_vertices])
+                tri.append(
+                    [
+                        curr_serie * nb_vertices + i,
+                        curr_serie * nb_vertices + i - 1,
+                        (curr_serie + 1) * nb_vertices + i,
+                    ]
+                )
+        tri.append(
+            [
+                curr_serie * nb_vertices,
+                (curr_serie + 1) * nb_vertices - 1,
+                (curr_serie + 1) * nb_vertices,
+            ]
+        )
+        tri.append(
+            [
+                (curr_serie + 1) * nb_vertices - 1,
+                (curr_serie + 2) * nb_vertices - 1,
+                (curr_serie + 1) * nb_vertices,
+            ]
+        )
     return tri
 
 
