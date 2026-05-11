@@ -3,6 +3,7 @@ __pycache__
 .pytest_cache
 .venv
 .vscode
+.ruff_cache
 geocruncher-dist
 build
 docker
