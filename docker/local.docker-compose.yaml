@@ -4,7 +4,8 @@ services:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile
+      target: local
     depends_on:
       - redis
     command: ["bash", "/home/build/scripts/api-local.sh"]
@@ -19,7 +20,8 @@ services:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile
+      target: local
     depends_on:
       - redis
     command: ["bash", "/home/build/scripts/worker-local.sh"]

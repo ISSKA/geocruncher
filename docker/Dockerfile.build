@@ -1,5 +1,0 @@
-# syntax = edrevo/dockerfile-plus
-INCLUDE+ docker/Dockerfile.common
-
-RUN uv venv /opt/venv \
- && uv pip install "pybind11[global]"

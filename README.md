@@ -36,7 +36,7 @@ git submodule update --init # For VISKAR team, pre-built dependencies are availa
 
 To run Geocruncher in local development mode with Hot Reloading, run the script `./scripts/run.sh`
 
-We recommand creating a python environment and installing the dependencies as done in the [Dockerfile.common](./docker/Dockerfile.common) in order to have correct syntax highlighting / autocompletion.
+We recommand creating a python environment and installing the dependencies as done in the the `base` and `local` stages of [docker/Dockerfile](./docker/Dockerfile) in order to have correct syntax highlighting / autocompletion.
 
 If using Visual Studio Code, the last step is to tell it which Python version to use. With a Python file open, at the bottom right, click on the Python version. In the dropdown, choose the Python version from the conda environment.
 

@@ -1,13 +1,11 @@
 pipeline {
   agent none
-  environment {
-    DOCKER_BUILDKIT = 1
-  }
   stages {
     stage('draco') {
       agent {
         dockerfile {
-          filename 'docker/Dockerfile.build'
+          filename 'docker/Dockerfile'
+          additionalBuildArgs '--target build'
         }
       }
       steps {
@@ -29,7 +27,8 @@ pipeline {
     stage('geo-algo') {
       agent {
         dockerfile {
-          filename 'docker/Dockerfile.build'
+          filename 'docker/Dockerfile'
+          additionalBuildArgs '--target build'
         }
       }
       steps {
@@ -52,7 +51,8 @@ pipeline {
     stage('geocruncher & api') {
       agent {
         dockerfile {
-          filename 'docker/Dockerfile.common'
+          filename 'docker/Dockerfile'
+          additionalBuildArgs '--target base'
         }
       }
       steps {
@@ -69,7 +69,7 @@ pipeline {
       agent any
       when { anyOf { branch 'develop' } }
       steps {
-        sh 'docker build -t geocruncher/geocruncher-dev:$BUILD_NUMBER -t geocruncher/geocruncher-dev:latest -f docker/server.Dockerfile .'
+        sh 'docker build --target server -t geocruncher/geocruncher-dev:$BUILD_NUMBER -t geocruncher/geocruncher-dev:latest -f docker/Dockerfile .'
         sh 'sudo systemctl restart geocruncher.dev'
         sh 'sudo systemctl status geocruncher.dev --no-pager -l'
       }
@@ -78,7 +78,7 @@ pipeline {
       agent any
       when { anyOf { branch 'master' } }
       steps {
-        sh 'docker build -t geocruncher/geocruncher-prod:$BUILD_NUMBER -t geocruncher/geocruncher-prod:latest -f docker/server.Dockerfile .'
+        sh 'docker build --target server -t geocruncher/geocruncher-prod:$BUILD_NUMBER -t geocruncher/geocruncher-prod:latest -f docker/Dockerfile .'
         sh 'sudo systemctl restart geocruncher.prod'
         sh 'sudo systemctl status geocruncher.prod --no-pager -l'
         sh 'docker image prune --filter "until=1440h" -f' // clean all unused images until 60 days ago
