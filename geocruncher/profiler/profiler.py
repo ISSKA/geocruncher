@@ -1,6 +1,6 @@
 import datetime
 import time
-from typing import Optional
+from typing import Any, Optional
 
 from .config import ProfilerConfig
 from .storage import ProfilerStorage
@@ -17,8 +17,10 @@ class VkProfiler:
         self._storage = storage
         # dictionnary where each step's name maps to the total fractional seconds spent on that step (time)
         # make the dictionnary with a default value for each step
-        self._steps = {step: {"profile": [], "time": 0} for step in settings.steps}
-        self._metadata = {}
+        self._steps: dict[str, dict[str, float]] = {
+            step: {"time": 0.0} for step in settings.steps
+        }
+        self._metadata: dict[str, Any] = {}
 
         # set the metadata that's on every computation
         self.set_metadata("start_time", datetime.datetime.now().isoformat())

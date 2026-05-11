@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -45,7 +46,12 @@ class CSVStorage(ProfilerStorage):
                 f.write(header)
             f.write(line)
 
-    def _get_csv_header(self, metadata_keys: str, step_keys: str, separator: str = ";"):
+    def _get_csv_header(
+        self,
+        metadata_keys: Iterable[str],
+        step_keys: Iterable[str],
+        separator: str = ";",
+    ):
         return (
             separator.join(metadata_keys) + separator + separator.join(step_keys) + "\n"
         )

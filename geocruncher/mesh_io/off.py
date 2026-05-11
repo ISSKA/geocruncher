@@ -7,6 +7,7 @@ The code is therefore modified to not use BufferIOs
 import numpy as np
 from meshio._exceptions import ReadError
 from meshio._mesh import CellBlock, Mesh
+from numpy.typing import ArrayLike
 
 
 def read_off(string: str) -> Mesh:
@@ -52,7 +53,9 @@ def read_off(string: str) -> Mesh:
     )
     if not np.all(faces[:, 0] == 3):
         raise ReadError("Can only read triangular faces")
-    cells = [CellBlock("triangle", faces[:, 1:])]
+    cells: list[tuple[str, ArrayLike] | CellBlock] = [
+        CellBlock("triangle", faces[:, 1:])
+    ]
 
     return Mesh(verts, cells)
 

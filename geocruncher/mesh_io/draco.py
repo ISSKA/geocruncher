@@ -1,4 +1,4 @@
-import DracoPy
+import DracoPy  # ty: ignore[unresolved-import]
 import numpy as np
 import pyvista as pv
 
@@ -6,7 +6,7 @@ DRACO_COMPRESSION_LEVEL = 6
 DRACO_QUANTIZATION_BITS = 14
 
 
-def triangulate_faces(faces: list) -> np.ndarray:
+def triangulate_faces(faces: np.ndarray | list) -> np.ndarray:
     """
     Convert mixed triangles, quads, and ngons to all triangles.
     Uses fan triangulation for ngons.
