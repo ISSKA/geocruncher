@@ -13,6 +13,7 @@ dependencies = [
     "lxml",
     "meshio",
     "numpy",
+    "pydantic",
     "pyvista",
     "redis",
     "scikit-image",

@@ -3,6 +3,14 @@ import tarfile
 from io import BytesIO
 
 from flask import Flask, Response, request, send_file
+from pydantic import TypeAdapter, ValidationError
+
+from geocruncher.computations import (
+    IntersectionsData,
+    MeshesData,
+    Spring,
+    TunnelMeshesData,
+)
 
 from . import tasks
 from .celery import app as celery
@@ -10,6 +18,11 @@ from .redis import redis_client as r
 from .utils import generate_key, parse_metadata_from_request
 
 app = Flask(__name__)
+
+_meshes_adapter = TypeAdapter(MeshesData)
+_tunnel_meshes_adapter = TypeAdapter(TunnelMeshesData)
+_intersections_adapter = TypeAdapter(IntersectionsData)
+_gwb_meshes_adapter = TypeAdapter(list[Spring])
 
 
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
@@ -26,13 +39,18 @@ def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
 def compute_meshes_or_faults(is_meshes: bool):
     if request.method == "POST":
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
-        # TODO: validate data
-        data = json.loads(request.form["data"])
+        try:
+            data: MeshesData = _meshes_adapter.validate_json(request.form["data"])
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        # TODO: check files exists
-        xml = request.files.get("xml").read()
-        dem = request.files.get("dem").read()
+        xml_file = request.files.get("xml")
+        dem_file = request.files.get("dem")
+        if xml_file is None or dem_file is None:
+            return Response("Missing xml or dem file", 400, mimetype="text/plain")
+        xml = xml_file.read()
+        dem = dem_file.read()
         xml_key = generate_key()
         dem_key = generate_key()
         r.set(xml_key, xml)
@@ -69,8 +87,12 @@ def compute_meshes_or_faults(is_meshes: bool):
 @app.route("/compute/tunnel_meshes", methods=["POST", "GET"])
 def compute_tunnel_meshes():
     if request.method == "POST":
-        # TODO: validate data
-        data = json.loads(request.form["data"])
+        try:
+            data: TunnelMeshesData = _tunnel_meshes_adapter.validate_json(
+                request.form["data"]
+            )
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
         output_key = generate_key()
@@ -109,13 +131,20 @@ def compute_meshes():
 def compute_intersections():
     if request.method == "POST":
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
-        # TODO: validate data
-        data = json.loads(request.form["data"])
+        try:
+            data: IntersectionsData = _intersections_adapter.validate_json(
+                request.form["data"]
+            )
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        # TODO: check files exists
-        xml = request.files.get("xml").read()
-        dem = request.files.get("dem").read()
+        xml_file = request.files.get("xml")
+        dem_file = request.files.get("dem")
+        if xml_file is None or dem_file is None:
+            return Response("Missing xml or dem file", 400, mimetype="text/plain")
+        xml = xml_file.read()
+        dem = dem_file.read()
         xml_key = generate_key()
         dem_key = generate_key()
         r.set(xml_key, xml)
@@ -160,13 +189,18 @@ def compute_faults():
 def compute_voxels():
     if request.method == "POST":
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
-        # TODO: validate data
-        data = json.loads(request.form["data"])
+        try:
+            data: MeshesData = _meshes_adapter.validate_json(request.form["data"])
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        # TODO: check files exists
-        xml = request.files.get("xml").read()
-        dem = request.files.get("dem").read()
+        xml_file = request.files.get("xml")
+        dem_file = request.files.get("dem")
+        if xml_file is None or dem_file is None:
+            return Response("Missing xml or dem file", 400, mimetype="text/plain")
+        xml = xml_file.read()
+        dem = dem_file.read()
         xml_key = generate_key()
         dem_key = generate_key()
         r.set(xml_key, xml)
@@ -204,8 +238,10 @@ def compute_voxels():
 def compute_gwb_meshes():
     if request.method == "POST":
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
-        # TODO: validate data
-        data = json.loads(request.form["data"])
+        try:
+            data: list[Spring] = _gwb_meshes_adapter.validate_json(request.form["data"])
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
         meshes_key = generate_key()

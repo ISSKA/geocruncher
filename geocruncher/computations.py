@@ -5,7 +5,7 @@ These functions take data as input and return data as output, with no Disk inter
 
 import math
 from enum import Enum
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
@@ -54,12 +54,9 @@ class Tunnel(TypedDict):
     name: str
     shape: TunnelShape
     functions: list[TunnelFunction]
-    # Optional
-    radius: float
-    # Optional
-    width: float
-    # Optional
-    height: float
+    radius: NotRequired[float | None]
+    width: NotRequired[float | None]
+    height: NotRequired[float | None]
 
 
 class TunnelMeshesData(TypedDict):
@@ -153,8 +150,7 @@ class MeshesData(TypedDict):
     """Data given to the meshes computation"""
 
     resolution: Vec3Int
-    # Optional
-    box: BoxDict
+    box: NotRequired[BoxDict | None]
 
 
 class MeshesResult(TypedDict):
@@ -246,10 +242,10 @@ class Line3D(TypedDict):
 class IntersectionsData(TypedDict):
     """Data given to the intersections computation"""
 
-    # Optional. ID as string to 3D point
-    springs: dict[str, Vec3Float]
-    # Optional. ID as string to box
-    drillholes: dict[str, BoxDict]
+    # ID as string to 3D point
+    springs: NotRequired[dict[str, Vec3Float] | None]
+    # ID as string to box
+    drillholes: NotRequired[dict[str, BoxDict] | None]
     resolution: int
     # cross sections, ID as string to box for each segment
     toCompute: dict[str, list[BoxDict]]
@@ -344,17 +340,15 @@ def compute_intersections(
     ).set_metadata("resolution", data["resolution"]).set_metadata(
         "num_sections", len(data["toCompute"])
     ).set_metadata("compute_map", data["computeMap"]).set_metadata(
-        "num_springs", len(data["springs"]) if "springs" in data else 0
-    ).set_metadata(
-        "num_drillholes", len(data["drillholes"]) if "drillholes" in data else 0
-    ).set_metadata("num_gwb_parts", len(gwb_meshes))
+        "num_springs", len(data.get("springs") or {})
+    ).set_metadata("num_drillholes", len(data.get("drillholes") or {})).set_metadata(
+        "num_gwb_parts", len(gwb_meshes)
+    )
     if metadata:
         for key in metadata:
             profiler.set_metadata(key, metadata[key])
 
-    has_hydro_layer = bool(
-        any(key in data for key in ["springs", "drillholes"]) or gwb_meshes
-    )
+    has_hydro_layer = bool(data.get("springs") or data.get("drillholes") or gwb_meshes)
 
     profile_step("load_model")
 
@@ -398,8 +392,8 @@ def compute_intersections(
                     lower_left,
                     upper_right,
                     xyz,
-                    data.get("springs"),
-                    data.get("drillholes"),
+                    data.get("springs") or {},
+                    data.get("drillholes") or {},
                     gwb_meshes,
                     max_dist_proj,
                 )
