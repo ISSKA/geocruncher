@@ -45,6 +45,12 @@ build-backend = "hatchling.build"
 [tool.ruff]
 exclude = ["third_party"]
 
+[tool.ty.src]
+exclude = ["third_party/"]
+
+[tool.ty.environment]
+extra-paths = ["typings"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["geocruncher", "api"]
 

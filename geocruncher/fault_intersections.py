@@ -123,10 +123,10 @@ class FaultIntersector:
         # Prepare output: transpose and convert to list
         for name, potential in fault_potentials.items():
             transposed = np.transpose(potential)
+            values = transposed.astype(object)
             # Setting the values to None directly doesn't work, so we use np.nan and replace it all with None at the end
-            fault_potentials[name] = np.where(
-                np.isnan(transposed), None, transposed
-            ).tolist()
+            values[np.isnan(transposed)] = None
+            fault_potentials[name] = values.tolist()
 
         profile_step("tesselate_faults")
         return fault_potentials

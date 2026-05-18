@@ -1,6 +1,9 @@
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
+from forgeo.gmlib.architecture import (
+    from_GeoModeller,
+    make_evaluator,  # ty: ignore[unresolved-import]
+)
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
 from .mesh_io.mesh_io import read_mesh_to_polydata

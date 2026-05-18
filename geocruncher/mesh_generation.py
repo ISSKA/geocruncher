@@ -1,7 +1,11 @@
 from collections import defaultdict
 
 import numpy as np
-from forgeo.gmlib.architecture import from_GeoModeller, grid, make_evaluator
+from forgeo.gmlib.architecture import (
+    from_GeoModeller,
+    grid,  # ty: ignore[unresolved-import]
+    make_evaluator,  # ty: ignore[unresolved-import]
+)
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from forgeo.gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes
@@ -14,20 +18,23 @@ from .rigs import extract
 RANK_SKY = 0
 
 
-def compute_ranks(res: tuple[int, int, int], model: GeologicalModel, box: Box = None):
+def compute_ranks(
+    res: tuple[int, int, int], model: GeologicalModel, box: Box | None = None
+):
     """ "
     :param res: resolution (supposed to be a tuple)
     :param model: gmlib.GeologicalModel object
     :param box: if not given will default to the bounding box of model
     """
-    if box is None:
-        box = model.bbox()
-    else:
-        box = BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    grid_box = (
+        model.bbox()
+        if box is None
+        else BBox3(box.xmin, box.xmax, box.ymin, box.ymax, box.zmin, box.zmax)
+    )
     cppmodel = from_GeoModeller(model)
     topography = model.implicit_topography()
     evaluator = make_evaluator(cppmodel, topography)
-    return evaluator(grid(box, res))
+    return evaluator(grid(grid_box, res))
 
 
 def rescale_to_grid(verts, box: Box, shape: tuple[int, int, int]):
@@ -112,7 +119,7 @@ def generate_volumes(
 
 # Currently unused, for future reference and testing. Drop-in replacement for "generate_volumes", but currently returns surfaces and not volumes (not yet implemented in rigs)
 def generate_rigs_volumes(
-    model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box | None = None
 ) -> dict[str, dict[str, bytes]]:
     """Generates topologically valid meshes for each unit in the model. Meshes are output in Draco format.
 
@@ -176,7 +183,7 @@ def generate_rigs_volumes(
 
 
 def generate_faults_files(
-    model: GeologicalModel, shape: tuple[int, int, int], box: Box = None
+    model: GeologicalModel, shape: tuple[int, int, int], box: Box | None = None
 ) -> dict[str, bytes]:
     # For now, the resolution of faults is 10x lower than the mesh, with a minimum of 10, as with RIGS, we see no improvements with increased resolution except for conformity with the DEM and higher resolutions are extremely slow
     rigs_shape = (

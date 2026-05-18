@@ -1,0 +1,3 @@
+from typing import Any
+
+def fromstring(text: bytes | str) -> Any: ...

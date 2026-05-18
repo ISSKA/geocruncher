@@ -8,7 +8,7 @@ from forgeo.rigs.tetcube import tetgrid
 def extract(
     model: GeologicalModel,
     shape: tuple[int, int, int],
-    box: Box = None,
+    box: Box | None = None,
     faults_only=False,
 ) -> tuple[list, list, list, list]:
     """Generate a regular grid of tesselated cubes, convert the model to RIGS and evaluate it on the grid, returning surfaces

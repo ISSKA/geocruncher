@@ -391,7 +391,7 @@ def compute_intersections(
                     upper_right,
                     xyz,
                     data.get("springs") or {},
-                    cast(dict[str, Box], data.get("drillholes") or {}),
+                    data.get("drillholes") or {},
                     gwb_meshes,
                     max_dist_proj,
                 )
