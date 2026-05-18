@@ -5,7 +5,7 @@ These functions take data as input and return data as output, with no Disk inter
 
 import math
 from enum import Enum
-from typing import NotRequired, TypedDict
+from typing import NotRequired, TypedDict, cast
 
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
@@ -19,9 +19,14 @@ from .compute_intersections import (
 )
 from .fault_intersections import compute_fault_intersections
 from .geo_algo import GeoAlgo, GeoAlgoOutput
-from .geomodeller_import import extract_project_data
+from .geomodeller_import import XmlInput, extract_project_data
 from .mesh_generation import generate_faults_files, generate_volumes
-from .profiler import PROFILES, get_current_profiler, profile_step, set_profiler
+from .profiler import (
+    PROFILES,
+    ProfilerMetadata,
+    profile_step,
+    set_profiler,
+)
 from .profiler.util import MetadataHelpers
 from .tunnel_shape_generation import (
     get_circle_segment,
@@ -72,7 +77,7 @@ class TunnelMeshesData(TypedDict):
 
 
 def compute_tunnel_meshes(
-    data: TunnelMeshesData, metadata: dict = None
+    data: TunnelMeshesData, metadata: ProfilerMetadata | None = None
 ) -> dict[str, bytes]:
     """Compute Tunnel Meshes.
 
@@ -104,14 +109,11 @@ def compute_tunnel_meshes(
     }
     for tunnel in data["tunnels"]:
         # profile each tunnel separatly
-        set_profiler(PROFILES["tunnel_meshes"])
-        profiler = get_current_profiler()
+        profiler = set_profiler(PROFILES["tunnel_meshes"])
         profiler.set_metadata("shape", tunnel["shape"]).set_metadata(
             "num_waypoints", len(tunnel["functions"]) + 1
         )
-        if metadata:
-            for key in metadata:
-                profiler.set_metadata(key, metadata[key])
+        profiler.update_metadata(metadata)
 
         output[tunnel["name"]] = tunnel_to_meshes(
             tunnel["functions"],
@@ -123,7 +125,7 @@ def compute_tunnel_meshes(
             data["tEnd"],
         )
         # write profiler result before moving on to the next tunnel
-        get_current_profiler().save_results()
+        profiler.save_results()
     return output
 
 
@@ -161,7 +163,10 @@ class MeshesResult(TypedDict):
 
 
 def compute_meshes(
-    data: MeshesData, xml: str, dem: str, metadata: dict = None
+    data: MeshesData,
+    xml: XmlInput,
+    dem: str,
+    metadata: ProfilerMetadata | None = None,
 ) -> MeshesResult:
     """Compute Unit and Fault Meshes.
 
@@ -169,7 +174,7 @@ def compute_meshes(
     ----------
     data : MeshesData
         The configuration data.
-    xml : str
+    xml : bytes | str
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
@@ -181,12 +186,11 @@ def compute_meshes(
     MeshesResult
         Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
-    set_profiler(PROFILES["meshes"])
+    profiler = set_profiler(PROFILES["meshes"])
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
-    profiler = get_current_profiler()
     profiler.set_metadata(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
@@ -202,9 +206,7 @@ def compute_meshes(
     ).set_metadata("num_dips", MetadataHelpers.num_dips(model)).set_metadata(
         "resolution", shape[0] * shape[1] * shape[2]
     )
-    if metadata:
-        for key in metadata:
-            profiler.set_metadata(key, metadata[key])
+    profiler.update_metadata(metadata)
 
     profile_step("load_model")
 
@@ -212,8 +214,8 @@ def compute_meshes(
         box = Box(**data["box"])
     else:
         box = model.getbox()
-    output = generate_volumes(model, shape, box)
-    get_current_profiler().save_results()
+    output = cast(MeshesResult, generate_volumes(model, shape, box))
+    profiler.save_results()
     return output
 
 
@@ -259,8 +261,7 @@ class MeshIntersectionsResult(TypedDict):
     drillholes: dict[str, list[dict[str, list[list[float]]]]]
     springs: dict[str, list[dict[str, list[float]]]]
     matrixGwb: dict[str, list[list[int]]]
-    # Optional
-    forMaps: list[list[int]]
+    forMaps: NotRequired[list[list[int]]]
 
 
 class FaultIntersectionsResult(TypedDict):
@@ -284,10 +285,10 @@ RATIO_MAX_DIST_PROJ = 0.2
 
 def compute_intersections(
     data: IntersectionsData,
-    xml: str,
+    xml: XmlInput,
     dem: str,
     gwb_meshes: dict[str, list[bytes]],
-    metadata: dict = None,
+    metadata: ProfilerMetadata | None = None,
 ) -> IntersectionsResult:
     """Compute Intersections.
 
@@ -295,7 +296,7 @@ def compute_intersections(
     ----------
     data : IntersectionsData
         The configuration data.
-    xml : str
+    xml : bytes | str
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
@@ -310,7 +311,7 @@ def compute_intersections(
         Results for cross sections, drillholes, sptrings, gwb matrix and maps.
         TODO: find a more complete explanation of what is returned and simplify return type.
     """
-    set_profiler(PROFILES["intersections"])
+    profiler = set_profiler(PROFILES["intersections"])
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
     box = model.getbox()
     max_dist_proj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
@@ -322,7 +323,6 @@ def compute_intersections(
     }
     fault_output: FaultIntersectionsResult = {"forCrossSections": {}, "forMaps": {}}
 
-    profiler = get_current_profiler()
     profiler.set_metadata(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
@@ -344,9 +344,7 @@ def compute_intersections(
     ).set_metadata("num_drillholes", len(data.get("drillholes") or {})).set_metadata(
         "num_gwb_parts", len(gwb_meshes)
     )
-    if metadata:
-        for key in metadata:
-            profiler.set_metadata(key, metadata[key])
+    profiler.update_metadata(metadata)
 
     has_hydro_layer = bool(data.get("springs") or data.get("drillholes") or gwb_meshes)
 
@@ -363,9 +361,9 @@ def compute_intersections(
         for b in intersection:
             b = Box(**b)
             # FIXME: if we remove rounding, it breaks virtual drillhole slices. But it feels wrong to round, since we are rounding to arbitrary units of EPSG, usually meters, and the effect is not going to be the same on small and large projects
-            x_coord = [round(b.xmin), round(b.xmax)]
-            y_coord = [round(b.ymin), round(b.ymax)]
-            z_coord = [round(b.zmin), round(b.zmax)]
+            x_coord = (round(b.xmin), round(b.xmax))
+            y_coord = (round(b.ymin), round(b.ymax))
+            z_coord = (round(b.zmin), round(b.zmax))
             x_extent = round(b.xmax) - round(b.xmin)
             y_extent = round(b.ymax) - round(b.ymin)
             height = round(b.zmax) - round(b.zmin)
@@ -393,7 +391,7 @@ def compute_intersections(
                     upper_right,
                     xyz,
                     data.get("springs") or {},
-                    data.get("drillholes") or {},
+                    cast(dict[str, Box], data.get("drillholes") or {}),
                     gwb_meshes,
                     max_dist_proj,
                 )
@@ -415,12 +413,15 @@ def compute_intersections(
             xyz, resolution, model, topography=False
         )
         fault_output["forMaps"] = compute_fault_intersections(xyz, resolution, model)
-    get_current_profiler().save_results()
+    profiler.save_results()
     return {"mesh": mesh_output, "fault": fault_output}
 
 
 def compute_faults(
-    data: MeshesData, xml: str, dem: str, metadata: dict = None
+    data: MeshesData,
+    xml: XmlInput,
+    dem: str,
+    metadata: ProfilerMetadata | None = None,
 ) -> MeshesResult:
     """Compute Fault Meshes. Parameters and return types are the same as mesh computation.
 
@@ -428,7 +429,7 @@ def compute_faults(
     ----------
     data : MeshesData
         The configuration data.
-    xml : str
+    xml : bytes | str
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
@@ -440,12 +441,11 @@ def compute_faults(
     MeshesResult
         Dictionnary with mesh, an empty map, and fault, a map from fault name to OFF mesh file.
     """
-    set_profiler(PROFILES["faults"])
+    profiler = set_profiler(PROFILES["faults"])
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
-    profiler = get_current_profiler()
     profiler.set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
@@ -457,9 +457,7 @@ def compute_faults(
     ).set_metadata(
         "num_dips", MetadataHelpers.num_dips(model, unit=False)
     ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
-    if metadata:
-        for key in metadata:
-            profiler.set_metadata(key, metadata[key])
+    profiler.update_metadata(metadata)
 
     profile_step("load_model")
 
@@ -468,17 +466,20 @@ def compute_faults(
     else:
         box = model.getbox()
 
-    output = {"mesh": {}, "fault": generate_faults_files(model, shape, box)}
-    get_current_profiler().save_results()
+    output: MeshesResult = {
+        "mesh": {},
+        "fault": generate_faults_files(model, shape, box),
+    }
+    profiler.save_results()
     return output
 
 
 def compute_voxels(
     data: MeshesData,
-    xml: str,
+    xml: XmlInput,
     dem: str,
     gwb_meshes: dict[str, list[bytes]],
-    metadata: dict = None,
+    metadata: ProfilerMetadata | None = None,
 ) -> str:
     """Compute Voxels.
 
@@ -486,7 +487,7 @@ def compute_voxels(
     ----------
     data : MeshesData
         The configuration data.
-    xml : str
+    xml : bytes | str
         Project definition as Geomodeller XML.
     dem : str
         DEM datapoints as ASCIIGrid.
@@ -498,12 +499,11 @@ def compute_voxels(
     str
         The VOX mesh file
     """
-    set_profiler(PROFILES["voxels"])
+    profiler = set_profiler(PROFILES["voxels"])
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
-    profiler = get_current_profiler()
     profiler.set_metadata(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
@@ -511,9 +511,7 @@ def compute_voxels(
     ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
         "num_gwb_parts", len(gwb_meshes)
     ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
-    if metadata:
-        for key in metadata:
-            profiler.set_metadata(key, metadata[key])
+    profiler.update_metadata(metadata)
 
     profile_step("load_model")
 
@@ -523,7 +521,7 @@ def compute_voxels(
         box = model.getbox()
 
     output = Voxels.output(model, shape, box, gwb_meshes)
-    get_current_profiler().save_results()
+    profiler.save_results()
     return output
 
 
@@ -543,19 +541,18 @@ class UnitMesh(TypedDict):
 
 
 def compute_gwb_meshes(
-    unit_meshes: dict[str, bytes], springs: list[Spring], metadata: dict = None
+    unit_meshes: dict[str, bytes],
+    springs: list[Spring],
+    metadata: ProfilerMetadata | None = None,
 ) -> GeoAlgoOutput:
     """Returns the metadata, then a dict of unit_id to OFF or Draco mesh file"""
-    set_profiler(PROFILES["gwb_meshes"])
+    profiler = set_profiler(PROFILES["gwb_meshes"])
 
-    profiler = get_current_profiler()
     profiler.set_metadata("num_units", len(unit_meshes)).set_metadata(
         "num_springs", len(springs)
     )
-    if metadata:
-        for key in metadata:
-            profiler.set_metadata(key, metadata[key])
+    profiler.update_metadata(metadata)
 
     results = GeoAlgo.output(unit_meshes, springs)
-    get_current_profiler().save_results()
+    profiler.save_results()
     return results

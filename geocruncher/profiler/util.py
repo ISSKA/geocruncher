@@ -1,6 +1,9 @@
-from typing import NamedTuple
+from collections.abc import Mapping
+from typing import Any, NamedTuple
 
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
+
+type ProfilerMetadata = Mapping[str, Any]
 
 
 class VkProfilerSettings(NamedTuple):

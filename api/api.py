@@ -15,7 +15,13 @@ from geocruncher.computations import (
 from . import tasks
 from .celery import app as celery
 from .redis import redis_client as r
-from .utils import generate_key, parse_metadata_from_request
+from .utils import (
+    generate_key,
+    get_bytes,
+    get_hash_bytes,
+    hset_bytes,
+    parse_metadata_from_request,
+)
 
 app = Flask(__name__)
 
@@ -70,7 +76,7 @@ def compute_meshes_or_faults(is_meshes: bool):
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        meshes = r.hgetall(output_key)
+        meshes = get_hash_bytes(r, output_key)
         r.delete(output_key)
         if not meshes:
             return Response("", 204, mimetype="text/plain")
@@ -108,7 +114,7 @@ def compute_tunnel_meshes():
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        meshes = r.hgetall(output_key)
+        meshes = get_hash_bytes(r, output_key)
         r.delete(output_key)
         if not meshes:
             return Response("", 204, mimetype="text/plain")
@@ -155,7 +161,7 @@ def compute_intersections():
             # consider every other uploaded file as a groundwater body mesh
             if key in ["xml", "dem"]:
                 continue
-            r.hset(gwb_meshes_key, key, value.read())
+            hset_bytes(r, gwb_meshes_key, key, value.read())
         output_key = generate_key()
 
         res = tasks.compute_intersections.delay(
@@ -172,7 +178,7 @@ def compute_intersections():
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        output = r.get(output_key)
+        output = get_bytes(r, output_key)
         r.delete(output_key)
         if not output:
             return Response("", 204, mimetype="text/plain")
@@ -210,7 +216,7 @@ def compute_voxels():
             # consider every other uploaded file as a groundwater body mesh
             if key in ["xml", "dem"]:
                 continue
-            r.hset(gwb_meshes_key, key, value.read())
+            hset_bytes(r, gwb_meshes_key, key, value.read())
         output_key = generate_key()
         res = tasks.compute_voxels.delay(
             data, xml_key, dem_key, gwb_meshes_key, output_key, metadata
@@ -226,7 +232,7 @@ def compute_voxels():
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        mesh = r.get(output_key)
+        mesh = get_bytes(r, output_key)
         r.delete(output_key)
         if not mesh:
             return Response("", 204, mimetype="text/plain")
@@ -247,7 +253,7 @@ def compute_gwb_meshes():
         meshes_key = generate_key()
         for key, value in request.files.items():
             # consider every uploaded file as a unit mesh
-            r.hset(meshes_key, key, value.read())
+            hset_bytes(r, meshes_key, key, value.read())
         output_key = generate_key()
 
         res = tasks.compute_gwb_meshes.delay(data, meshes_key, output_key, metadata)
@@ -262,7 +268,7 @@ def compute_gwb_meshes():
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
-        meshes_and_metadata = r.hgetall(output_key)
+        meshes_and_metadata = get_hash_bytes(r, output_key)
         r.delete(output_key)
         if not meshes_and_metadata:
             return Response("", 204, mimetype="text/plain")

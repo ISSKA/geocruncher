@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from .config import ProfilerConfig
 from .storage import ProfilerStorage
-from .util import VkProfilerSettings
+from .util import ProfilerMetadata, VkProfilerSettings
 
 
 class VkProfiler:
@@ -41,8 +41,17 @@ class VkProfiler:
 
         return self
 
-    def set_metadata(self, metadata: str, value) -> "VkProfiler":
+    def set_metadata(self, metadata: str, value: Any) -> "VkProfiler":
         self._metadata[metadata] = value
+        return self
+
+    def update_metadata(self, metadata: ProfilerMetadata | None) -> "VkProfiler":
+        if metadata is None:
+            return self
+
+        for key, value in metadata.items():
+            self.set_metadata(key, value)
+
         return self
 
     def save_results(self) -> "VkProfiler":
@@ -66,10 +75,11 @@ class ProfilerManager:
         self._storage = self._config.create_storage()
         self._current_profiler: Optional[VkProfiler] = None
 
-    def create_profiler(self, settings: VkProfilerSettings) -> None:
+    def create_profiler(self, settings: VkProfilerSettings) -> VkProfiler:
         """Create a new profiler instance"""
         profiler = VkProfiler(settings, self._storage)
         self._current_profiler = profiler
+        return profiler
 
     def get_current_profiler(self) -> Optional[VkProfiler]:
         """Get the current profiler instance"""
@@ -82,9 +92,9 @@ _profiler_manager = ProfilerManager()
 # Public API
 
 
-def set_profiler(settings: VkProfilerSettings) -> None:
+def set_profiler(settings: VkProfilerSettings) -> VkProfiler:
     """Create a new profiler with the given settings"""
-    _profiler_manager.create_profiler(settings)
+    return _profiler_manager.create_profiler(settings)
 
 
 def get_current_profiler() -> Optional[VkProfiler]:
