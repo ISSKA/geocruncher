@@ -56,7 +56,10 @@ pipeline {
         }
       }
       steps {
-        withEnv(["HOME=${env.WORKSPACE}"]) {
+        withEnv([
+          "HOME=${env.WORKSPACE}",
+          "UV_CACHE_DIR=/tmp/uv-cache",
+        ]) {
           // TODO: re-enable tests once known regressions are addressed.
           // The setuptools blocker is gone (uv + hatchling now); leaving
           // disabled until the suite is green. To re-enable:
