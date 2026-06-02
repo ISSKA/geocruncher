@@ -1,9 +1,16 @@
 repos:
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.12
-  hooks:
-    - id: ruff-check
-      types_or: [ python, pyi, pyproject ]
-      args: [ --fix ]
-    - id: ruff-format
-      types_or: [ python, pyi ]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff-check
+        types_or: [ python, pyi, pyproject ]
+        args: [ --fix ]
+      - id: ruff-format
+        types_or: [ python, pyi ]
+  - repo: local
+    hooks:
+        - id: ty
+          name: ty check
+          entry: uv run ty check .
+          language: system
+          pass_filenames: false
