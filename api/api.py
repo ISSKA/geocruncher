@@ -2,6 +2,7 @@ import json
 import tarfile
 from io import BytesIO
 
+from celery.result import AsyncResult
 from flask import Flask, Response, request, send_file
 from pydantic import TypeAdapter, ValidationError
 
@@ -13,7 +14,6 @@ from geocruncher.computations import (
 )
 
 from . import tasks
-from .celery import app as celery
 from .redis import redis_client as r
 from .utils import (
     generate_key,
@@ -71,8 +71,9 @@ def compute_meshes_or_faults(is_meshes: bool):
         _id = request.args.get("id")
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
+        res = AsyncResult(_id)
         if res.state != "SUCCESS":
+            res.forget()
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
@@ -109,8 +110,9 @@ def compute_tunnel_meshes():
         _id = request.args.get("id")
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
+        res = AsyncResult(_id)
         if res.state != "SUCCESS":
+            res.forget()
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
@@ -173,8 +175,9 @@ def compute_intersections():
         _id = request.args.get("id")
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
+        res = AsyncResult(_id)
         if res.state != "SUCCESS":
+            res.forget()
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
@@ -227,8 +230,9 @@ def compute_voxels():
         _id = request.args.get("id")
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
+        res = AsyncResult(_id)
         if res.state != "SUCCESS":
+            res.forget()
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
@@ -263,8 +267,9 @@ def compute_gwb_meshes():
         _id = request.args.get("id")
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
-        res = celery.AsyncResult(_id)
+        res = AsyncResult(_id)
         if res.state != "SUCCESS":
+            res.forget()
             return Response(res.state, mimetype="text/plain")
         # TODO: catch errors
         output_key = res.get()
@@ -288,8 +293,12 @@ def poll():
     data = request.json
     result = {}
     for _id in data:
-        res = celery.AsyncResult(str(_id))
-        result[str(_id)] = res.state
+        res = AsyncResult(str(_id))
+        meta = res._get_task_meta()["result"]
+        result[str(_id)] = {
+            "state": res.state,
+            "progress": meta if isinstance(meta, dict) else None,
+        }
     return Response(
         json.dumps(result, separators=(",", ":")), mimetype="application/json"
     )
@@ -302,7 +311,7 @@ def revoke():
     if not _id or _id == "":
         return Response("Missing parameter id", 400, mimetype="text/plain")
 
-    res = celery.AsyncResult(_id)
+    res = AsyncResult(_id)
     res.revoke(terminate=True, wait=True, timeout=2)
     if res.state != "REVOKED":
         return Response(f"Task {_id} could not be revoked", 500, mimetype="text/plain")

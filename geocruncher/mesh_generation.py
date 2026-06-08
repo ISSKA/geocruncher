@@ -11,7 +11,7 @@ from forgeo.gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes
 
 from .mesh_io.mesh_io import generate_mesh
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 from .rigs import extract
 
 # Constants
@@ -60,6 +60,9 @@ def generate_volumes(
         shape: Number of samples for marching cubes (x,y,z)
         box: Custom box
     """
+
+    start_step("ranks")
+
     ranks = compute_ranks(shape, model, box)
     ranks.shape = shape
 
@@ -81,6 +84,7 @@ def generate_volumes(
     extended_shape = tuple(n + 2 for n in shape)
 
     for rank in rank_values:
+        start_step("volume")
         if rank == RANK_SKY:
             continue
         if model.pile.reference == "base":
@@ -96,6 +100,7 @@ def generate_volumes(
 
         profile_step("volume")
 
+        start_step("marching_cubes")
         # Using the lewiner variant leads to holes in the meshes which CGAL cannot handle
         # (Produces an error when reading the OFF in geo-algo/VK-Aquifers)
         # Gradient direction ensures normals point outwards. Otherwise, aquifers computation will be incorrect
@@ -105,6 +110,7 @@ def generate_volumes(
         scaled_verts = rescale_to_grid(verts, box, shape)
         profile_step("marching_cubes")
 
+        start_step("generate_mesh")
         mesh = generate_mesh(scaled_verts, faces)
         out_files["mesh"][str(rank_id)] = mesh
         profile_step("generate_mesh")
@@ -185,6 +191,7 @@ def generate_rigs_volumes(
 def generate_faults_files(
     model: GeologicalModel, shape: tuple[int, int, int], box: Box | None = None
 ) -> dict[str, bytes]:
+    start_step("tesselate_faults")
     # For now, the resolution of faults is 10x lower than the mesh, with a minimum of 10, as with RIGS, we see no improvements with increased resolution except for conformity with the DEM and higher resolutions are extremely slow
     rigs_shape = (
         int(max(10, shape[0] / 10)),
@@ -194,6 +201,7 @@ def generate_faults_files(
     v, f, parts, surface_names = extract(model, rigs_shape, box, faults_only=True)
 
     profile_step("tesselate_faults")
+    start_step("generate_mesh")
 
     # The returned data is one big list of vertices and faces for all parts. We can separate the faces by part using an identifier per face.
     grouped = defaultdict(list)

@@ -10,6 +10,8 @@ from typing import NotRequired, TypedDict, cast
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
+from geocruncher.profiler.profiler import start_step
+
 from .compute_intersections import (
     calculate_resolution,
     compute_cross_section_ranks,
@@ -187,6 +189,7 @@ def compute_meshes(
         Dictionnary with mesh, a map from unit ID to OFF or Draco mesh file, and fault, a map from fault name to OFF or Draco mesh file.
     """
     profiler = set_profiler(PROFILES["meshes"])
+    start_step("load_model")
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
