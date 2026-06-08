@@ -88,7 +88,7 @@ WORKDIR /home/build
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --group server --no-install-project
 
-COPY celeryconfig.py /
+COPY celeryconfig.py ./
 
 # Jenkins build artifacts
 COPY geo-algo/VK-Aquifers/PyGeoAlgo.*.so \
