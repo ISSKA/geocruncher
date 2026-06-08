@@ -30,8 +30,8 @@ def ascii_grid_to_implicit_dtm(dem: str) -> ImplicitDTM:
     yllcorner = _header_float(r"-?\d+\.?\d*", lines[3])
     cellsize = _header_float(r"\d+\.?\d*", lines[4])
 
-    offset = 6  # Skip the first 6 lines (header)
-    if lines[offset].startswith("NODATA_value"):
+    offset = 5  # Skip the required header lines
+    if len(lines) > offset and lines[offset].strip().startswith("NODATA_value"):
         logger.warning("Skipping NODATA_value line")
         offset += 1
 

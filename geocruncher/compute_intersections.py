@@ -28,8 +28,10 @@ def calculate_resolution(width: float, height: float, res: int) -> tuple[int, in
     Returns:
         Tuple[int, int]: New (width, height) where one dimension equals `res`.
     """
-    if width <= 0 and height <= 0:
-        raise ValueError("Both width and height must be positive.")
+    if width < 0 or height < 0:
+        raise ValueError("Width and height must be non-negative.")
+    if width == 0 and height == 0:
+        raise ValueError("Width and height can not be both 0.")
     if width == 0 or height == 0:
         # edge case for drillhole-style slices where width is zero
         return (res, res)

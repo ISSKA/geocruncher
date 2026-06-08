@@ -14,7 +14,7 @@ def generate_mesh(
     verts: np.ndarray | list, faces: np.ndarray | list, use_off=False
 ) -> bytes:
     if use_off:
-        return generate_off(verts, faces)
+        return generate_off(verts, faces).encode("utf-8")
     else:
         return generate_draco(verts, faces)
 
