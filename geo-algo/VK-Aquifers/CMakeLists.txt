@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 project(VK-Aquifers)
 
 set(CMAKE_CXX_STANDARD 17) # Draco requires C++14+
-set(CGAL_DIR "/opt/CGAL-6.1.1-library")
+if(NOT DEFINED CGAL_DIR)
+    set(CGAL_DIR "/opt/CGAL-6.1.1-library")
+endif()
 
 # Explicit Draco configuration
 # Configurable Draco configuration with default

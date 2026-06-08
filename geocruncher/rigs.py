@@ -1,14 +1,14 @@
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from forgeo.rigs import all_intersections
-from forgeo.rigs.tetcube import tetgrid
 from forgeo.rigs.gmconverter import convert
+from forgeo.rigs.tetcube import tetgrid
 
 
 # TODO: more accurate typings for the returned values
 def extract(
     model: GeologicalModel,
     shape: tuple[int, int, int],
-    box: Box = None,
+    box: Box | None = None,
     faults_only=False,
 ) -> tuple[list, list, list, list]:
     """Generate a regular grid of tesselated cubes, convert the model to RIGS and evaluate it on the grid, returning surfaces

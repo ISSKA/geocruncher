@@ -1,8 +1,8 @@
-import pyvista as pv
 import numpy as np
+import pyvista as pv
 
-from .off import read_off, generate_off
-from .draco import read_draco_to_polydata, generate_draco
+from .draco import generate_draco, read_draco_to_polydata
+from .off import generate_off, read_off
 
 
 def is_off_file(data: bytes) -> bool:
@@ -24,7 +24,7 @@ def read_mesh_to_polydata(data: bytes) -> pv.PolyData:
     if is_off_file(data):
         # Old OFF importer
         try:
-            mesh_str = data.decode('utf-8')  # Decode only if confirmed OFF
+            mesh_str = data.decode("utf-8")  # Decode only if confirmed OFF
             mesh = pv.from_meshio(read_off(mesh_str)).extract_geometry()
         except Exception as e:
             raise ValueError("Invalid OFF file") from e

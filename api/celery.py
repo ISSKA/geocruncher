@@ -1,7 +1,7 @@
 from celery import Celery
 
-app = Celery('geocruncher')
-app.config_from_object('celeryconfig')
+app = Celery("geocruncher")
+app.config_from_object("celeryconfig")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.start()

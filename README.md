@@ -34,14 +34,42 @@ git submodule update --init # For VISKAR team, pre-built dependencies are availa
 
 ## Development
 
-To run Geocruncher in local development mode with Hot Reloading, run the script `./scripts/run.sh`
+To run Geocruncher in local development mode in Docker container with Hot Reloading, run the script `./scripts/run.sh`
 
-We recommand creating a python environment and installing the dependencies as done in the [Dockerfile.common](./docker/Dockerfile.common) in order to have correct syntax highlighting / autocompletion.
+To create a local Python venv that mirrors the `base` and `local` stages of [docker/Dockerfile](./docker/Dockerfile), run:
 
-If using Visual Studio Code, the last step is to tell it which Python version to use. With a Python file open, at the bottom right, click on the Python version. In the dropdown, choose the Python version from the conda environment.
+```bash
+./scripts/setup-local-venv.sh
+source .venv/bin/activate
+```
 
-Autocompletion will now work as expected.
-Recommanded extensions: `ms-python.python`, `ms-python.pylint` and `ms-python.autopep8`
+The script uses `uv`, builds the native Draco and PyGeoAlgo pieces, and stores downloaded native dependencies under `.cache/local-dev`.
+On Linux, the local venv requires glibc 2.39 or newer because the published `forgeo-gmlib` wheel targets `manylinux_2_39_x86_64`. Older Linux distributions should use the Docker setup.
+
+Recommanded extensions : `ms-python.python`, `charliermarsh.ruff` and `astral-sh.ty`.
+
+We use [Ruff](https://docs.astral.sh/ruff/) for both linting and formatting. It is included in the `dev` dependency group and configured in [pyproject.toml](./pyproject.toml). Run it manually with:
+
+```bash
+uv run ruff check --fix
+uv run ruff format
+```
+
+We use [ty](https://docs.astral.sh/ty/) for type checking. It is included in the `dev` dependency group and configured in [pyproject.toml](./pyproject.toml). Run it manually with:
+
+```bash
+uv run ty check .
+```
+
+### Pre-commit hook
+
+Ruff and ty are wired up via [pre-commit](https://pre-commit.com/) so they run automatically before each commit. After cloning, install the hook once per checkout:
+
+```bash
+uv run pre-commit install
+```
+
+To run the hooks against the whole repository: `uv run pre-commit run --all-files`.
 
 ## Monitoring
 

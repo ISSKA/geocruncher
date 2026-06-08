@@ -3,6 +3,5 @@
 from ..util import VkProfilerSettings
 
 PROFILER_GWB_MESHES_V3 = VkProfilerSettings(
-    version=3,
-    computation='gwb_meshes',
-    steps=['load_mesh', 'compute', 'generate_mesh'])
+    version=3, computation="gwb_meshes", steps=["load_mesh", "compute", "generate_mesh"]
+)

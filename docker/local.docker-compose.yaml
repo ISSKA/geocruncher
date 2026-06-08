@@ -4,10 +4,11 @@ services:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile
+      target: local
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/api-local.sh"]
+    command: ["bash", "/home/build/scripts/api-local.sh"]
     ports:
       - "5000:5000"
     volumes:
@@ -19,10 +20,11 @@ services:
     image: geocruncher/geocruncher-local:latest
     build:
       context: ..
-      dockerfile: docker/local.Dockerfile
+      dockerfile: docker/Dockerfile
+      target: local
     depends_on:
       - redis
-    command: ["bash", "--login", "/home/build/scripts/worker-local.sh"]
+    command: ["bash", "/home/build/scripts/worker-local.sh"]
     volumes:
       # Avoid packaging api / geocruncher on every change by linking to on-disk code
       - $PWD:/home/build

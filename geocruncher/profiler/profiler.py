@@ -1,13 +1,13 @@
-import time
 import datetime
-from typing import Optional
+import time
+from typing import Any, Optional
 
-from .util import VkProfilerSettings
 from .config import ProfilerConfig
 from .storage import ProfilerStorage
+from .util import ProfilerMetadata, VkProfilerSettings
 
-class VkProfiler():
 
+class VkProfiler:
     def __init__(
         self, settings: VkProfilerSettings, storage: Optional[ProfilerStorage] = None
     ):
@@ -17,17 +17,18 @@ class VkProfiler():
         self._storage = storage
         # dictionnary where each step's name maps to the total fractional seconds spent on that step (time)
         # make the dictionnary with a default value for each step
-        self._steps = {step: {'profile': [], 'time': 0} for step in settings.steps}
-        self._metadata = {}
+        self._steps: dict[str, dict[str, float]] = {
+            step: {"time": 0.0} for step in settings.steps
+        }
+        self._metadata: dict[str, Any] = {}
 
         # set the metadata that's on every computation
-        self.set_metadata(
-            'start_time', datetime.datetime.now().isoformat())
+        self.set_metadata("start_time", datetime.datetime.now().isoformat())
 
-    def profile(self, step: str) -> 'VkProfiler':
+    def profile(self, step: str) -> "VkProfiler":
         """Profile a step by name. To be called when the step in question is done.
-        Also works inside loops (total time per step gets summed up). For loops, it is recommended 
-        to profile at least just before entering and at the end of every iteration, so the first 
+        Also works inside loops (total time per step gets summed up). For loops, it is recommended
+        to profile at least just before entering and at the end of every iteration, so the first
         profile in the loop is consistent"""
         if not self._storage or step not in self._steps:
             return self
@@ -35,26 +36,36 @@ class VkProfiler():
 
         # add for the step the difference between now and the last profiled time
         # since we add, the profile function works in loops. on each loop iteration, the step's time will be increased
-        self._steps[step]['time'] += now - self._last_profiled
+        self._steps[step]["time"] += now - self._last_profiled
         self._last_profiled = now
 
         return self
 
-    def set_metadata(self, metadata: str, value) -> 'VkProfiler':
+    def set_metadata(self, metadata: str, value: Any) -> "VkProfiler":
         self._metadata[metadata] = value
         return self
 
-    def save_results(self) -> 'VkProfiler':
+    def update_metadata(self, metadata: ProfilerMetadata | None) -> "VkProfiler":
+        if metadata is None:
+            return self
+
+        for key, value in metadata.items():
+            self.set_metadata(key, value)
+
+        return self
+
+    def save_results(self) -> "VkProfiler":
         """Save profiling results using configured storage"""
         if self._storage:
             self._storage.save(
                 self._settings.computation,
                 self._settings.version,
                 self._metadata,
-                self._steps
+                self._steps,
             )
 
         return self
+
 
 class ProfilerManager:
     """Manages global profiler state"""
@@ -64,10 +75,11 @@ class ProfilerManager:
         self._storage = self._config.create_storage()
         self._current_profiler: Optional[VkProfiler] = None
 
-    def create_profiler(self, settings: VkProfilerSettings) -> None:
+    def create_profiler(self, settings: VkProfilerSettings) -> VkProfiler:
         """Create a new profiler instance"""
         profiler = VkProfiler(settings, self._storage)
         self._current_profiler = profiler
+        return profiler
 
     def get_current_profiler(self) -> Optional[VkProfiler]:
         """Get the current profiler instance"""
@@ -79,9 +91,10 @@ _profiler_manager = ProfilerManager()
 
 # Public API
 
-def set_profiler(settings: VkProfilerSettings) -> None:
+
+def set_profiler(settings: VkProfilerSettings) -> VkProfiler:
     """Create a new profiler with the given settings"""
-    _profiler_manager.create_profiler(settings)
+    return _profiler_manager.create_profiler(settings)
 
 
 def get_current_profiler() -> Optional[VkProfiler]:

@@ -3,20 +3,23 @@ Adapted from gmlib geomodeller_project.py and topography_reader.py
 to allow importing from strings instead of files
 """
 
-import numpy as np
 import lxml.etree as etree
+import numpy as np
 from forgeo.gmlib.geomodeller_project import (
-    nsmap,
     extract_crs,
+    nsmap,
     read_box,
+    read_formations,
     read_modeled_faults_data,
     read_pile,
-    read_formations,
 )
+
 from .topography_reader import ascii_grid_to_implicit_dtm
 
+type XmlInput = bytes | str
 
-def extract_tree(xml: str):
+
+def extract_tree(xml: XmlInput):
     root = etree.fromstring(xml)
     for ns, uri in nsmap.items():
         assert ns in root.nsmap
@@ -24,7 +27,7 @@ def extract_tree(xml: str):
     return root
 
 
-def extract_project_data(xml: str, dem: str, scalardt=np.dtype("d")):
+def extract_project_data(xml: XmlInput, dem: str, scalardt=np.dtype("d")):
     root = extract_tree(xml)
     crs = extract_crs(root)
     box = read_box(root)

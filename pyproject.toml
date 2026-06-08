@@ -1,0 +1,70 @@
+[project]
+name = "geocruncher"
+version = "0.4.0"
+description = "Geocruncher is a standalone application for Geological Computations"
+requires-python = ">=3.12"
+dependencies = [
+    "DracoPy",
+    "celery",
+    "flask",
+    "forgeo",
+    "forgeo-gmlib",
+    "forgeo-rigs",
+    "lxml",
+    "meshio",
+    "numpy",
+    "pydantic",
+    "pyvista",
+    "redis",
+    "scikit-image",
+    "scipy",
+    "sympy",
+]
+
+[project.scripts]
+geocruncher = "geocruncher.main:main"
+api = "api.api:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "watchdog[watchmedo]",
+    "pybind11[global]",
+    "ruff",
+    "ty",
+    "pre-commit",
+]
+server = [
+    "gunicorn",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.16,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+module-name = ["geocruncher", "api"]
+source-exclude = [
+    "/.cache",
+    "/.venv",
+    "/build",
+    "/dist",
+]
+
+[tool.ruff]
+exclude = ["third_party"]
+
+[tool.ty.src]
+exclude = ["third_party/"]
+
+[tool.ty.environment]
+extra-paths = ["typings"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

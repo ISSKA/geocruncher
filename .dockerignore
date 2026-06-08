@@ -1,7 +1,11 @@
 __pycache__
+.cache
 .eggs
 .pytest_cache
+.venv
 .vscode
+.ruff_cache
+geocruncher-dist
 build
 docker
 scripts/run.sh

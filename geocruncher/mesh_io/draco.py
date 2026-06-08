@@ -1,12 +1,12 @@
+import DracoPy  # ty: ignore[unresolved-import]
 import numpy as np
 import pyvista as pv
-import DracoPy
 
 DRACO_COMPRESSION_LEVEL = 6
 DRACO_QUANTIZATION_BITS = 14
 
 
-def triangulate_faces(faces: list) -> np.ndarray:
+def triangulate_faces(faces: np.ndarray | list) -> np.ndarray:
     """
     Convert mixed triangles, quads, and ngons to all triangles.
     Uses fan triangulation for ngons.
@@ -68,15 +68,17 @@ def read_draco_to_polydata(draco_bytes: bytes) -> pv.PolyData:
 
     # Convert to expected dtypes (float64 for points, int32 for faces)
     points = np.asarray(data.points, dtype=np.float64)  # shape (n_verts, 3)
-    faces = np.asarray(data.faces, dtype=np.int32)      # shape (n_faces, 3)
+    faces = np.asarray(data.faces, dtype=np.int32)  # shape (n_faces, 3)
 
     # PyVista expects faces as a 1D array formatted as [n_verts, v0, v1, ..., vN]
     # For triangles: [3, v0, v1, v2, 3, v3, v4, v5, ...]
-    faces_pv = np.hstack([
-        # Prefix each tri with "3"
-        np.full((faces.shape[0], 1), 3, dtype=np.int32),
-        faces
-    ]).ravel()
+    faces_pv = np.hstack(
+        [
+            # Prefix each tri with "3"
+            np.full((faces.shape[0], 1), 3, dtype=np.int32),
+            faces,
+        ]
+    ).ravel()
 
     # Create PolyData directly
     mesh = pv.PolyData(points, faces=faces_pv)

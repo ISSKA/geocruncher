@@ -1,27 +1,27 @@
 """
-    Read code adapted from MeshIO
-    Sadly, MeshIO usese `np.fromfile`, which makes it impossible to read a mesh from an in-memory buffer
-    The code is therefore modified to not use BufferIOs
+Read code adapted from MeshIO
+Sadly, MeshIO usese `np.fromfile`, which makes it impossible to read a mesh from an in-memory buffer
+The code is therefore modified to not use BufferIOs
 """
 
 import numpy as np
-
 from meshio._exceptions import ReadError
 from meshio._mesh import CellBlock, Mesh
+from numpy.typing import ArrayLike
 
 
 def read_off(string: str) -> Mesh:
     # assert that the first line reads `OFF`
     lines = string.splitlines()
 
-    if lines[0].strip() != 'OFF':
+    if lines[0].strip() != "OFF":
         raise ReadError("Expected the first line to be `OFF`.")
 
     # fast forward to the next significant line
     i = 1
     while True:
         line = lines[i].strip()
-        if line and line[0] != '#':
+        if line and line[0] != "#":
             break
         i += 1
 
@@ -35,23 +35,27 @@ def read_off(string: str) -> Mesh:
     i += 1
     while True:
         line = lines[i].strip()
-        if line and line[0] != '#':
+        if line and line[0] != "#":
             break
         i += 1
 
     vert_lines_end = i + num_verts
     vert_lines = lines[i:vert_lines_end]
 
-    verts = np.array([[float(x) for x in line.strip().split()]
-                     for line in vert_lines], dtype=float)
+    verts = np.array(
+        [[float(x) for x in line.strip().split()] for line in vert_lines], dtype=float
+    )
 
-    face_lines = lines[vert_lines_end:vert_lines_end + num_faces]
+    face_lines = lines[vert_lines_end : vert_lines_end + num_faces]
 
-    faces = np.array([[int(x) for x in line.strip().split()]
-                      for line in face_lines], dtype=int)
+    faces = np.array(
+        [[int(x) for x in line.strip().split()] for line in face_lines], dtype=int
+    )
     if not np.all(faces[:, 0] == 3):
         raise ReadError("Can only read triangular faces")
-    cells = [CellBlock("triangle", faces[:, 1:])]
+    cells: list[tuple[str, ArrayLike] | CellBlock] = [
+        CellBlock("triangle", faces[:, 1:])
+    ]
 
     return Mesh(verts, cells)
 
@@ -79,6 +83,6 @@ def generate_off(verts: np.ndarray | list, faces: np.ndarray | list, precision=3
     num_faces = len(faces)
 
     verts_rounded = np.round(np.asarray(verts, dtype=np.float64), precision)
-    verts_str = '\n'.join(' '.join(map(str, vertex)) for vertex in verts_rounded)
-    faces_str = '\n'.join(f"{len(face)} {' '.join(map(str, face))}" for face in faces)
+    verts_str = "\n".join(" ".join(map(str, vertex)) for vertex in verts_rounded)
+    faces_str = "\n".join(f"{len(face)} {' '.join(map(str, face))}" for face in faces)
     return f"OFF\n{num_verts} {num_faces} 0\n{verts_str}\n{faces_str}\n"

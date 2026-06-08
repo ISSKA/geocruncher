@@ -1,13 +1,17 @@
 import math
+from collections.abc import Mapping
+from typing import Any
 
 import numpy as np
 import pyvista as pv
-from forgeo.gmlib.GeologicalModel3D import GeologicalModel, Box
+from forgeo.gmlib.architecture import (
+    from_GeoModeller,
+    make_evaluator,  # ty: ignore[unresolved-import]
+)
+from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
-from forgeo.gmlib.architecture import from_GeoModeller, make_evaluator
-
-from .profiler import profile_step
 from .mesh_io.mesh_io import read_mesh_to_polydata
+from .profiler import profile_step
 
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
@@ -170,7 +174,7 @@ def project_hydro_features_on_slice(
     upper_right: np.ndarray,
     xyz: np.ndarray,
     spring_map: dict,
-    drillhole_map: dict[str, Box],
+    drillhole_map: Mapping[str, Mapping[str, Any]],
     gwb_meshes: dict[str, list[bytes]],
     max_dist_proj: float,
 ) -> tuple[dict, dict, list]:
@@ -232,7 +236,7 @@ def project_hydro_features_on_slice(
         dist_to_plane = np.dot(q_to_p0, plane_normal)
         q_proj = np.subtract(q, dist_to_plane * plane_normal)
         proj_distance = np.linalg.norm(np.subtract(q, q_proj))
-        valid = proj_distance < max_dist_proj
+        valid = bool(proj_distance < max_dist_proj)
         return _transform_value(q_proj), valid
 
     def _transform_value(q: np.ndarray) -> list:
