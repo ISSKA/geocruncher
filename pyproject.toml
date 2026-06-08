@@ -1,7 +1,7 @@
 [project]
 name = "geocruncher"
 version = "0.4.0"
-description = "Geocruncher: a bridge between Gmlib and VK, plus its Flask/Celery API layer."
+description = "Geocruncher is a standalone application for Geological Computations"
 requires-python = ">=3.12"
 dependencies = [
     "DracoPy",
