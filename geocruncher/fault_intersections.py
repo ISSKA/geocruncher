@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 
 CLIP_VALUE = np.nan
 
@@ -60,6 +60,7 @@ class FaultIntersector:
         return topography
 
     def intersect(self) -> dict:
+        start_step("tesselate_faults")
         res = self._resolution
         topography_2d = self._topography.reshape(res)
 

@@ -6,7 +6,7 @@ from sympy import diff, symbols
 from sympy.parsing.sympy_parser import parse_expr
 
 from .mesh_io.mesh_io import generate_mesh
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 
 
 def tunnel_to_meshes(
@@ -28,6 +28,7 @@ def tunnel_to_meshes(
         idxStart if idxStart != -1 else 0,
         idxEnd + 1 if idxEnd != -1 else len(functions),
     ):
+        start_step("sympy_parse_diff_function")
         f = functions[j]
         fx = parse_expr(f["x"].replace("^", "**"))
         dfx = diff(fx, t)
@@ -39,6 +40,7 @@ def tunnel_to_meshes(
         for i in np.arange(
             tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step
         ):
+            start_step("interpolate_function")
             normal = np.array(
                 [float(dfx.subs(t, i)), float(dfy.subs(t, i)), float(dfz.subs(t, i))]
             )
@@ -46,12 +48,15 @@ def tunnel_to_meshes(
                 [float(fx.subs(t, i)), float(fy.subs(t, i)), float(fz.subs(t, i))]
             )
             profile_step("interpolate_function")
+            start_step("project_points")
             for p in _project_points(normal, bottom, xy_points):
                 vertices.append(p)
             nb_series += 1
             profile_step("project_points")
+    start_step("connect_vertices")
     triangles = _connect_vertices(len(xy_points), nb_series)
     profile_step("connect_vertices")
+    start_step("generate_mesh")
     mesh = generate_mesh(np.array(vertices), np.array(triangles))
     profile_step("generate_mesh")
     return mesh

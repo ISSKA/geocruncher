@@ -315,6 +315,7 @@ def compute_intersections(
         TODO: find a more complete explanation of what is returned and simplify return type.
     """
     profiler = set_profiler(PROFILES["intersections"])
+    start_step("load_model")
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
     box = model.getbox()
     max_dist_proj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
@@ -362,6 +363,7 @@ def compute_intersections(
         mesh_output["matrixGwb"][key] = []
 
         for b in intersection:
+            start_step("cross_section_grid")
             b = Box(**b)
             # FIXME: if we remove rounding, it breaks virtual drillhole slices. But it feels wrong to round, since we are rounding to arbitrary units of EPSG, usually meters, and the effect is not going to be the same on small and large projects
             x_coord = (round(b.xmin), round(b.xmax))
@@ -406,6 +408,7 @@ def compute_intersections(
             )
 
     if data["computeMap"]:
+        start_step("map_grid")
         width = box.xmax - box.xmin
         height = box.ymax - box.ymin
         resolution = calculate_resolution(width, height, data["resolution"])
@@ -445,6 +448,7 @@ def compute_faults(
         Dictionnary with mesh, an empty map, and fault, a map from fault name to OFF mesh file.
     """
     profiler = set_profiler(PROFILES["faults"])
+    start_step("load_model")
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
@@ -503,6 +507,7 @@ def compute_voxels(
         The VOX mesh file
     """
     profiler = set_profiler(PROFILES["voxels"])
+    start_step("load_model")
     model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])

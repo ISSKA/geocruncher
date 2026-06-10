@@ -1,5 +1,5 @@
-import datetime
 import time
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from celery import Task
@@ -26,7 +26,7 @@ class VkProfiler:
         self._metadata: dict[str, Any] = {}
 
         # set the metadata that's on every computation
-        self.set_metadata("start_time", datetime.datetime.now().isoformat())
+        self.set_metadata("start_time", datetime.now().isoformat())
 
     def profile(self, step: str) -> "VkProfiler":
         """Profile a step by name. To be called when the step in question is done.
@@ -118,9 +118,9 @@ def set_current_task(task: Task) -> None:
 
 
 def start_step(step: str) -> None:
-    start_time = int(datetime.datetime.now().timestamp())
-    total_time: float = 0.0
+    start_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+    total_time: int = 0
     profiler = _profiler_manager.get_current_profiler()
     if profiler:
-        total_time = float(profiler._steps[step]["time"])
+        total_time = int(profiler._steps[step]["time"] * 1000)
     _progress_recorder.set_progress(step, start_time, total_time)
