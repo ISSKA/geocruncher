@@ -2,7 +2,7 @@ import json
 import tarfile
 from io import BytesIO
 
-from celery.result import AsyncResult
+from celery.result import AsyncResult, states
 from flask import Flask, Response, request, send_file
 from pydantic import TypeAdapter, ValidationError
 
@@ -41,6 +41,18 @@ def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
     output.seek(0)
     return output
 
+def non_success_response(res: AsyncResult) -> Response | None:
+    """Returns a Response if the state is not SUCCESS, otherwise None.
+    Additionally, cleans up task result if state is FAILURE or REVOKED"""
+    state = res.state
+    if state == states.SUCCESS:
+        return None
+
+    if state in {states.FAILURE, states.REVOKED}:
+        res.forget()
+
+    return Response(state, mimetype="text/plain")
+
 
 def compute_meshes_or_faults(is_meshes: bool):
     if request.method == "POST":
@@ -72,9 +84,9 @@ def compute_meshes_or_faults(is_meshes: bool):
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
         res = AsyncResult(_id)
-        if res.state != "SUCCESS":
-            res.forget()
-            return Response(res.state, mimetype="text/plain")
+        response = non_success_response(res)
+        if response is not None:
+            return response
         # TODO: catch errors
         output_key = res.get()
         meshes = get_hash_bytes(r, output_key)
@@ -111,9 +123,9 @@ def compute_tunnel_meshes():
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
         res = AsyncResult(_id)
-        if res.state != "SUCCESS":
-            res.forget()
-            return Response(res.state, mimetype="text/plain")
+        response = non_success_response(res)
+        if response is not None:
+            return response
         # TODO: catch errors
         output_key = res.get()
         meshes = get_hash_bytes(r, output_key)
@@ -176,9 +188,9 @@ def compute_intersections():
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
         res = AsyncResult(_id)
-        if res.state != "SUCCESS":
-            res.forget()
-            return Response(res.state, mimetype="text/plain")
+        response = non_success_response(res)
+        if response is not None:
+            return response
         # TODO: catch errors
         output_key = res.get()
         output = get_bytes(r, output_key)
@@ -231,9 +243,9 @@ def compute_voxels():
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
         res = AsyncResult(_id)
-        if res.state != "SUCCESS":
-            res.forget()
-            return Response(res.state, mimetype="text/plain")
+        response = non_success_response(res)
+        if response is not None:
+            return response
         # TODO: catch errors
         output_key = res.get()
         mesh = get_bytes(r, output_key)
@@ -268,9 +280,9 @@ def compute_gwb_meshes():
         if _id is None or _id == "":
             return Response("Missing parameter id", 400, mimetype="text/plain")
         res = AsyncResult(_id)
-        if res.state != "SUCCESS":
-            res.forget()
-            return Response(res.state, mimetype="text/plain")
+        response = non_success_response(res)
+        if response is not None:
+            return response
         # TODO: catch errors
         output_key = res.get()
         meshes_and_metadata = get_hash_bytes(r, output_key)
@@ -313,7 +325,7 @@ def revoke():
 
     res = AsyncResult(_id)
     res.revoke(terminate=True, wait=True, timeout=2)
-    if res.state != "REVOKED":
+    if res.state != states.REVOKED:
         return Response(f"Task {_id} could not be revoked", 500, mimetype="text/plain")
     else:
         return Response(f"Task {_id} revoked", 200, mimetype="text/plain")

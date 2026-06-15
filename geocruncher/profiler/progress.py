@@ -5,7 +5,8 @@ from celery.result import AsyncResult
 
 
 class ProgressRecorder:
-    task: Optional[Task]
+    def __init__(self) -> None:
+        self.task: Optional[Task] = None
 
     def set_current_task(self, task: Task) -> None:
         self.task = task
