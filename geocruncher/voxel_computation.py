@@ -7,7 +7,7 @@ from forgeo.gmlib.architecture import (
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
 from .mesh_io.mesh_io import read_mesh_to_polydata
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 
 
 class Voxels:
@@ -18,6 +18,7 @@ class Voxels:
         box: Box,
         gwb_meshes: dict[str, list[bytes]],
     ) -> str:
+        start_step("grid")
         # we use numpy meshgrid to produce a regular grid
         # the output is a list containing a 3D array for each coordinate
         # if we want an evaluation on the center of the voxels
@@ -42,10 +43,12 @@ class Voxels:
         gwb_tags = [0] * xyz.shape[0]
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_data in meshes:
+                start_step("read_gwbs")
                 mesh = read_mesh_to_polydata(mesh_data)
                 points = pv.PolyData(xyz)
                 profile_step("read_gwbs")
 
+                start_step("test_inside_gwbs")
                 inside_points = points.select_enclosed_points(mesh, tolerance=0.00001)
                 selected_points = inside_points["SelectedPoints"].astype(
                     np.uint16
@@ -56,12 +59,14 @@ class Voxels:
                 ]
                 profile_step("test_inside_gwbs")
 
+        start_step("ranks")
         cppmodel = from_GeoModeller(model)
         topography = model.implicit_topography()
         evaluator = make_evaluator(cppmodel, topography)
         ranks = evaluator(xyz)
         profile_step("ranks")
 
+        start_step("generate_vox")
         ranks_tags = list(zip(ranks, gwb_tags))
 
         # We sort the arrays in reverse-nested loop order where z is the outer loop, y the middle and x the inner loop

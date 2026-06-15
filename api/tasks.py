@@ -1,34 +1,41 @@
 import json
 from collections import defaultdict
 
+from celery import Task
+
 from geocruncher import computations
 from geocruncher.profiler import ProfilerMetadata
+from geocruncher.profiler.profiler import set_current_task
 
 from .celery import app
 from .redis import redis_client as r
 from .utils import get_and_delete, get_hash_bytes, hset_bytes
 
 
-@app.task
+@app.task(bind=True)
 def compute_tunnel_meshes(
+    self: Task,
     data: computations.TunnelMeshesData,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
+    set_current_task(self)
     meshes = computations.compute_tunnel_meshes(data, metadata)
     for field, value in meshes.items():
         hset_bytes(r, output_key, field, value)
     return output_key
 
 
-@app.task
+@app.task(bind=True)
 def compute_meshes(
+    self: Task,
     data: computations.MeshesData,
     xml_key: str,
     dem_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
+    set_current_task(self)
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
@@ -46,8 +53,9 @@ def compute_meshes(
     return output_key
 
 
-@app.task
+@app.task(bind=True)
 def compute_intersections(
+    self: Task,
     data: computations.IntersectionsData,
     xml_key: str,
     dem_key: str,
@@ -55,6 +63,7 @@ def compute_intersections(
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
+    set_current_task(self)
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
@@ -73,14 +82,16 @@ def compute_intersections(
     return output_key
 
 
-@app.task
+@app.task(bind=True)
 def compute_faults(
+    self: Task,
     data: computations.MeshesData,
     xml_key: str,
     dem_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
+    set_current_task(self)
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
@@ -93,8 +104,9 @@ def compute_faults(
     return output_key
 
 
-@app.task
+@app.task(bind=True)
 def compute_voxels(
+    self: Task,
     data: computations.MeshesData,
     xml_key: str,
     dem_key: str,
@@ -102,6 +114,7 @@ def compute_voxels(
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
+    set_current_task(self)
     xml = get_and_delete(r, xml_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
@@ -118,14 +131,15 @@ def compute_voxels(
     return output_key
 
 
-@app.task
+@app.task(bind=True)
 def compute_gwb_meshes(
+    self: Task,
     data: list[computations.Spring],
     meshes_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
-
+    set_current_task(self)
     # get existing meshes for groundwater bodies
     unit_meshes: dict[str, bytes] = {}
     stored = get_hash_bytes(r, meshes_key)
