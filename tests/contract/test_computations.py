@@ -5,6 +5,8 @@ import pytest
 
 import geocruncher.computations as computations
 
+######## Fixtures/Fakes ########
+
 
 class FakeBox:
     def __init__(self, xmin, ymin, zmin, xmax, ymax, zmax):
@@ -111,6 +113,25 @@ def computation_fakes(monkeypatch):
     return records
 
 
+MODEL_METADATA = {
+    "num_erode_series": 1,
+    "num_onlap_series": 2,
+    "num_units": 3,
+    "num_finite_faults": 4,
+    "num_infinite_faults": 5,
+    "num_stops_on_relations": 6,
+    "num_contact_data": 7,
+    "num_dips": 8,
+}
+
+
+def assert_metadata_contains(metadata, expected):
+    assert {key: metadata[key] for key in expected} == expected
+
+
+######## Tests ########
+
+
 def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
     monkeypatch, computation_fakes
 ):
@@ -151,6 +172,42 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
     assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["resolution"] == 24
     assert computation_fakes.profilers[0].metadata["env"] == "test"
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        MODEL_METADATA,
+    )
+    assert computation_fakes.profilers[0].saved is True
+
+
+def test_compute_meshes_uses_model_box_when_box_is_absent(
+    monkeypatch, computation_fakes
+):
+    generated = {}
+
+    def fake_generate_volumes(model, shape, box):
+        generated["model"] = model
+        generated["shape"] = shape
+        generated["box"] = box
+        return {"mesh": {}, "fault": {}}
+
+    monkeypatch.setattr(computations, "generate_volumes", fake_generate_volumes)
+
+    result = computations.compute_meshes(
+        {"resolution": {"x": 1, "y": 2, "z": 3}},
+        xml="xml",
+        dem="dem",
+    )
+
+    assert result == {"mesh": {}, "fault": {}}
+    assert generated["model"] is computation_fakes.models[0]
+    assert generated["shape"] == (1, 2, 3)
+    assert generated["box"] is computation_fakes.models[0].box
+    assert computation_fakes.profile_steps == ["load_model"]
+    assert computation_fakes.profilers[0].metadata["resolution"] == 6
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        MODEL_METADATA,
+    )
     assert computation_fakes.profilers[0].saved is True
 
 
@@ -180,9 +237,56 @@ def test_compute_faults_uses_model_box_and_wraps_fault_output(
     assert generated["model"] is computation_fakes.models[0]
     assert generated["shape"] == (5, 6, 7)
     assert generated["box"] is computation_fakes.models[0].box
+    assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["resolution"] == 210
     assert computation_fakes.profilers[0].metadata["env"] == "test"
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        {
+            "num_finite_faults": 4,
+            "num_infinite_faults": 5,
+            "num_stops_on_relations": 6,
+            "num_contact_data": 7,
+            "num_dips": 8,
+        },
+    )
     assert computation_fakes.profilers[0].saved is True
+
+
+def test_compute_faults_uses_custom_box(monkeypatch, computation_fakes):
+    generated = {}
+
+    def fake_generate_faults_files(model, shape, box):
+        generated["model"] = model
+        generated["shape"] = shape
+        generated["box"] = box
+        return {"fault-a": b"fault"}
+
+    monkeypatch.setattr(
+        computations, "generate_faults_files", fake_generate_faults_files
+    )
+
+    result = computations.compute_faults(
+        computations.MeshesData(
+            resolution={"x": 2, "y": 3, "z": 4},
+            box={
+                "xmin": 11,
+                "ymin": 12,
+                "zmin": 13,
+                "xmax": 14,
+                "ymax": 15,
+                "zmax": 16,
+            },
+        ),
+        xml="xml",
+        dem="dem",
+    )
+
+    assert result == {"mesh": {}, "fault": {"fault-a": b"fault"}}
+    assert generated["model"] is computation_fakes.models[0]
+    assert generated["shape"] == (2, 3, 4)
+    assert generated["box"].as_tuple() == (11, 12, 13, 14, 15, 16)
+    assert computation_fakes.profile_steps == ["load_model"]
 
 
 def test_compute_voxels_passes_shape_box_gwbs_and_metadata(
@@ -215,9 +319,58 @@ def test_compute_voxels_passes_shape_box_gwbs_and_metadata(
     assert voxel_call["shape"] == (2, 4, 6)
     assert voxel_call["box"] is computation_fakes.models[0].box
     assert voxel_call["gwb_meshes"] is gwb_meshes
+    assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 2
     assert computation_fakes.profilers[0].metadata["env"] == "test"
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        {
+            "num_erode_series": 1,
+            "num_onlap_series": 2,
+            "num_units": 3,
+        },
+    )
     assert computation_fakes.profilers[0].saved is True
+
+
+def test_compute_voxels_uses_custom_box(monkeypatch, computation_fakes):
+    voxel_call = {}
+
+    class FakeVoxels:
+        @staticmethod
+        def output(model, shape, box, gwb_meshes):
+            voxel_call["model"] = model
+            voxel_call["shape"] = shape
+            voxel_call["box"] = box
+            voxel_call["gwb_meshes"] = gwb_meshes
+            return "vox-output"
+
+    monkeypatch.setattr(computations, "Voxels", FakeVoxels)
+
+    gwb_meshes = {"10": [b"mesh"]}
+    result = computations.compute_voxels(
+        computations.MeshesData(
+            resolution={"x": 3, "y": 4, "z": 5},
+            box={
+                "xmin": 21,
+                "ymin": 22,
+                "zmin": 23,
+                "xmax": 24,
+                "ymax": 25,
+                "zmax": 26,
+            },
+        ),
+        xml="xml",
+        dem="dem",
+        gwb_meshes=gwb_meshes,
+    )
+
+    assert result == "vox-output"
+    assert voxel_call["model"] is computation_fakes.models[0]
+    assert voxel_call["shape"] == (3, 4, 5)
+    assert voxel_call["box"].as_tuple() == (21, 22, 23, 24, 25, 26)
+    assert voxel_call["gwb_meshes"] is gwb_meshes
+    assert computation_fakes.profile_steps == ["load_model"]
 
 
 def test_compute_gwb_meshes_delegates_to_geo_algo_and_profiles_metadata(
@@ -346,6 +499,13 @@ def test_compute_tunnel_meshes_profiles_each_tunnel_and_applies_sub_tunnel_scale
         ["circle-segment"],
         ["rectangle-segment"],
     ]
+    assert [call["functions"] for call in mesh_calls] == [
+        [{"x": "t", "y": "0", "z": "0"}],
+        [
+            {"x": "t", "y": "0", "z": "0"},
+            {"x": "t", "y": "1", "z": "0"},
+        ],
+    ]
 
     expected_mesh_args = {
         "step": 0.25,
@@ -373,6 +533,83 @@ def test_compute_tunnel_meshes_profiles_each_tunnel_and_applies_sub_tunnel_scale
     )
 
     assert all(profiler.saved for profiler in computation_fakes.profilers)
+
+
+def test_compute_tunnel_meshes_elliptic_tunnel_without_sub_tunnel_scale_when_start_is_minus_one(
+    monkeypatch, computation_fakes
+):
+    segment_calls = []
+    mesh_calls = []
+
+    monkeypatch.setattr(
+        computations,
+        "get_elliptic_segment",
+        lambda width, height, nb_vertices: (
+            segment_calls.append(("elliptic", width, height, nb_vertices))
+            or ["elliptic-segment"]
+        ),
+    )
+
+    def fake_tunnel_to_meshes(
+        functions, step, segment, idx_start, t_start, idx_end, t_end
+    ):
+        mesh_calls.append(
+            {
+                "functions": functions,
+                "step": step,
+                "segment": segment,
+                "idx_start": idx_start,
+                "t_start": t_start,
+                "idx_end": idx_end,
+                "t_end": t_end,
+            }
+        )
+        return b"elliptic-mesh"
+
+    monkeypatch.setattr(computations, "tunnel_to_meshes", fake_tunnel_to_meshes)
+
+    functions = [computations.TunnelFunction(x="t", y="t + 1", z="0")]
+    data = computations.TunnelMeshesData(
+        tunnels=[
+            computations.Tunnel(
+                name="bypass",
+                shape=computations.TunnelShape.ELLIPTIC,
+                functions=functions,
+                width=4.0,
+                height=6.0,
+            )
+        ],
+        nb_vertices=12,
+        step=0.5,
+        idxStart=-1,
+        idxEnd=3,
+        tStart=0.0,
+        tEnd=2.0,
+    )
+    result = computations.compute_tunnel_meshes(
+        data,
+        metadata={"env": "test"},
+    )
+
+    assert result == {"bypass": b"elliptic-mesh"}
+    assert segment_calls == [("elliptic", 4.0, 6.0, 12)]
+    assert mesh_calls == [
+        {
+            "functions": functions,
+            "step": 0.5,
+            "segment": ["elliptic-segment"],
+            "idx_start": -1,
+            "t_start": 0.0,
+            "idx_end": 3,
+            "t_end": 2.0,
+        }
+    ]
+    assert computation_fakes.profilers[0].metadata["shape"] == (
+        computations.TunnelShape.ELLIPTIC
+    )
+    assert computation_fakes.profilers[0].metadata["num_waypoints"] == 2
+    assert computation_fakes.profilers[0].metadata["env"] == "test"
+    assert computation_fakes.profilers[0].saved is True
 
 
 def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
@@ -464,12 +701,108 @@ def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
     assert calls.vertical_slices == [((1, 12), (4, 4), (5, 26), (3, 4))]
     assert calls.hydro_calls == []
     assert calls.map_calls == []
+    assert calls.rank_calls[0][2] is computation_fakes.models[0]
     assert calls.rank_calls[0][3] is True
+    assert calls.fault_calls[0][2] is computation_fakes.models[0]
     assert computation_fakes.profile_steps == ["load_model", "cross_section_grid"]
     assert computation_fakes.profilers[0].metadata["compute_map"] is False
     assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 0
     assert computation_fakes.profilers[0].metadata["env"] == "test"
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        MODEL_METADATA,
+    )
     assert computation_fakes.profilers[0].saved is True
+
+
+def test_compute_intersections_with_only_gwb_meshes_runs_hydro_projection(
+    monkeypatch, computation_fakes
+):
+    vertical_xyz = np.array([[1, 2, 3]])
+    hydro_calls = []
+
+    monkeypatch.setattr(
+        computations, "calculate_resolution", lambda width, height, target: (2, 3)
+    )
+    monkeypatch.setattr(
+        computations,
+        "compute_vertical_slice_points",
+        lambda x_coord, y_coord, z_coord, resolution: vertical_xyz,
+    )
+    monkeypatch.setattr(
+        computations,
+        "compute_cross_section_ranks",
+        lambda xyz, resolution, model, topography: [["rank"]],
+    )
+    monkeypatch.setattr(
+        computations,
+        "compute_fault_intersections",
+        lambda xyz, resolution, model: [{"fault": [[1.0]]}],
+    )
+
+    def fake_project_hydro_features_on_slice(
+        lower_left,
+        upper_right,
+        xyz,
+        springs,
+        drillholes,
+        gwb_meshes,
+        max_dist_proj,
+    ):
+        hydro_calls.append(
+            {
+                "lower_left": lower_left.copy(),
+                "upper_right": upper_right.copy(),
+                "springs": springs,
+                "drillholes": drillholes,
+                "gwb_meshes": gwb_meshes,
+                "max_dist_proj": max_dist_proj,
+            }
+        )
+        return {}, {}, [12]
+
+    monkeypatch.setattr(
+        computations,
+        "project_hydro_features_on_slice",
+        fake_project_hydro_features_on_slice,
+    )
+
+    gwb_meshes = {"12": [b"mesh"]}
+    result = computations.compute_intersections(
+        {
+            "resolution": 20,
+            "toCompute": {
+                "section-a": [
+                    {
+                        "xmin": 0,
+                        "ymin": 0,
+                        "zmin": 0,
+                        "xmax": 10,
+                        "ymax": 0,
+                        "zmax": 5,
+                    }
+                ]
+            },
+            "computeMap": False,
+        },
+        xml="xml",
+        dem="dem",
+        gwb_meshes=gwb_meshes,
+    )
+
+    assert result["mesh"]["drillholes"] == {"section-a": [{}]}
+    assert result["mesh"]["springs"] == {"section-a": [{}]}
+    assert result["mesh"]["matrixGwb"] == {"section-a": [[12]]}
+    assert len(hydro_calls) == 1
+    np.testing.assert_array_equal(hydro_calls[0]["lower_left"], np.array([0, 0, 0]))
+    np.testing.assert_array_equal(hydro_calls[0]["upper_right"], np.array([10, 0, 5]))
+    assert hydro_calls[0]["springs"] == {}
+    assert hydro_calls[0]["drillholes"] == {}
+    assert hydro_calls[0]["gwb_meshes"] == gwb_meshes
+    assert hydro_calls[0]["max_dist_proj"] == pytest.approx(40.0)
+    assert computation_fakes.profilers[0].metadata["num_springs"] == 0
+    assert computation_fakes.profilers[0].metadata["num_drillholes"] == 0
+    assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 1
 
 
 def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
@@ -494,11 +827,11 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     )
 
     def fake_compute_cross_section_ranks(xyz, resolution, model, topography):
-        rank_calls.append((xyz, resolution, topography))
+        rank_calls.append((xyz, resolution, model, topography))
         return [["map-rank" if not topography else "section-rank"]]
 
     def fake_compute_fault_intersections(xyz, resolution, model):
-        fault_calls.append((xyz, resolution))
+        fault_calls.append((xyz, resolution, model))
         return [{"fault": [[float(resolution[0])]]}]
 
     def fake_project_hydro_features_on_slice(
@@ -590,14 +923,16 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     assert map_calls[0][2] is computation_fakes.models[0]
 
     np.testing.assert_array_equal(rank_calls[0][0], vertical_xyz)
-    assert rank_calls[0][1:] == ((10, 14), True)
+    assert rank_calls[0][1:] == ((10, 14), computation_fakes.models[0], True)
     np.testing.assert_array_equal(rank_calls[1][0], map_xyz)
-    assert rank_calls[1][1:] == ((110, 210), False)
+    assert rank_calls[1][1:] == ((110, 210), computation_fakes.models[0], False)
 
     np.testing.assert_array_equal(fault_calls[0][0], vertical_xyz)
     assert fault_calls[0][1] == (10, 14)
+    assert fault_calls[0][2] is computation_fakes.models[0]
     np.testing.assert_array_equal(fault_calls[1][0], map_xyz)
     assert fault_calls[1][1] == (110, 210)
+    assert fault_calls[1][2] is computation_fakes.models[0]
 
     assert computation_fakes.profile_steps == [
         "load_model",
@@ -608,4 +943,8 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     assert computation_fakes.profilers[0].metadata["num_springs"] == 1
     assert computation_fakes.profilers[0].metadata["num_drillholes"] == 1
     assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 1
+    assert_metadata_contains(
+        computation_fakes.profilers[0].metadata,
+        MODEL_METADATA,
+    )
     assert computation_fakes.profilers[0].saved is True
