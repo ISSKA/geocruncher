@@ -2,7 +2,7 @@
 
 A dummy project is provided in order to test the installation. For example, to run the dummy computation of intersections, execute the following:
 ```bash
-python -m geocruncher intersections tests/dummy_project/sections.json tests/dummy_project/geocruncher_project.xml tests/dummy_project/geocruncher_dem.asc tests/dummy_project out.json
+python -m geocruncher intersections tests/fixtures/dummy_project/sections.json tests/fixtures/dummy_project/geocruncher_project.xml tests/fixtures/dummy_project/geocruncher_dem.asc tests/fixtures/dummy_project out.json
 ```
 
 A more helpful command line argument validation system is being worked on (DEPRECATED). You can already run geocruncher with `-h` or `--help` to get basic help. Note that:
