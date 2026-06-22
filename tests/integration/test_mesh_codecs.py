@@ -9,10 +9,8 @@ pytestmark = [
 ######## Tests ########
 
 
-def test_draco_mesh_roundtrip_through_pyvista_preserves_topology_and_bounds():
+def test_draco_mesh_roundtrip_through_pyvista_preserves_topology_and_bounds(mesh_io):
     pytest.importorskip("DracoPy")
-    pytest.importorskip("pyvista")
-    mesh_io = pytest.importorskip("geocruncher.mesh_io.mesh_io")
 
     vertices = np.array(
         [
@@ -50,3 +48,19 @@ def test_draco_mesh_roundtrip_through_pyvista_preserves_topology_and_bounds():
     )
     assert decoded.n_cells == expected_triangles_after_wrapper_triangulation
     np.testing.assert_allclose(decoded.bounds, (0, 1, 0, 1, 0, 1), atol=1e-3)
+
+
+def test_off_mesh_bytes_read_to_pyvista_polydata_has_sane_bounds(
+    fixture_bytes, mesh_io
+):
+    off = fixture_bytes("gwb_meshes/7.off")
+    decoded = mesh_io.read_mesh_to_polydata(off)
+
+    assert mesh_io.is_off_file(off)
+    assert decoded.n_points == 8
+    assert decoded.n_cells == 12
+    np.testing.assert_allclose(
+        decoded.bounds,
+        (539000, 543000, 194000, 197000, -1000, 1500),
+        atol=1e-6,
+    )

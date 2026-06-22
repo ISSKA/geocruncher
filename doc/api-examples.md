@@ -29,7 +29,7 @@ Will return the computation ID
 Replace `meshes` with `faults` in the URL for a faults computation
 
 ```bash
-curl -F "data=<tests/fixtures/dummy_project/tiny_meshes.json" -F xml=@tests/fixtures/dummy_project/geocruncher_project.xml -F dem=@tests/fixtures/dummy_project/geocruncher_dem.asc http://127.0.0.1:5000/compute/meshes
+curl -F "data=<tests/fixtures/dummy_project/mesh.json" -F xml=@tests/fixtures/dummy_project/geocruncher_project.xml -F dem=@tests/fixtures/dummy_project/geocruncher_dem.asc http://127.0.0.1:5000/compute/meshes
 ```
 
 ### Poll a Meshes / Faults computation for results
@@ -75,7 +75,7 @@ Will return the computation ID
 Not included in this exemple: every additional file given is considered as a groundwater body mesh
 
 ```bash
-curl -F "data=<tests/fixtures/dummy_project/tiny_meshes.json" -F xml=@tests/fixtures/dummy_project/geocruncher_project.xml -F dem=@tests/fixtures/dummy_project/geocruncher_dem.asc http://127.0.0.1:5000/compute/voxels
+curl -F "data=<tests/fixtures/dummy_project/mesh.json" -F xml=@tests/fixtures/dummy_project/geocruncher_project.xml -F dem=@tests/fixtures/dummy_project/geocruncher_dem.asc http://127.0.0.1:5000/compute/voxels
 ```
 
 ### Poll a Voxels computation for results

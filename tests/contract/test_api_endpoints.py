@@ -1,12 +1,18 @@
 import json
 import tarfile
-from io import BytesIO
-from types import SimpleNamespace
-from typing import Any
 
 import pytest
 
 import api.api as api_module
+from tests.support.api import (
+    FakeAsyncResult,
+    FakeRedis,
+    FakeTask,
+    multipart_with_files,
+    set_async_result,
+    set_generated_keys,
+    tar_entries,
+)
 
 ######## Fixtures/Fakes ########
 
@@ -47,59 +53,6 @@ TUNNEL_MESHES_DATA = {
 GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
 
 
-class FakeRedis:
-    def __init__(self):
-        self.values = {}
-        self.hashes = {}
-        self.deleted = []
-
-    def set(self, key, value):
-        self.values[key] = value if isinstance(value, bytes) else value.encode("utf-8")
-
-    def get(self, key):
-        return self.values.get(key)
-
-    def delete(self, key):
-        self.deleted.append(key)
-        self.values.pop(key, None)
-        self.hashes.pop(key, None)
-
-    def hgetall(self, key):
-        return self.hashes.get(key, {})
-
-    def hset(self, key, field, value):
-        field_bytes = field if isinstance(field, bytes) else field.encode("utf-8")
-        value_bytes = value if isinstance(value, bytes) else value.encode("utf-8")
-        self.hashes.setdefault(key, {})[field_bytes] = value_bytes
-
-
-class FakeTask:
-    def __init__(self, task_id="task-id"):
-        self.task_id = task_id
-        self.calls = []
-
-    def delay(self, *args):
-        self.calls.append(args)
-        return SimpleNamespace(id=self.task_id)
-
-
-class FakeAsyncResult:
-    def __init__(self, state="PENDING", result=None):
-        self.state = state
-        self.result = result
-        self.revoked = False
-
-    def get(self):
-        return self.result
-
-    def _get_task_meta(self):
-        return {"result": self.result}
-
-    def revoke(self, terminate, wait, timeout):
-        self.revoked = (terminate, wait, timeout)
-        self.state = "REVOKED"
-
-
 @pytest.fixture
 def client():
     api_module.app.config.update(TESTING=True)
@@ -111,36 +64,6 @@ def fake_redis(monkeypatch):
     redis = FakeRedis()
     monkeypatch.setattr(api_module, "r", redis)
     return redis
-
-
-def set_generated_keys(monkeypatch, *keys):
-    remaining = iter(keys)
-    monkeypatch.setattr(api_module, "generate_key", lambda: next(remaining))
-
-
-def set_async_result(monkeypatch, factory):
-    monkeypatch.setattr(api_module, "AsyncResult", factory)
-
-
-def multipart_with_files(payload, metadata=None, **files):
-    data: dict[str, Any] = {"data": json.dumps(payload)}
-    if metadata is not None:
-        data["metadata"] = json.dumps(metadata)
-    for field, content in files.items():
-        data[field] = (BytesIO(content), f"{field}.dat")
-    return data
-
-
-def tar_entries(response):
-    with tarfile.open(fileobj=BytesIO(response.data), mode="r") as tar:
-        entries = {}
-        for member in tar.getmembers():
-            if not member.isfile():
-                continue
-            extracted = tar.extractfile(member)
-            assert extracted is not None
-            entries[member.name] = extracted.read()
-        return entries
 
 
 ######## Tests ########
@@ -163,7 +86,7 @@ def test_filemap_to_tar_roundtrips_binary_files():
 
 def test_post_tunnel_meshes_valid_data_queues_task(client, monkeypatch):
     task = FakeTask("tunnel-task")
-    set_generated_keys(monkeypatch, "output-key")
+    set_generated_keys(monkeypatch, api_module, "output-key")
     monkeypatch.setattr(api_module.tasks, "compute_tunnel_meshes", task)
 
     response = client.post(
@@ -252,7 +175,7 @@ def test_post_meshes_and_faults_store_inputs_and_queue_task(
 ):
     task = FakeTask(f"{task_name}-id")
     metadata = {"request_id": "req-1"}
-    set_generated_keys(monkeypatch, "xml-key", "dem-key", "output-key")
+    set_generated_keys(monkeypatch, api_module, "xml-key", "dem-key", "output-key")
     monkeypatch.setattr(api_module.tasks, task_name, task)
 
     response = client.post(
@@ -286,7 +209,9 @@ def test_post_hydro_aware_endpoints_store_gwb_meshes_and_queue_task(
 ):
     task = FakeTask(f"{task_name}-id")
     metadata = {"project_id": "project-b"}
-    set_generated_keys(monkeypatch, "xml-key", "dem-key", "gwb-key", "output-key")
+    set_generated_keys(
+        monkeypatch, api_module, "xml-key", "dem-key", "gwb-key", "output-key"
+    )
     monkeypatch.setattr(api_module.tasks, task_name, task)
 
     response = client.post(
@@ -317,7 +242,7 @@ def test_post_gwb_meshes_stores_unit_meshes_and_queues_task(
 ):
     task = FakeTask("gwb-task")
     metadata = {"request_id": "req-gwb"}
-    set_generated_keys(monkeypatch, "meshes-key", "output-key")
+    set_generated_keys(monkeypatch, api_module, "meshes-key", "output-key")
     monkeypatch.setattr(api_module.tasks, "compute_gwb_meshes", task)
 
     response = client.post(
@@ -368,7 +293,9 @@ def test_get_compute_endpoints_require_id(client, path):
     ],
 )
 def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, path):
-    set_async_result(monkeypatch, lambda task_id: FakeAsyncResult(state="PENDING"))
+    set_async_result(
+        monkeypatch, api_module, lambda task_id: FakeAsyncResult(state="PENDING")
+    )
 
     response = client.get(path, query_string={"id": "task-id"})
 
@@ -392,6 +319,7 @@ def test_get_compute_endpoints_return_204_for_empty_success_output(
 ):
     set_async_result(
         monkeypatch,
+        api_module,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
     if storage == "hash":
@@ -420,6 +348,7 @@ def test_get_tar_compute_endpoints_return_tar_and_delete_output(
     fake_redis.hashes["output-key"] = {b"a.off": b"mesh-a", b"b.off": b"mesh-b"}
     set_async_result(
         monkeypatch,
+        api_module,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -437,6 +366,7 @@ def test_get_intersections_returns_json_and_deletes_output(
     fake_redis.values["output-key"] = b'{"mesh":{},"fault":{}}'
     set_async_result(
         monkeypatch,
+        api_module,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -452,6 +382,7 @@ def test_get_voxels_returns_text_and_deletes_output(client, fake_redis, monkeypa
     fake_redis.values["output-key"] = b"vox-data"
     set_async_result(
         monkeypatch,
+        api_module,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -475,7 +406,7 @@ def test_poll_returns_states_for_many_tasks(client, monkeypatch):
         ),
         "task-b": FakeAsyncResult(state="SUCCESS", result="output-key"),
     }
-    set_async_result(monkeypatch, lambda task_id: results[task_id])
+    set_async_result(monkeypatch, api_module, lambda task_id: results[task_id])
 
     response = client.post("/poll", json=["task-a", "task-b"])
 
@@ -502,7 +433,7 @@ def test_revoke_requires_id(client):
 
 def test_revoke_terminates_task_and_returns_success(client, monkeypatch):
     result = FakeAsyncResult(state="STARTED")
-    set_async_result(monkeypatch, lambda task_id: result)
+    set_async_result(monkeypatch, api_module, lambda task_id: result)
 
     response = client.post("/revoke", query_string={"id": "task-id"})
 
@@ -519,6 +450,7 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
 
     set_async_result(
         monkeypatch,
+        api_module,
         lambda task_id: NotRevokedResult(state="STARTED"),
     )
 

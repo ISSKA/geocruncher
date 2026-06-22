@@ -1,7 +1,4 @@
-import json
 import math
-from pathlib import Path
-from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -12,50 +9,8 @@ pytestmark = [
     pytest.mark.native,
 ]
 
-######## Fixtures/Fakes ########
-
-
-FIXTURE_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "dummy_project"
 EXPECTED_TINY_UNIT_IDS = {"1", "2", "3", "4", "6", "8", "9"}
 EXPECTED_MODEL_RANKS = {0.0, *map(float, range(1, 10))}
-
-
-@pytest.fixture(scope="module")
-def computations():
-    pytest.importorskip("DracoPy")
-    pytest.importorskip("PyGeoAlgo")
-    pytest.importorskip("forgeo")
-    pytest.importorskip("pyvista")
-    return pytest.importorskip("geocruncher.computations")
-
-
-@pytest.fixture(scope="module")
-def mesh_io():
-    return pytest.importorskip("geocruncher.mesh_io.mesh_io")
-
-
-@pytest.fixture(scope="module")
-def dummy_project():
-    return SimpleNamespace(
-        xml=FIXTURE_DIR.joinpath("geocruncher_project.xml").read_bytes(),
-        dem=FIXTURE_DIR.joinpath("geocruncher_dem.asc").read_text(),
-    )
-
-
-def _decode_meshes(mesh_io, meshes):
-    summaries = {}
-    for name, data in meshes.items():
-        assert isinstance(data, bytes)
-        polydata = mesh_io.read_mesh_to_polydata(data)
-        assert polydata.n_points > 0
-        assert polydata.n_cells > 0
-        assert np.isfinite(polydata.bounds).all()
-        summaries[name] = (polydata.n_points, polydata.n_cells)
-    return summaries
-
-
-def _fixture_json(name):
-    return json.loads(FIXTURE_DIR.joinpath(name).read_text())
 
 
 def _expected_slice_resolution(computations, data):
@@ -71,39 +26,39 @@ def _expected_slice_resolution(computations, data):
 
 
 def test_real_compute_meshes_generates_decodable_tiny_dummy_project_meshes(
-    computations, mesh_io, dummy_project
+    computations, decode_meshes, dummy_project, fixture_json
 ):
     result = computations.compute_meshes(
-        _fixture_json("tiny_meshes.json"), dummy_project.xml, dummy_project.dem
+        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
     )
 
     assert set(result) == {"mesh", "fault"}
     assert set(result["mesh"]) == EXPECTED_TINY_UNIT_IDS
     assert set(result["fault"]) == {"topography"}
 
-    unit_summaries = _decode_meshes(mesh_io, result["mesh"])
-    fault_summaries = _decode_meshes(mesh_io, result["fault"])
+    unit_summaries = decode_meshes(result["mesh"])
+    fault_summaries = decode_meshes(result["fault"])
 
     assert unit_summaries["1"] == (86, 168)
     assert fault_summaries["topography"] == (521, 952)
 
 
 def test_real_compute_faults_generates_decodable_tiny_dummy_project_surface(
-    computations, mesh_io, dummy_project
+    computations, decode_meshes, dummy_project, fixture_json
 ):
     result = computations.compute_faults(
-        _fixture_json("tiny_meshes.json"), dummy_project.xml, dummy_project.dem
+        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
     )
 
     assert result["mesh"] == {}
     assert set(result["fault"]) == {"topography"}
-    assert _decode_meshes(mesh_io, result["fault"]) == {"topography": (521, 952)}
+    assert decode_meshes(result["fault"]) == {"topography": (521, 952)}
 
 
 def test_real_compute_intersections_generates_fixture_slice(
-    computations, dummy_project
+    computations, dummy_project, fixture_json
 ):
-    data = _fixture_json("slice.json")
+    data = fixture_json("intersection.json")
     section_id = next(iter(data["toCompute"]))
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
@@ -125,13 +80,113 @@ def test_real_compute_intersections_generates_fixture_slice(
     assert {value for row in section for value in row} <= EXPECTED_MODEL_RANKS
 
 
-def test_real_compute_tunnel_meshes_generates_decodable_tiny_meshes(
-    computations, mesh_io
+def test_real_compute_voxels_generates_tiny_vox_grid(
+    computations, dummy_project, fixture_json
 ):
-    result = computations.compute_tunnel_meshes(_fixture_json("tunnel.json"))
+    result = computations.compute_voxels(
+        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem, {}
+    )
+
+    lines = result.splitlines()
+    assert "NUMBERX=5" in lines[0]
+    assert "NUMBERY=5" in lines[0]
+    assert "NUMBERZ=5" in lines[0]
+    assert lines[1] == "rank gwb_id"
+
+    rows = lines[2:]
+    assert len(rows) == 125
+    assert {int(row.split()[1]) for row in rows} == {0}
+    for row in rows:
+        rank, gwb_id = row.split()
+        assert float(rank) in EXPECTED_MODEL_RANKS
+        assert gwb_id == "0"
+
+
+def test_real_compute_intersections_generates_map_outputs(
+    computations, dummy_project, fixture_json
+):
+    data = fixture_json("intersection_map.json")
+    section_id = next(iter(data["toCompute"]))
+    expected_width, expected_height = _expected_slice_resolution(computations, data)
+
+    result = computations.compute_intersections(
+        data, dummy_project.xml, dummy_project.dem, {}
+    )
+
+    assert "forMaps" in result["mesh"]
+    assert len(result["mesh"]["forMaps"]) == 25
+    assert {len(row) for row in result["mesh"]["forMaps"]} == {17}
+    assert {value for row in result["mesh"]["forMaps"] for value in row} <= (
+        EXPECTED_MODEL_RANKS
+    )
+    assert "forMaps" in result["fault"]
+    assert isinstance(result["fault"]["forMaps"], dict)
+
+    section = result["mesh"]["forCrossSections"][section_id][0]
+    assert len(section) == expected_width
+    assert {len(row) for row in section} == {expected_height}
+
+
+def test_real_compute_intersections_projects_hydro_features_and_gwb_matrix(
+    computations, dummy_project, fixture_bytes, fixture_json
+):
+    data = fixture_json("intersection_hydro.json")
+    section_id = next(iter(data["toCompute"]))
+    expected_width, expected_height = _expected_slice_resolution(computations, data)
+
+    result = computations.compute_intersections(
+        data,
+        dummy_project.xml,
+        dummy_project.dem,
+        {"7": [fixture_bytes("gwb_meshes/7.off")]},
+    )
+
+    springs = result["mesh"]["springs"][section_id][0]
+    drillholes = result["mesh"]["drillholes"][section_id][0]
+    matrix_gwb = result["mesh"]["matrixGwb"][section_id][0]
+
+    assert set(springs) == {"spring-1"}
+    np.testing.assert_allclose(springs["spring-1"], [8184.030841075725, 500.0])
+    assert set(drillholes) == {"drillhole-1"}
+    np.testing.assert_allclose(
+        drillholes["drillhole-1"],
+        [[8184.030841075725, -1000.0], [8184.030841075725, 1250.0]],
+    )
+    assert len(matrix_gwb) == expected_width * expected_height
+    assert set(matrix_gwb) == {0, 7}
+
+
+def test_real_compute_gwb_meshes_returns_decodable_aquifer(
+    computations, mesh_io, dummy_project, fixture_json
+):
+    unit_meshes = computations.compute_meshes(
+        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
+    )["mesh"]
+    springs = fixture_json("gwb_spring.json")
+
+    result = computations.compute_gwb_meshes({"1": unit_meshes["1"]}, springs)
+
+    assert set(result) == {"metadata", "meshes"}
+    assert len(result["metadata"]) == 1
+    assert result["metadata"][0]["unit_id"] == 1
+    assert result["metadata"][0]["spring_id"] == 1
+    assert result["metadata"][0]["volume"] > 0
+    assert len(result["meshes"]) == 1
+
+    polydata = mesh_io.read_mesh_to_polydata(result["meshes"][0])
+    assert polydata.n_points > 0
+    assert polydata.n_cells > 0
+    assert np.isfinite(polydata.bounds).all()
+    assert polydata.bounds[5] <= springs[0]["location"]["z"] + 1.0
+
+
+def test_real_compute_tunnel_meshes_generates_decodable_tiny_meshes(
+    computations, decode_meshes, fixture_json
+):
+    result = computations.compute_tunnel_meshes(fixture_json("tunnel.json"))
 
     assert set(result) == {"circle_tunnel", "rectangle_tunnel", "elliptic_tunnel"}
-    assert _decode_meshes(mesh_io, result) == {
+    assert decode_meshes(result) == {
         "circle_tunnel": (48, 72),
         "rectangle_tunnel": (48, 72),
         "elliptic_tunnel": (48, 72),
