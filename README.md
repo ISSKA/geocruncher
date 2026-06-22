@@ -61,6 +61,36 @@ We use [ty](https://docs.astral.sh/ty/) for type checking. It is included in the
 uv run ty check .
 ```
 
+We use [pytest](https://docs.pytest.org/) for tests. It is included in the `dev` dependency group and configured in [pyproject.toml](./pyproject.toml). The test suite is split into:
+
+- `tests/unit`: focused tests for pure helpers and small module behaviours
+- `tests/contract`: API, task and computation boundary tests using fakes for Redis, Celery and native computations
+- `tests/integration`: real dummy-project computations and mesh codec checks using the native geometry dependencies
+
+Run the fast unit and contract suites with:
+
+```bash
+uv run pytest tests/unit tests/contract
+```
+
+Run the full suite with:
+
+```bash
+uv run pytest
+```
+
+Generate a coverage report for the fast suite with:
+
+```bash
+uv run pytest tests/unit tests/contract --cov=geocruncher --cov=api --cov-report=term-missing
+```
+
+Integration tests are marked with `integration`, tests requiring native geometry dependencies are marked with `native`, and longer-running dummy-project computations are marked with `slow`. To run only the integration suite:
+
+```bash
+uv run pytest -m integration
+```
+
 ### Pre-commit hook
 
 Ruff and ty are wired up via [pre-commit](https://pre-commit.com/) so they run automatically before each commit. After cloning, install the hook once per checkout:
