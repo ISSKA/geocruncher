@@ -6,7 +6,7 @@ from typing import TypedDict
 
 import PyGeoAlgo as ga
 
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 
 
 class GwbMeshesResult(TypedDict):
@@ -30,6 +30,7 @@ class GeoAlgoOutput(TypedDict):
 class GeoAlgo:
     @staticmethod
     def output(unit_meshes: dict[str, bytes], springs: list) -> GeoAlgoOutput:
+        start_step("load_mesh")
         s = [
             ga.Spring(
                 spring["id"],
@@ -49,10 +50,12 @@ class GeoAlgo:
         ]
         profile_step("load_mesh")
 
+        start_step("compute")
         aquifer_calc = ga.AquiferCalc(m, s)
         aquifers = aquifer_calc.calculate()
         profile_step("compute")
 
+        start_step("generate_mesh")
         metadata = []
         meshes = []
         for aquifer in aquifers:

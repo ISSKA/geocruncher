@@ -3,6 +3,7 @@ from .profiler import (
     get_current_profiler,
     profile_step,
     set_profiler,
+    start_step,
 )
 from .settings.faults import PROFILER_FAULTS_V5
 from .settings.gwb_meshes import PROFILER_GWB_MESHES_V3
@@ -28,5 +29,6 @@ __all__ = [
     "set_profiler",
     "get_current_profiler",
     "profile_step",
+    "start_step",
     "PROFILES",
 ]

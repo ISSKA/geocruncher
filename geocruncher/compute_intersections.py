@@ -11,7 +11,7 @@ from forgeo.gmlib.architecture import (
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
 from .mesh_io.mesh_io import read_mesh_to_polydata
-from .profiler import profile_step
+from .profiler import profile_step, start_step
 
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
@@ -153,7 +153,7 @@ def compute_cross_section_ranks(
     -----
     For top-down views the topography should be False and for vertical slices it should be True.
     """
-
+    start_step("ranks")
     cppmodel = from_GeoModeller(model)
     if topography:
         topography = model.implicit_topography()
@@ -209,7 +209,7 @@ def project_hydro_features_on_slice(
         List of groundwater body values for each point in rank_matrix
         each value corresponds to the groundwater body ID for that point
     """
-
+    start_step("hydro_setup")
     # Create a third point to define the plane
     # The third point is the same x and y as the lower left corner, but z is the upper right corner
     # This is possible because cross sections are always parallel to the z axis
@@ -263,6 +263,7 @@ def project_hydro_features_on_slice(
     springs_point = {}
     profile_step("hydro_setup")
 
+    start_step("hydro_project_drillholes")
     if drillhole_map:
         for d_id, line in drillhole_map.items():
             line = Box(**line)
@@ -276,6 +277,7 @@ def project_hydro_features_on_slice(
                 drillholes_line[d_id] = [s_proj, e_proj]
     profile_step("hydro_project_drillholes")
 
+    start_step("hydro_project_springs")
     if spring_map:
         for s_id, p in spring_map.items():
             point = np.array([p["x"], p["y"], p["z"]])
@@ -284,6 +286,7 @@ def project_hydro_features_on_slice(
                 springs_point[s_id] = p_proj
     profile_step("hydro_project_springs")
 
+    start_step(step="hydro_project_gwbs")
     points_polydata = pv.PolyData(xyz)
     # Test each point of the cross section against groundwater body meshes
     for gwb_id, meshes in gwb_meshes.items():
