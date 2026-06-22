@@ -102,6 +102,28 @@ def test_real_compute_voxels_generates_tiny_vox_grid(
         assert gwb_id == "0"
 
 
+def test_real_compute_voxels_tags_gwb_mesh_points(
+    computations, dummy_project, fixture_bytes, fixture_json
+):
+    result = computations.compute_voxels(
+        fixture_json("mesh.json"),
+        dummy_project.xml,
+        dummy_project.dem,
+        {"7": [fixture_bytes("gwb_meshes/7.off")]},
+    )
+
+    lines = result.splitlines()
+    assert lines[1] == "rank gwb_id"
+
+    rows = lines[2:]
+    assert len(rows) == 125
+    assert {int(row.split()[1]) for row in rows} == {0, 7}
+    for row in rows:
+        rank, gwb_id = row.split()
+        assert float(rank) in EXPECTED_MODEL_RANKS
+        assert gwb_id in {"0", "7"}
+
+
 def test_real_compute_intersections_generates_map_outputs(
     computations, dummy_project, fixture_json
 ):

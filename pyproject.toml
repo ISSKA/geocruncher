@@ -33,7 +33,7 @@ dev = [
     "ruff",
     "ty",
     "pre-commit",
-    "pytest-cov>=7.1.0",
+    "pytest-cov",
 ]
 server = [
     "gunicorn",

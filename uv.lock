@@ -609,7 +609,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pybind11", extras = ["global"] },
     { name = "pytest" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-cov" },
     { name = "ruff" },
     { name = "ty" },
     { name = "watchdog", extras = ["watchmedo"] },
