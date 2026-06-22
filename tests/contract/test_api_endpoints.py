@@ -92,6 +92,9 @@ class FakeAsyncResult:
     def get(self):
         return self.result
 
+    def _get_task_meta(self):
+        return {"result": self.result}
+
     def revoke(self, terminate, wait, timeout):
         self.revoked = (terminate, wait, timeout)
         self.state = "REVOKED"
@@ -113,6 +116,10 @@ def fake_redis(monkeypatch):
 def set_generated_keys(monkeypatch, *keys):
     remaining = iter(keys)
     monkeypatch.setattr(api_module, "generate_key", lambda: next(remaining))
+
+
+def set_async_result(monkeypatch, factory):
+    monkeypatch.setattr(api_module, "AsyncResult", factory)
 
 
 def multipart_with_files(payload, metadata=None, **files):
@@ -361,11 +368,7 @@ def test_get_compute_endpoints_require_id(client, path):
     ],
 )
 def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, path):
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
-        lambda task_id: FakeAsyncResult(state="PENDING"),
-    )
+    set_async_result(monkeypatch, lambda task_id: FakeAsyncResult(state="PENDING"))
 
     response = client.get(path, query_string={"id": "task-id"})
 
@@ -387,9 +390,8 @@ def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, pat
 def test_get_compute_endpoints_return_204_for_empty_success_output(
     client, fake_redis, monkeypatch, path, storage
 ):
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
+    set_async_result(
+        monkeypatch,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
     if storage == "hash":
@@ -416,9 +418,8 @@ def test_get_tar_compute_endpoints_return_tar_and_delete_output(
     client, fake_redis, monkeypatch, path
 ):
     fake_redis.hashes["output-key"] = {b"a.off": b"mesh-a", b"b.off": b"mesh-b"}
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
+    set_async_result(
+        monkeypatch,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -434,9 +435,8 @@ def test_get_intersections_returns_json_and_deletes_output(
     client, fake_redis, monkeypatch
 ):
     fake_redis.values["output-key"] = b'{"mesh":{},"fault":{}}'
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
+    set_async_result(
+        monkeypatch,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -450,9 +450,8 @@ def test_get_intersections_returns_json_and_deletes_output(
 
 def test_get_voxels_returns_text_and_deletes_output(client, fake_redis, monkeypatch):
     fake_redis.values["output-key"] = b"vox-data"
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
+    set_async_result(
+        monkeypatch,
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
@@ -465,17 +464,33 @@ def test_get_voxels_returns_text_and_deletes_output(client, fake_redis, monkeypa
 
 
 def test_poll_returns_states_for_many_tasks(client, monkeypatch):
-    states = {"task-a": "PENDING", "task-b": "SUCCESS"}
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
-        lambda task_id: FakeAsyncResult(state=states[task_id]),
-    )
+    results = {
+        "task-a": FakeAsyncResult(
+            state="PENDING",
+            result={
+                "currentStep": "ranks",
+                "startTime": 100,
+                "totalTime": 20,
+            },
+        ),
+        "task-b": FakeAsyncResult(state="SUCCESS", result="output-key"),
+    }
+    set_async_result(monkeypatch, lambda task_id: results[task_id])
 
     response = client.post("/poll", json=["task-a", "task-b"])
 
     assert response.status_code == 200
-    assert response.json == states
+    assert response.json == {
+        "task-a": {
+            "state": "PENDING",
+            "progress": {
+                "currentStep": "ranks",
+                "startTime": 100,
+                "totalTime": 20,
+            },
+        },
+        "task-b": {"state": "SUCCESS", "progress": None},
+    }
 
 
 def test_revoke_requires_id(client):
@@ -487,7 +502,7 @@ def test_revoke_requires_id(client):
 
 def test_revoke_terminates_task_and_returns_success(client, monkeypatch):
     result = FakeAsyncResult(state="STARTED")
-    monkeypatch.setattr(api_module.celery, "AsyncResult", lambda task_id: result)
+    set_async_result(monkeypatch, lambda task_id: result)
 
     response = client.post("/revoke", query_string={"id": "task-id"})
 
@@ -502,9 +517,8 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
             self.revoked = (terminate, wait, timeout)
             self.state = "STARTED"
 
-    monkeypatch.setattr(
-        api_module.celery,
-        "AsyncResult",
+    set_async_result(
+        monkeypatch,
         lambda task_id: NotRevokedResult(state="STARTED"),
     )
 
