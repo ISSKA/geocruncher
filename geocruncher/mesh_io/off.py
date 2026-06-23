@@ -60,7 +60,9 @@ def read_off(string: str) -> Mesh:
     return Mesh(verts, cells)
 
 
-def generate_off(verts: np.ndarray | list, faces: np.ndarray | list, precision=3):
+def generate_off(
+    verts: np.ndarray | list, faces: np.ndarray | list, precision=3
+) -> str:
     """Generates a valid OFF string from the given verts and faces.
 
     Parameters

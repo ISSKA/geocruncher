@@ -41,6 +41,7 @@ def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
     output.seek(0)
     return output
 
+
 def non_success_response(res: AsyncResult) -> Response | None:
     """Returns a Response if the state is not SUCCESS, otherwise None.
     Additionally, cleans up task result if state is FAILURE or REVOKED"""

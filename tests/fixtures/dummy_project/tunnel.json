@@ -39,8 +39,8 @@
             ]
         }
     ],
-    "step": 0.1,
-    "nb_vertices": 200,
+    "step": 0.25,
+    "nb_vertices": 12,
     "idxStart": -1,
     "idxEnd": -1,
     "tStart": 0,

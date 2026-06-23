@@ -33,6 +33,7 @@ dev = [
     "ruff",
     "ty",
     "pre-commit",
+    "pytest-cov",
 ]
 server = [
     "gunicorn",
@@ -60,6 +61,13 @@ exclude = ["third_party/"]
 
 [tool.ty.environment]
 extra-paths = ["typings"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests that exercise real cross-module behavior",
+    "slow: tests that are slower than the ordinary unit and contract suite",
+    "native: tests that require native geometry dependencies",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
