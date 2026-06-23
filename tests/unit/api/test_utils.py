@@ -7,26 +7,7 @@ from flask import Flask
 from redis.client import Redis
 
 import api.utils as utils
-
-
-class FakeRedis:
-    def __init__(self):
-        self.values = {}
-        self.hashes = {}
-        self.deleted = []
-
-    def get(self, key):
-        return self.values.get(key)
-
-    def delete(self, key):
-        self.deleted.append(key)
-        self.values.pop(key, None)
-
-    def hgetall(self, key):
-        return self.hashes.get(key, {})
-
-    def hset(self, key, field, value):
-        self.hashes.setdefault(key, {})[field.encode("utf8")] = value
+from tests.support.api import FakeRedis
 
 
 def test_parse_metadata_from_request_returns_valid_json_object():

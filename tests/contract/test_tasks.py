@@ -1,6 +1,7 @@
 import json
 
 import api.tasks as tasks
+from tests.support.api import FakeRedis
 
 ##### Fixtures/Fakes ########
 
@@ -40,32 +41,6 @@ TUNNEL_MESHES_DATA = {
     "tStart": 0.0,
     "tEnd": 1.0,
 }
-
-
-class FakeRedis:
-    def __init__(self):
-        self.values = {}
-        self.hashes = {}
-        self.deleted = []
-
-    def set(self, key, value):
-        self.values[key] = value if isinstance(value, bytes) else value.encode("utf-8")
-
-    def get(self, key):
-        return self.values.get(key)
-
-    def delete(self, key):
-        self.deleted.append(key)
-        self.values.pop(key, None)
-        self.hashes.pop(key, None)
-
-    def hgetall(self, key):
-        return self.hashes.get(key, {})
-
-    def hset(self, key, field, value):
-        field_bytes = field if isinstance(field, bytes) else field.encode("utf-8")
-        value_bytes = value if isinstance(value, bytes) else value.encode("utf-8")
-        self.hashes.setdefault(key, {})[field_bytes] = value_bytes
 
 
 ######## Tests ########
