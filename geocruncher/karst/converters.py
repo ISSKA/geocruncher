@@ -11,6 +11,7 @@ from pykarstnsim.models import (
 )
 from shapely import Point, Polygon
 
+from geocruncher.computations import Vec3Int
 from geocruncher.karst.models import (
     PERMEABILITY_MAP,
     KarstDemResolution,
@@ -20,7 +21,6 @@ from geocruncher.karst.models import (
     KarstStratigraphy,
     Permeability,
     Point2D,
-    Point3DInt,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ DUMMY = KarstGeologicalUnit(
 def load_project_box(
     box: KarstProjectBox,
     stratigraphy: KarstStratigraphy,
-    compute_resolution: Point3DInt,
+    compute_resolution: Vec3Int,
     voxels: np.ndarray,
     voxels_units: list[int],
     r_min_pervious: Literal["auto"] | float = "auto",
@@ -50,9 +50,9 @@ def load_project_box(
     u = (box.width, 0.0, 0.0)
     v = (0.0, box.height, 0.0)
     w = (0.0, 0.0, box.depth)
-    cells_u = compute_resolution.x
-    cells_v = compute_resolution.y
-    cells_w = compute_resolution.z
+    cells_u = compute_resolution["x"]
+    cells_v = compute_resolution["y"]
+    cells_w = compute_resolution["z"]
 
     # we will find the "top" altitude of each gwb cell
     gwbs = [0] * (cells_u * cells_v)

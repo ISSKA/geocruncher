@@ -3,13 +3,14 @@ from datetime import datetime
 
 from pykarstnsim.models import KarstNSimResult
 
-from geocruncher.karst.models import Point3DInt, SimulationParameters
+from geocruncher.computations import Vec3Int
+from geocruncher.karst.models import SimulationParameters
 
 
 def serialize_output(
     result: KarstNSimResult,
     params: SimulationParameters,
-    compute_resolution: Point3DInt,
+    compute_resolution: Vec3Int,
     runtime_s: float,
 ) -> bytes:
     lines = ["# Run info"]
@@ -20,9 +21,9 @@ def serialize_output(
                     "generationTime": datetime.now().isoformat(),
                     "generationDurationS": runtime_s,
                     "computeResolution": {
-                        "x": compute_resolution.x,
-                        "y": compute_resolution.y,
-                        "z": compute_resolution.z,
+                        "x": compute_resolution["x"],
+                        "y": compute_resolution["y"],
+                        "z": compute_resolution["z"],
                     },
                 },
                 "config": params.model_dump(by_alias=True),

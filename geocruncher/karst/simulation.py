@@ -72,9 +72,9 @@ def run_karst_simulation(
         len(springs),
     )
     max_dim = max(
-        content.project_box.width / content.compute_resolution.x,
-        content.project_box.height / content.compute_resolution.y,
-        content.project_box.depth / content.compute_resolution.z,
+        content.project_box.width / content.compute_resolution["x"],
+        content.project_box.height / content.compute_resolution["y"],
+        content.project_box.depth / content.compute_resolution["z"],
     )
     config = KarstConfig()
     config.karstic_network_name = content.simulation_params.name

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from geocruncher.computations import KarstNSimData
+from geocruncher.computations import KarstNSimData, Vec3Int
 from geocruncher.karst.models import (
     KarstDemResolution,
     KarstFault,
@@ -14,7 +14,6 @@ from geocruncher.karst.models import (
     KarstVoxelsHeader,
     KarstVoxelsUnits,
     Point2D,
-    Point3DInt,
     SimulationParameters,
 )
 
@@ -30,7 +29,7 @@ class KarstContent:
     dem_resolution: KarstDemResolution
     surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
     stratigraphy: KarstStratigraphy
-    compute_resolution: Point3DInt
+    compute_resolution: Vec3Int
     voxels_header: KarstVoxelsHeader
     voxels: np.ndarray  # shape (nx, ny, nz, 2)
     voxels_units: KarstVoxelsUnits
@@ -102,6 +101,32 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstVoxelsHeader, np.ndarray]
     return (header, voxels)
 
 
+def load_fault(fault_bytes: bytes) -> KarstFault:
+    # faults are packed as follows:
+    # - int32: number of vertices (N)
+    # - float32[3*N]: vertex positions (x1, y1, z1, x2, y2, z2, ..., xN, yN, zN)
+    # - int32: number of triangles (M)
+    # - int32[3*M]: triangle indices (i1_1, i1_2, i1_3, i2_1, i2_2, i2_3, ..., iM_1, iM_2, iM_3)
+    data = np.frombuffer(fault_bytes, dtype=np.uint8)
+    offset = 0
+    n_vertices = int(np.frombuffer(data[offset : offset + 4], dtype=np.int32)[0])
+    offset += 4
+    vertices = np.frombuffer(
+        data[offset : offset + 4 * 3 * n_vertices], dtype=np.float32
+    ).reshape((n_vertices, 3))
+    offset += 4 * 3 * n_vertices
+    n_triangles = int(np.frombuffer(data[offset : offset + 4], dtype=np.int32)[0])
+    offset += 4
+    triangles = np.frombuffer(
+        data[offset : offset + 4 * 3 * n_triangles], dtype=np.int32
+    ).reshape((n_triangles, 3))
+    offset += 4 * 3 * n_triangles
+    if offset != len(data):
+        raise ValueError("Malformed fault file, extra data at the end")
+    LOGGER.info(f"Loaded fault with {n_vertices} vertices and {n_triangles} triangles")
+    return KarstFault(vertices=vertices, triangles=triangles)
+
+
 def load_fault_from_off(off_bytes: bytes) -> KarstFault:
     """Parse an OFF mesh into a KarstFault.
     Replaces load_fault() which parsed the custom Angular binary format.
@@ -140,14 +165,14 @@ def build_karst_content(
     )
     voxels_lines = voxels_str.splitlines()
     voxels_header, voxels = load_voxels(voxels_lines)
-    compute_resolution = Point3DInt(
+    compute_resolution = Vec3Int(
         x=voxels_header.nx, y=voxels_header.ny, z=voxels_header.nz
     )
 
     # resample + flip: same arithmetic as read_zip
     surface_data = surface_data[
-        :: data.dem_resolution.n_rows // compute_resolution.y,
-        :: data.dem_resolution.n_cols // compute_resolution.x,
+        :: data.dem_resolution.n_rows // compute_resolution["y"],
+        :: data.dem_resolution.n_cols // compute_resolution["x"],
     ]
     surface_data = np.flipud(surface_data).copy()
 

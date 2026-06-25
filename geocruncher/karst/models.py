@@ -31,12 +31,6 @@ class Point3D(Point2D):
     z: float
 
 
-class Point3DInt(BaseModel):
-    x: int
-    y: int
-    z: int
-
-
 class KarstProjectBox(BaseModel):
     width: float
     height: float
