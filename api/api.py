@@ -8,6 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from geocruncher.computations import (
     IntersectionsData,
+    KarstNSimData,
     MeshesData,
     Spring,
     TunnelMeshesData,
@@ -29,6 +30,7 @@ _meshes_adapter = TypeAdapter(MeshesData)
 _tunnel_meshes_adapter = TypeAdapter(TunnelMeshesData)
 _intersections_adapter = TypeAdapter(IntersectionsData)
 _gwb_meshes_adapter = TypeAdapter(list[Spring])
+_karstnsim_adapter = TypeAdapter(KarstNSimData)
 
 
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
@@ -297,6 +299,47 @@ def compute_gwb_meshes():
             mimetype="application/x-tar",
             as_attachment=True,
             download_name="gwb_meshes.tar",
+        )
+
+
+@app.route("/compute/karstnsim", methods=["POST", "GET"])
+def compute_karstnsim():
+    if request.method == "POST":
+        try:
+            data: KarstNSimData = _karstnsim_adapter.validate_json(request.form["data"])
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
+        metadata = parse_metadata_from_request()
+
+        files_key = generate_key()
+        hset_bytes(r, files_key, "dem", request.files["dem"].read())
+        hset_bytes(r, files_key, "voxels", request.files["voxels"].read())
+        for key, f in request.files.items():
+            if key.startswith("fault_"):
+                hset_bytes(r, files_key, key, f.read())
+
+        output_key = generate_key()
+        res = tasks.compute_karstnsim.delay(data, files_key, output_key, metadata)
+        return Response(res.id, 202, mimetype="text/plain")
+
+    elif request.method == "GET":
+        _id = request.args.get("id")
+        if not _id:
+            return Response("Missing parameter id", 400, mimetype="text/plain")
+        res = AsyncResult(_id)
+        response = non_success_response(res)
+        if response is not None:
+            return response
+        output_key = res.get()
+        output = get_hash_bytes(r, output_key)
+        r.delete(output_key)
+        if not output:
+            return Response("", 204, mimetype="text/plain")
+        return send_file(
+            filemap_to_tar(output),
+            mimetype="application/x-tar",
+            as_attachment=True,
+            download_name="karstnsim.tar",
         )
 
 

@@ -19,6 +19,7 @@ dependencies = [
     "redis",
     "scikit-image",
     "scipy",
+    "shapely",
     "sympy",
 ]
 

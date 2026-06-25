@@ -9,7 +9,17 @@ from typing import NotRequired, TypedDict, cast
 
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
+from pydantic import BaseModel
 
+from geocruncher.karst.models import (
+    KarstDemResolution,
+    KarstGeologicalUnit,
+    KarstGroundwaterBody,
+    KarstProjectBox,
+    KarstSpring,
+    KarstVoxelsHeader,
+    SimulationParameters,
+)
 from geocruncher.profiler.profiler import start_step
 
 from .compute_intersections import (
@@ -564,3 +574,18 @@ def compute_gwb_meshes(
     results = GeoAlgo.output(unit_meshes, springs)
     profiler.save_results()
     return results
+
+
+class KarstNSimData(BaseModel):
+    """Data given to the KarstNSim computation.
+    Binary inputs (dem_values, voxels, faults) are sent as separate files."""
+
+    simulation_params: SimulationParameters
+    project_box: KarstProjectBox
+    dem_resolution: KarstDemResolution
+    stratigraphy: list[KarstGeologicalUnit]
+    voxels_header: KarstVoxelsHeader
+    voxels_units: list[int]
+    fault_ids: list[int]
+    springs: list[KarstSpring]
+    gwbs: list[KarstGroundwaterBody]
