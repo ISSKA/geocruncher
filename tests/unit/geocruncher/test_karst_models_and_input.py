@@ -1,6 +1,44 @@
 import numpy as np
 import pytest
 
+
+@pytest.fixture(scope="session")
+def karst_content(
+    karst_nsim_data_dict,
+    karst_dem_bytes,
+    karst_voxels_str,
+    karst_fault_off_bytes,
+):
+    from geocruncher.computations import KarstNSimData
+    from geocruncher.karst.input import build_karst_content
+
+    data = KarstNSimData.model_validate(karst_nsim_data_dict)
+
+    return build_karst_content(
+        data,
+        karst_dem_bytes,
+        karst_voxels_str,
+        karst_fault_off_bytes,
+    )
+
+
+@pytest.fixture(scope="session")
+def parsed_voxels(karst_voxels_str):
+    from geocruncher.karst.input import load_voxels
+
+    return load_voxels(karst_voxels_str.splitlines())
+
+
+@pytest.fixture(scope="session")
+def parsed_faults(karst_fault_off_bytes):
+    from geocruncher.karst.input import load_fault_from_off
+
+    return {
+        fault_id: load_fault_from_off(off_bytes)
+        for fault_id, off_bytes in karst_fault_off_bytes.items()
+    }
+
+
 ######## Model Tests ########
 
 
@@ -85,34 +123,23 @@ class TestKarstNSimData:
 
 
 class TestLoadVoxels:
-    def test_header_parsed(self, karst_voxels_str):
-        from geocruncher.karst.input import load_voxels
-
-        header, _ = load_voxels(karst_voxels_str.splitlines())
-        assert header.nx > 0
-        assert header.ny > 0
-        assert header.nz > 0
-
-    def test_array_shape(self, karst_voxels_str):
+    def test_parses_header_and_shape(self, karst_voxels_str):
         from geocruncher.karst.input import load_voxels
 
         header, voxels = load_voxels(karst_voxels_str.splitlines())
-        assert voxels.shape == (header.nx, header.ny, header.nz, 2)
+
+        assert (header.nx, header.ny, header.nz) == (150, 100, 75)
+        assert voxels.shape == (150, 100, 75, 2)
         assert voxels.dtype == np.int32
 
-    def test_cell_count_matches_header(self, karst_voxels_str):
-        from geocruncher.karst.input import load_voxels
-
-        header, voxels = load_voxels(karst_voxels_str.splitlines())
+    def test_cell_count_matches_header(self, parsed_voxels):
+        header, voxels = parsed_voxels
         assert voxels.size == header.nx * header.ny * header.nz * 2
 
 
 class TestLoadFaultFromOff:
-    def test_shape(self, karst_fault_off_bytes):
-        from geocruncher.karst.input import load_fault_from_off
-
-        for fault_id, off_bytes in karst_fault_off_bytes.items():
-            fault = load_fault_from_off(off_bytes)
+    def test_shape(self, parsed_faults):
+        for fault_id, fault in parsed_faults.items():
             assert fault.vertices.ndim == 2 and fault.vertices.shape[1] == 3, (
                 f"Fault {fault_id}: unexpected vertices shape {fault.vertices.shape}"
             )
@@ -120,11 +147,8 @@ class TestLoadFaultFromOff:
                 f"Fault {fault_id}: unexpected triangles shape {fault.triangles.shape}"
             )
 
-    def test_dtypes(self, karst_fault_off_bytes):
-        from geocruncher.karst.input import load_fault_from_off
-
-        for fault_id, off_bytes in karst_fault_off_bytes.items():
-            fault = load_fault_from_off(off_bytes)
+    def test_dtypes(self, parsed_faults):
+        for fault_id, fault in parsed_faults.items():
             assert fault.vertices.dtype == np.float32, (
                 f"Fault {fault_id}: vertices dtype should be float32"
             )
@@ -132,11 +156,8 @@ class TestLoadFaultFromOff:
                 f"Fault {fault_id}: triangles dtype should be int32"
             )
 
-    def test_triangle_indices_in_range(self, karst_fault_off_bytes):
-        from geocruncher.karst.input import load_fault_from_off
-
-        for fault_id, off_bytes in karst_fault_off_bytes.items():
-            fault = load_fault_from_off(off_bytes)
+    def test_triangle_indices_in_range(self, parsed_faults):
+        for fault_id, fault in parsed_faults.items():
             assert fault.triangles.min() >= 0
             assert fault.triangles.max() < len(fault.vertices), (
                 f"Fault {fault_id}: triangle index out of vertex range"
@@ -144,80 +165,28 @@ class TestLoadFaultFromOff:
 
 
 class TestBuildKarstContent:
-    def test_surface_data_shape(
-        self,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
-    ):
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karst.input import build_karst_content
+    def test_surface_data_shape(self, karst_content):
+        assert karst_content.surface_data.ndim == 2
+        assert karst_content.surface_data.shape[0] >= 2
+        assert karst_content.surface_data.shape[1] >= 2
 
-        data = KarstNSimData.model_validate(karst_nsim_data_dict)
-        content = build_karst_content(
-            data, karst_dem_bytes, karst_voxels_str, karst_fault_off_bytes
-        )
-        assert content.surface_data.ndim == 2
-        assert content.surface_data.shape[0] >= 2
-        assert content.surface_data.shape[1] >= 2
+    def test_compute_resolution_matches_voxels(self, karst_content, parsed_voxels):
+        header, _ = parsed_voxels
+        assert karst_content.compute_resolution["x"] == header.nx
+        assert karst_content.compute_resolution["y"] == header.ny
+        assert karst_content.compute_resolution["z"] == header.nz
 
-    def test_compute_resolution_matches_voxels(
-        self,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
-    ):
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karst.input import build_karst_content, load_voxels
+    def test_fault_count(self, karst_content, karst_fault_off_bytes):
+        assert len(karst_content.faults) == len(karst_fault_off_bytes)
 
-        data = KarstNSimData.model_validate(karst_nsim_data_dict)
-        content = build_karst_content(
-            data, karst_dem_bytes, karst_voxels_str, karst_fault_off_bytes
-        )
-        header, _ = load_voxels(karst_voxels_str.splitlines())
-        assert content.compute_resolution["x"] == header.nx
-        assert content.compute_resolution["y"] == header.ny
-        assert content.compute_resolution["z"] == header.nz
-
-    def test_fault_count(
-        self,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
-    ):
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karst.input import build_karst_content
-
-        data = KarstNSimData.model_validate(karst_nsim_data_dict)
-        content = build_karst_content(
-            data, karst_dem_bytes, karst_voxels_str, karst_fault_off_bytes
-        )
-        assert len(content.faults) == len(karst_fault_off_bytes)
-
-    def test_surface_resolution_positive(
-        self,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
-    ):
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karst.input import build_karst_content
-
-        data = KarstNSimData.model_validate(karst_nsim_data_dict)
-        content = build_karst_content(
-            data, karst_dem_bytes, karst_voxels_str, karst_fault_off_bytes
-        )
-        assert content.surface_resolution.x > 0
-        assert content.surface_resolution.y > 0
+    def test_surface_resolution_positive(self, karst_content):
+        assert karst_content.surface_resolution.x > 0
+        assert karst_content.surface_resolution.y > 0
 
 
-# ===========================================================================
+########
 # Coordinate tests - ensure all x/y coordinates are in local box coordinates, not absolute coordinates
-# ===========================================================================
+########
 
 
 class TestCoordinates:
