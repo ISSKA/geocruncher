@@ -1,3 +1,5 @@
+# Based on https://github.com/ISSKA/pykarstnsim-demo/blob/main/src/pykarstnsim_demo/models
+
 import enum
 from dataclasses import dataclass
 from typing import Literal

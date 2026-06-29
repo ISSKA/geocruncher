@@ -1,3 +1,6 @@
+# Based on https://github.com/ISSKA/pykarstnsim-demo/blob/main/src/pykarstnsim_demo/vkzipreader.py
+
+
 import logging
 from dataclasses import dataclass
 

@@ -1,3 +1,6 @@
+# Based on https://github.com/ISSKA/pykarstnsim-demo/tree/main/src/pykarstnsim_demo/converters
+
+
 import logging
 from typing import Literal
 
