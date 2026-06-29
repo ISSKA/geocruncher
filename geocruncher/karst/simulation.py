@@ -11,6 +11,13 @@ from geocruncher.computations import KarstNSimData
 from geocruncher.karst.converters import load_project_box, load_sinks, load_water_tables
 from geocruncher.karst.input import build_karst_content
 from geocruncher.karst.output import serialize_output
+from geocruncher.profiler import (
+    PROFILES,
+    ProfilerMetadata,
+    profile_step,
+    set_profiler,
+    start_step,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,7 +27,11 @@ def run_karst_simulation(
     dem_bytes: bytes,
     voxels_str: str,
     fault_off_bytes: dict[int, bytes],
+    metadata: ProfilerMetadata | None = None,
 ) -> bytes:
+    profiler = set_profiler(PROFILES["karstnsim"]).update_metadata(metadata)
+
+    start_step("load_project_data")
     content = build_karst_content(data, dem_bytes, voxels_str, fault_off_bytes)
 
     project_box = load_project_box(
@@ -76,6 +87,9 @@ def run_karst_simulation(
         content.project_box.height / content.compute_resolution["y"],
         content.project_box.depth / content.compute_resolution["z"],
     )
+    profile_step("load_project_data")
+
+    start_step("configuration")
     config = KarstConfig()
     config.karstic_network_name = content.simulation_params.name
     config.selected_seed = content.simulation_params.seed
@@ -100,7 +114,9 @@ def run_karst_simulation(
     config.karstification_potential_weight = 1.0
     config.nb_deadend_points = 0
     config.create_vset_sampling = False
+    profile_step("configuration")
 
+    start_step("run_karst_simulation")
     start = time.time_ns()
     result = run_simulation(
         config,
@@ -116,11 +132,13 @@ def run_karst_simulation(
         raise ValueError("Simulation returned no result")
 
     runtime_s = (time.time_ns() - start) / 1e9
+    profile_step("run_karst_simulation")
     LOGGER.info(
         "Simulation completed in %.2f seconds, %d segments",
         runtime_s,
         len(result.segments),
     )
+    profiler.save_results()
     return serialize_output(
         result, content.simulation_params, content.compute_resolution, runtime_s
     )

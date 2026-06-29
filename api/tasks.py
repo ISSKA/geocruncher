@@ -182,6 +182,8 @@ def compute_karstnsim(
         if k.startswith(b"fault_")
     }
 
-    result_bytes = run_karst_simulation(data, dem_bytes, voxels_str, fault_off_bytes)
+    result_bytes = run_karst_simulation(
+        data, dem_bytes, voxels_str, fault_off_bytes, metadata
+    )
     hset_bytes(r, output_key, "output.txt", result_bytes)
     return output_key
