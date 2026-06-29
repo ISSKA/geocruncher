@@ -1,4 +1,7 @@
 import json
+from unittest.mock import patch
+
+import pytest
 
 import api.tasks as tasks
 from tests.support.api import FakeRedis
@@ -41,6 +44,20 @@ TUNNEL_MESHES_DATA = {
     "tStart": 0.0,
     "tEnd": 1.0,
 }
+
+
+@pytest.fixture
+def redis_with_inputs(
+    karst_dem_bytes,
+    karst_voxels_str,
+    karst_fault_off_bytes,
+):
+    fake_redis = FakeRedis()
+    fake_redis.hset("files_key", "dem", karst_dem_bytes)
+    fake_redis.hset("files_key", "voxels", karst_voxels_str)
+    for fault_id, data in karst_fault_off_bytes.items():
+        fake_redis.hset("files_key", f"fault_{fault_id}", data)
+    return fake_redis
 
 
 ######## Tests ########
@@ -323,3 +340,120 @@ def test_compute_gwb_meshes_reads_unit_meshes_and_writes_metadata_and_meshes(
         b"mesh_0": b"gwb-a",
         b"mesh_1": b"gwb-b",
     }
+
+
+class TestComputeKarstNSimTask:
+    def test_reads_inputs(
+        self,
+        redis_with_inputs,
+        karst_nsim_data_dict,
+        karst_dem_bytes,
+        karst_voxels_str,
+        karst_fault_off_bytes,
+    ):
+        from api.tasks import compute_karstnsim
+        from geocruncher.computations import KarstNSimData
+
+        captured = {}
+
+        def fake_run(data, dem, voxels, faults):
+            captured["dem"] = dem
+            captured["voxels"] = voxels
+            captured["faults"] = faults
+            return b"output"
+
+        with (
+            patch("api.tasks.r", redis_with_inputs),
+            patch(
+                "api.tasks.run_karst_simulation",
+                side_effect=fake_run,
+            ),
+        ):
+            compute_karstnsim(
+                KarstNSimData.model_validate(karst_nsim_data_dict),
+                "files_key",
+                "output_key",
+            )
+
+        assert captured["dem"] == karst_dem_bytes
+        assert captured["voxels"] == karst_voxels_str
+        assert captured["faults"] == karst_fault_off_bytes
+
+    def test_stores_output(
+        self,
+        redis_with_inputs,
+        karst_nsim_data_dict,
+    ):
+        from api.tasks import compute_karstnsim
+        from geocruncher.computations import KarstNSimData
+
+        output = b"# Run info\n{}\n# Data\n"
+
+        with (
+            patch("api.tasks.r", redis_with_inputs),
+            patch(
+                "api.tasks.run_karst_simulation",
+                return_value=output,
+            ),
+        ):
+            key = compute_karstnsim(
+                KarstNSimData.model_validate(karst_nsim_data_dict),
+                "files_key",
+                "output_key",
+            )
+
+        assert key == "output_key"
+        assert redis_with_inputs.hashes["output_key"][b"output.txt"] == output
+
+    def test_deletes_input_hash(
+        self,
+        redis_with_inputs,
+        karst_nsim_data_dict,
+    ):
+        from api.tasks import compute_karstnsim
+        from geocruncher.computations import KarstNSimData
+
+        with (
+            patch("api.tasks.r", redis_with_inputs),
+            patch(
+                "api.tasks.run_karst_simulation",
+                return_value=b"output",
+            ),
+        ):
+            compute_karstnsim(
+                KarstNSimData.model_validate(karst_nsim_data_dict),
+                "files_key",
+                "output_key",
+            )
+
+        assert "files_key" in redis_with_inputs.deleted
+
+    def test_parses_fault_ids(
+        self,
+        redis_with_inputs,
+        karst_nsim_data_dict,
+        karst_fault_off_bytes,
+    ):
+        from api.tasks import compute_karstnsim
+        from geocruncher.computations import KarstNSimData
+
+        captured = {}
+
+        def fake_run(data, dem, voxels, faults):
+            captured.update(faults)
+            return b"output"
+
+        with (
+            patch("api.tasks.r", redis_with_inputs),
+            patch(
+                "api.tasks.run_karst_simulation",
+                side_effect=fake_run,
+            ),
+        ):
+            compute_karstnsim(
+                KarstNSimData.model_validate(karst_nsim_data_dict),
+                "files_key",
+                "output_key",
+            )
+
+        assert captured == karst_fault_off_bytes
