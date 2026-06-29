@@ -92,7 +92,7 @@ class KarstFault:
 
 
 class SimulationParameters(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel)
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
     name: str = "Karst Network"
     seed: int = 42
     k_pts: int = 10
