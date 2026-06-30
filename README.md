@@ -138,7 +138,7 @@ Depending on your needs, we also recommand implementing basic authentification t
 
 ### Citation
 
-If you use this tool in your research, please cite the original KarstNSim publication:
+Geocruncher uses the [KarstNSim](https://github.com/ring-team/KarstNSim_Public) library for karst network simulations, which can be cited as follows:
 
 ```bibtex
 @article{Gouy2024,

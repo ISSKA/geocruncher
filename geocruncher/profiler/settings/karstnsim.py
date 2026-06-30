@@ -8,6 +8,6 @@ PROFILER_KARSTNSIM_V1 = VkProfilerSettings(
     steps=[
         "load_project_data",
         "configuration",
-        "run_karst_simulation",
+        "run_karstnsim",
     ],
 )

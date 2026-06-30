@@ -48,14 +48,14 @@ TUNNEL_MESHES_DATA = {
 
 @pytest.fixture
 def redis_with_inputs(
-    karst_dem_bytes,
-    karst_voxels_str,
-    karst_fault_off_bytes,
+    karstnsim_dem_bytes,
+    karstnsim_voxels_str,
+    karstnsim_fault_bytes,
 ):
     fake_redis = FakeRedis()
-    fake_redis.hset("files_key", "dem", karst_dem_bytes)
-    fake_redis.hset("files_key", "voxels", karst_voxels_str)
-    for fault_id, data in karst_fault_off_bytes.items():
+    fake_redis.hset("files_key", "dem", karstnsim_dem_bytes)
+    fake_redis.hset("files_key", "voxels", karstnsim_voxels_str)
+    for fault_id, data in karstnsim_fault_bytes.items():
         fake_redis.hset("files_key", f"fault_{fault_id}", data)
     return fake_redis
 
@@ -346,10 +346,10 @@ class TestComputeKarstNSimTask:
     def test_reads_inputs(
         self,
         redis_with_inputs,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
+        karstnsim_data_dict,
+        karstnsim_dem_bytes,
+        karstnsim_voxels_str,
+        karstnsim_fault_bytes,
     ):
         from api.tasks import compute_karstnsim
         from geocruncher.computations import KarstNSimData
@@ -365,24 +365,24 @@ class TestComputeKarstNSimTask:
         with (
             patch("api.tasks.r", redis_with_inputs),
             patch(
-                "api.tasks.run_karst_simulation",
+                "api.tasks.run_karstnsim",
                 side_effect=fake_run,
             ),
         ):
             compute_karstnsim(
-                KarstNSimData.model_validate(karst_nsim_data_dict),
+                KarstNSimData.model_validate(karstnsim_data_dict),
                 "files_key",
                 "output_key",
             )
 
-        assert captured["dem"] == karst_dem_bytes
-        assert captured["voxels"] == karst_voxels_str
-        assert captured["faults"] == karst_fault_off_bytes
+        assert captured["dem"] == karstnsim_dem_bytes
+        assert captured["voxels"] == karstnsim_voxels_str
+        assert captured["faults"] == karstnsim_fault_bytes
 
     def test_stores_output(
         self,
         redis_with_inputs,
-        karst_nsim_data_dict,
+        karstnsim_data_dict,
     ):
         from api.tasks import compute_karstnsim
         from geocruncher.computations import KarstNSimData
@@ -392,12 +392,12 @@ class TestComputeKarstNSimTask:
         with (
             patch("api.tasks.r", redis_with_inputs),
             patch(
-                "api.tasks.run_karst_simulation",
+                "api.tasks.run_karstnsim",
                 return_value=output,
             ),
         ):
             key = compute_karstnsim(
-                KarstNSimData.model_validate(karst_nsim_data_dict),
+                KarstNSimData.model_validate(karstnsim_data_dict),
                 "files_key",
                 "output_key",
             )
@@ -408,7 +408,7 @@ class TestComputeKarstNSimTask:
     def test_deletes_input_hash(
         self,
         redis_with_inputs,
-        karst_nsim_data_dict,
+        karstnsim_data_dict,
     ):
         from api.tasks import compute_karstnsim
         from geocruncher.computations import KarstNSimData
@@ -416,12 +416,12 @@ class TestComputeKarstNSimTask:
         with (
             patch("api.tasks.r", redis_with_inputs),
             patch(
-                "api.tasks.run_karst_simulation",
+                "api.tasks.run_karstnsim",
                 return_value=b"output",
             ),
         ):
             compute_karstnsim(
-                KarstNSimData.model_validate(karst_nsim_data_dict),
+                KarstNSimData.model_validate(karstnsim_data_dict),
                 "files_key",
                 "output_key",
             )
@@ -431,8 +431,8 @@ class TestComputeKarstNSimTask:
     def test_parses_fault_ids(
         self,
         redis_with_inputs,
-        karst_nsim_data_dict,
-        karst_fault_off_bytes,
+        karstnsim_data_dict,
+        karstnsim_fault_bytes,
     ):
         from api.tasks import compute_karstnsim
         from geocruncher.computations import KarstNSimData
@@ -446,14 +446,14 @@ class TestComputeKarstNSimTask:
         with (
             patch("api.tasks.r", redis_with_inputs),
             patch(
-                "api.tasks.run_karst_simulation",
+                "api.tasks.run_karstnsim",
                 side_effect=fake_run,
             ),
         ):
             compute_karstnsim(
-                KarstNSimData.model_validate(karst_nsim_data_dict),
+                KarstNSimData.model_validate(karstnsim_data_dict),
                 "files_key",
                 "output_key",
             )
 
-        assert captured == karst_fault_off_bytes
+        assert captured == karstnsim_fault_bytes

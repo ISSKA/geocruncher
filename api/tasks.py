@@ -4,7 +4,7 @@ from collections import defaultdict
 from celery import Task
 
 from geocruncher import computations
-from geocruncher.karst.simulation import run_karst_simulation
+from geocruncher.karstnsim.simulation import run_karstnsim
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
 
@@ -176,14 +176,12 @@ def compute_karstnsim(
 
     dem_bytes = stored[b"dem"]
     voxels_str = stored[b"voxels"].decode("utf-8")
-    fault_off_bytes = {
+    fault_bytes = {
         int(k.decode().split("_")[1]): v
         for k, v in stored.items()
         if k.startswith(b"fault_")
     }
 
-    result_bytes = run_karst_simulation(
-        data, dem_bytes, voxels_str, fault_off_bytes, metadata
-    )
+    result_bytes = run_karstnsim(data, dem_bytes, voxels_str, fault_bytes, metadata)
     hset_bytes(r, output_key, "output.txt", result_bytes)
     return output_key

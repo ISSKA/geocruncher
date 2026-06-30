@@ -11,25 +11,25 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture(scope="module")
 def simulation_result(
-    karst_nsim_data_dict,
-    karst_dem_bytes,
-    karst_voxels_str,
-    karst_fault_off_bytes,
+    karstnsim_data_dict,
+    karstnsim_dem_bytes,
+    karstnsim_voxels_str,
+    karstnsim_fault_bytes,
 ):
     from geocruncher.computations import KarstNSimData
-    from geocruncher.karst.simulation import run_karst_simulation
+    from geocruncher.karstnsim.simulation import run_karstnsim
 
-    data = KarstNSimData.model_validate(karst_nsim_data_dict)
+    data = KarstNSimData.model_validate(karstnsim_data_dict)
 
-    return run_karst_simulation(
+    return run_karstnsim(
         data,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
+        karstnsim_dem_bytes,
+        karstnsim_voxels_str,
+        karstnsim_fault_bytes,
     )
 
 
-class TestKarstSimulationOutput:
+class TestKarstNSimOutput:
     def test_returns_bytes(self, simulation_result, tmp_path):
         assert simulation_result
 
@@ -45,9 +45,9 @@ class TestKarstSimulationOutput:
     def test_output_metadata_json(
         self,
         simulation_result,
-        karst_voxels_str,
+        karstnsim_voxels_str,
     ):
-        from geocruncher.karst.input import load_voxels
+        from geocruncher.karstnsim.input import load_voxels
 
         text = simulation_result.decode()
         info = text.split("# Run info\n")[1].split("\n# Data")[0]
@@ -59,7 +59,7 @@ class TestKarstSimulationOutput:
         assert metadata["generationDurationS"] > 0
         assert "generationTime" in metadata
 
-        header, _ = load_voxels(karst_voxels_str.splitlines())
+        header, _ = load_voxels(karstnsim_voxels_str.splitlines())
         assert metadata["computeResolution"] == {
             "x": header.nx,
             "y": header.ny,
@@ -68,22 +68,22 @@ class TestKarstSimulationOutput:
 
     def test_invalid_spring_raises_value_error(
         self,
-        karst_nsim_data_dict,
-        karst_dem_bytes,
-        karst_voxels_str,
-        karst_fault_off_bytes,
+        karstnsim_data_dict,
+        karstnsim_dem_bytes,
+        karstnsim_voxels_str,
+        karstnsim_fault_bytes,
     ):
         from geocruncher.computations import KarstNSimData
-        from geocruncher.karst.simulation import run_karst_simulation
+        from geocruncher.karstnsim.simulation import run_karstnsim
 
-        broken = KarstNSimData.model_validate({**karst_nsim_data_dict, "gwbs": []})
+        broken = KarstNSimData.model_validate({**karstnsim_data_dict, "gwbs": []})
 
         with pytest.raises(ValueError, match="groundwater body"):
-            run_karst_simulation(
+            run_karstnsim(
                 broken,
-                karst_dem_bytes,
-                karst_voxels_str,
-                karst_fault_off_bytes,
+                karstnsim_dem_bytes,
+                karstnsim_voxels_str,
+                karstnsim_fault_bytes,
             )
 
     def test_matches_control_output(self, simulation_result, control_output):

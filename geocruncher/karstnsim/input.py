@@ -7,15 +7,15 @@ from dataclasses import dataclass
 import numpy as np
 
 from geocruncher.computations import KarstNSimData, Vec3Int
-from geocruncher.karst.models import (
-    KarstDemResolution,
-    KarstFault,
-    KarstGroundwaterBody,
-    KarstProjectBox,
-    KarstSpring,
-    KarstStratigraphy,
-    KarstVoxelsHeader,
-    KarstVoxelsUnits,
+from geocruncher.karstnsim.models import (
+    KarstNSimDemResolution,
+    KarstNSimFault,
+    KarstNSimGroundwaterBody,
+    KarstNSimProjectBox,
+    KarstNSimSpring,
+    KarstNSimStratigraphy,
+    KarstNSimVoxelsHeader,
+    KarstNSimVoxelsUnits,
     Point2D,
     SimulationParameters,
 )
@@ -24,26 +24,26 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class KarstContent:
+class KarstNSimContent:
     """Replaces VkZipContent — holds all parsed simulation inputs"""
 
     simulation_params: SimulationParameters
-    project_box: KarstProjectBox
-    dem_resolution: KarstDemResolution
+    project_box: KarstNSimProjectBox
+    dem_resolution: KarstNSimDemResolution
     surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
-    stratigraphy: KarstStratigraphy
+    stratigraphy: KarstNSimStratigraphy
     compute_resolution: Vec3Int
-    voxels_header: KarstVoxelsHeader
+    voxels_header: KarstNSimVoxelsHeader
     voxels: np.ndarray  # shape (nx, ny, nz, 2)
-    voxels_units: KarstVoxelsUnits
-    faults: list[KarstFault]
-    springs: list[KarstSpring]
-    gwbs: list[KarstGroundwaterBody]
+    voxels_units: KarstNSimVoxelsUnits
+    faults: list[KarstNSimFault]
+    springs: list[KarstNSimSpring]
+    gwbs: list[KarstNSimGroundwaterBody]
     surface_resolution: Point2D
-    resampled_dem_resolution: KarstDemResolution
+    resampled_dem_resolution: KarstNSimDemResolution
 
 
-def load_voxels(voxels_lines: list[str]) -> tuple[KarstVoxelsHeader, np.ndarray]:
+def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndarray]:
     """Load voxel grid and return as ndarray of shape (nx, ny, nz, 2) where last dimension is (rank, gwb_id)"""
     # file has 3 lines:
     # format is:
@@ -69,7 +69,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstVoxelsHeader, np.ndarray]
         raise ValueError(
             f"Voxel count mismatch: header says {expected_n_voxels}, but found {actual_n_voxels} data lines"
         )
-    header = KarstVoxelsHeader(
+    header = KarstNSimVoxelsHeader(
         xmin=xmin,
         xmax=xmax,
         ymin=ymin,
@@ -104,7 +104,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstVoxelsHeader, np.ndarray]
     return (header, voxels)
 
 
-def load_fault(fault_bytes: bytes) -> KarstFault:
+def load_fault(fault_bytes: bytes) -> KarstNSimFault:
     # faults are packed as follows:
     # - int32: number of vertices (N)
     # - float32[3*N]: vertex positions (x1, y1, z1, x2, y2, z2, ..., xN, yN, zN)
@@ -127,14 +127,14 @@ def load_fault(fault_bytes: bytes) -> KarstFault:
     if offset != len(data):
         raise ValueError("Malformed fault file, extra data at the end")
     LOGGER.info(f"Loaded fault with {n_vertices} vertices and {n_triangles} triangles")
-    return KarstFault(vertices=vertices, triangles=triangles)
+    return KarstNSimFault(vertices=vertices, triangles=triangles)
 
 
-def load_fault_from_off(off_bytes: bytes) -> KarstFault:
-    """Parse an OFF mesh into a KarstFault.
+def load_fault_from_off(bytes: bytes) -> KarstNSimFault:
+    """Parse an OFF mesh into a KarstNSimFault.
     Replaces load_fault() which parsed the custom Angular binary format.
     OFF format: header, then 'n_verts n_faces n_edges', then xyz lines, then face lines."""
-    lines = off_bytes.decode("utf-8").splitlines()
+    lines = bytes.decode("utf-8").splitlines()
     # skip "OFF" header line
     start = 1 if lines[0].strip() == "OFF" else 0
     n_verts, n_faces, _ = map(int, lines[start].split())
@@ -152,15 +152,15 @@ def load_fault_from_off(off_bytes: bytes) -> KarstFault:
     LOGGER.info(
         f"Loaded fault with {n_verts} vertices and {n_faces} triangles from OFF"
     )
-    return KarstFault(vertices=vertices, triangles=triangles)
+    return KarstNSimFault(vertices=vertices, triangles=triangles)
 
 
-def build_karst_content(
+def build_karstnsim_content(
     data: "KarstNSimData",
     dem_bytes: bytes,
     voxels_str: str,
-    fault_off_bytes: dict[int, bytes],
-) -> KarstContent:
+    fault_bytes: dict[int, bytes],
+) -> KarstNSimContent:
     # dem: same logic as read_zip
     surface_data = np.frombuffer(dem_bytes, dtype=np.float32)
     surface_data = surface_data.reshape(
@@ -186,22 +186,22 @@ def build_karst_content(
         x=data.project_box.width / (surface_data.shape[1] - 1),
         y=data.project_box.height / (surface_data.shape[0] - 1),
     )
-    resampled_dem_resolution = KarstDemResolution(
+    resampled_dem_resolution = KarstNSimDemResolution(
         n_cols=surface_data.shape[1],
         n_rows=surface_data.shape[0],
     )
-    faults = [load_fault_from_off(off_bytes) for off_bytes in fault_off_bytes.values()]
+    faults = [load_fault_from_off(bytes) for bytes in fault_bytes.values()]
 
-    return KarstContent(
+    return KarstNSimContent(
         simulation_params=data.simulation_params,
         project_box=data.project_box,
         dem_resolution=data.dem_resolution,
         surface_data=surface_data,
-        stratigraphy=KarstStratigraphy(data.stratigraphy),
+        stratigraphy=KarstNSimStratigraphy(data.stratigraphy),
         compute_resolution=compute_resolution,
         voxels_header=voxels_header,
         voxels=voxels,
-        voxels_units=KarstVoxelsUnits(data.voxels_units),
+        voxels_units=KarstNSimVoxelsUnits(data.voxels_units),
         faults=faults,
         springs=data.springs,
         gwbs=data.gwbs,

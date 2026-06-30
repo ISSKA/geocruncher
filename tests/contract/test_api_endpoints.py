@@ -69,18 +69,18 @@ def fake_redis(monkeypatch):
 
 @pytest.fixture
 def form_data(
-    karst_nsim_data_dict,
-    karst_dem_bytes,
-    karst_voxels_str,
-    karst_fault_off_bytes,
+    karstnsim_data_dict,
+    karstnsim_dem_bytes,
+    karstnsim_voxels_str,
+    karstnsim_fault_bytes,
 ):
     return multipart_with_files(
-        karst_nsim_data_dict,
-        dem=karst_dem_bytes,
-        voxels=karst_voxels_str.encode(),
+        karstnsim_data_dict,
+        dem=karstnsim_dem_bytes,
+        voxels=karstnsim_voxels_str.encode(),
         **{
             f"fault_{fault_id}": data
-            for fault_id, data in karst_fault_off_bytes.items()
+            for fault_id, data in karstnsim_fault_bytes.items()
         },
     )
 
@@ -516,10 +516,10 @@ class TestPostKarstNSim:
         self,
         client,
         payload,
-        karst_dem_bytes,
+        karstnsim_dem_bytes,
     ):
         if payload:
-            payload["dem"] = (BytesIO(karst_dem_bytes), "dem.bin")
+            payload["dem"] = (BytesIO(karstnsim_dem_bytes), "dem.bin")
 
         response = client.post(
             "/compute/karstnsim",
@@ -530,7 +530,7 @@ class TestPostKarstNSim:
         assert response.status_code == 400
 
     def test_stores_uploaded_files(
-        self, monkeypatch, client, form_data, karst_fault_off_bytes, fake_redis
+        self, monkeypatch, client, form_data, karstnsim_fault_bytes, fake_redis
     ):
         import api.api as api
 
@@ -550,7 +550,7 @@ class TestPostKarstNSim:
 
         assert b"dem" in stored
         assert b"voxels" in stored
-        for fault_id in karst_fault_off_bytes:
+        for fault_id in karstnsim_fault_bytes:
             assert f"fault_{fault_id}".encode() in stored
 
 
@@ -600,7 +600,7 @@ class TestGetKarstNSim:
         assert response.status_code == 400
 
 
-class TestPollKarstJob:
+class TestPollKarstNSimJob:
     def test_returns_null_progress(
         self,
         monkeypatch,

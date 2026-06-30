@@ -15,30 +15,30 @@ from pykarstnsim.models import (
 from shapely import Point, Polygon
 
 from geocruncher.computations import Vec3Int
-from geocruncher.karst.models import (
+from geocruncher.karstnsim.models import (
     PERMEABILITY_MAP,
-    KarstDemResolution,
-    KarstGeologicalUnit,
-    KarstProjectBox,
-    KarstSpring,
-    KarstStratigraphy,
+    KarstNSimDemResolution,
+    KarstNSimGeologicalUnit,
+    KarstNSimProjectBox,
+    KarstNSimSpring,
+    KarstNSimStratigraphy,
     Permeability,
     Point2D,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-SKY = KarstGeologicalUnit(
+SKY = KarstNSimGeologicalUnit(
     name="Sky", permeability=Permeability.NonKarstified, strati_unit_id=0
 )
-DUMMY = KarstGeologicalUnit(
+DUMMY = KarstNSimGeologicalUnit(
     name="Dummy", permeability=Permeability.Undefined, strati_unit_id=0
 )
 
 
 def load_project_box(
-    box: KarstProjectBox,
-    stratigraphy: KarstStratigraphy,
+    box: KarstNSimProjectBox,
+    stratigraphy: KarstNSimStratigraphy,
     compute_resolution: Vec3Int,
     voxels: np.ndarray,
     voxels_units: list[int],
@@ -71,7 +71,7 @@ def load_project_box(
     # TODO make it work for not base projects
     is_base = False
 
-    rank_to_unit: dict[int, KarstGeologicalUnit] = {}
+    rank_to_unit: dict[int, KarstNSimGeologicalUnit] = {}
 
     j = 0
     for unit_id in voxels_units:
@@ -154,8 +154,8 @@ def load_project_box(
 
 def load_sinks(
     n_sinks: int,
-    springs: list[KarstSpring],
-    dem_resolution: KarstDemResolution,
+    springs: list[KarstNSimSpring],
+    dem_resolution: KarstNSimDemResolution,
     surface_resolution: Point2D,
     surface_data: np.ndarray,
     rng: np.random.Generator,
@@ -277,7 +277,7 @@ def load_sinks(
 
 def load_water_tables(
     voxels: np.ndarray,
-    project_box: KarstProjectBox,
+    project_box: KarstNSimProjectBox,
 ) -> dict[int, Surface]:
     """Build a triangulated water-table surface for each groundwater body present in the voxels."""
 

@@ -7,12 +7,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from tests.conftest import KARST_DATA_ZIP
+from tests.conftest import KARSTNSIM_DATA_ZIP
 
 
 @pytest.fixture(scope="session")
 def control_zip():
-    with zipfile.ZipFile(KARST_DATA_ZIP, "r") as zf:
+    with zipfile.ZipFile(KARSTNSIM_DATA_ZIP, "r") as zf:
         yield zf
 
 
@@ -145,17 +145,17 @@ def fault_bin_to_off(bin_bytes: bytes) -> bytes:
 
 
 @pytest.fixture(scope="session")
-def karst_dem_bytes(control_zip) -> bytes:
+def karstnsim_dem_bytes(control_zip) -> bytes:
     return _read(control_zip, "dem_values.bin")
 
 
 @pytest.fixture(scope="session")
-def karst_voxels_str(control_zip) -> str:
+def karstnsim_voxels_str(control_zip) -> str:
     return _read_text(control_zip, "voxels.txt")
 
 
 @pytest.fixture(scope="session")
-def karst_fault_off_bytes(control_zip) -> dict[int, bytes]:
+def karstnsim_fault_bytes(control_zip) -> dict[int, bytes]:
     """Dict of fault_id -> OFF bytes."""
     result = {}
 
@@ -169,7 +169,7 @@ def karst_fault_off_bytes(control_zip) -> dict[int, bytes]:
 
 
 @pytest.fixture(scope="session")
-def karst_nsim_data_dict(control_zip, karst_voxels_str) -> dict:
+def karstnsim_data_dict(control_zip, karstnsim_voxels_str) -> dict:
     """The JSON body that Spring would POST to /compute/karstnsim."""
 
     config = json.loads(_read_text(control_zip, "config.json"))
@@ -179,7 +179,7 @@ def karst_nsim_data_dict(control_zip, karst_voxels_str) -> dict:
     vox_units = json.loads(_read_text(control_zip, "voxels_units.json"))
 
     # Parse voxels header
-    header_line = karst_voxels_str.splitlines()[0]
+    header_line = karstnsim_voxels_str.splitlines()[0]
     parts = dict(p.split("=") for p in header_line.split())
 
     voxels_header = {

@@ -11,13 +11,13 @@ import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from pydantic import BaseModel
 
-from geocruncher.karst.models import (
-    KarstDemResolution,
-    KarstGeologicalUnit,
-    KarstGroundwaterBody,
-    KarstProjectBox,
-    KarstSpring,
-    KarstVoxelsHeader,
+from geocruncher.karstnsim.models import (
+    KarstNSimDemResolution,
+    KarstNSimGeologicalUnit,
+    KarstNSimGroundwaterBody,
+    KarstNSimProjectBox,
+    KarstNSimSpring,
+    KarstNSimVoxelsHeader,
     SimulationParameters,
 )
 from geocruncher.profiler.profiler import start_step
@@ -581,11 +581,11 @@ class KarstNSimData(BaseModel):
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 
     simulation_params: SimulationParameters
-    project_box: KarstProjectBox
-    dem_resolution: KarstDemResolution
-    stratigraphy: list[KarstGeologicalUnit]
-    voxels_header: KarstVoxelsHeader
+    project_box: KarstNSimProjectBox
+    dem_resolution: KarstNSimDemResolution
+    stratigraphy: list[KarstNSimGeologicalUnit]
+    voxels_header: KarstNSimVoxelsHeader
     voxels_units: list[int]
     fault_ids: list[int]
-    springs: list[KarstSpring]
-    gwbs: list[KarstGroundwaterBody]
+    springs: list[KarstNSimSpring]
+    gwbs: list[KarstNSimGroundwaterBody]

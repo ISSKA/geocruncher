@@ -10,17 +10,17 @@ os.environ.setdefault("REDIS_HOST", "localhost")
 
 TESTS_DIR = Path(__file__).parent
 
-KARST_DATA_ZIP = Path(
+KARSTNSIM_DATA_ZIP = Path(
     os.environ.get(
-        "KARST_DATA_ZIP",
+        "KARSTNSIM_DATA_ZIP",
         TESTS_DIR / "fixtures" / "control_project.zip",
     )
 )
 
 
 @pytest.fixture(scope="session")
-def karst_zip():
-    with zipfile.ZipFile(KARST_DATA_ZIP, "r") as zf:
+def karstnsim_zip():
+    with zipfile.ZipFile(KARSTNSIM_DATA_ZIP, "r") as zf:
         yield zf
 
 
@@ -83,41 +83,41 @@ def fault_bin_to_off(bin_bytes: bytes) -> bytes:
 
 
 @pytest.fixture(scope="session")
-def karst_dem_bytes(karst_zip) -> bytes:
-    return _read(karst_zip, "dem_values.bin")
+def karstnsim_dem_bytes(karstnsim_zip) -> bytes:
+    return _read(karstnsim_zip, "dem_values.bin")
 
 
 @pytest.fixture(scope="session")
-def karst_voxels_str(karst_zip) -> str:
-    return _read_text(karst_zip, "voxels.txt")
+def karstnsim_voxels_str(karstnsim_zip) -> str:
+    return _read_text(karstnsim_zip, "voxels.txt")
 
 
 @pytest.fixture(scope="session")
-def karst_fault_off_bytes(karst_zip) -> dict[int, bytes]:
+def karstnsim_fault_bytes(karstnsim_zip) -> dict[int, bytes]:
     """Dict of fault_id -> OFF bytes."""
     result = {}
 
-    for name in sorted(karst_zip.namelist()):
+    for name in sorted(karstnsim_zip.namelist()):
         if name.startswith("fault_") and name.endswith(".bin"):
             fault_id = int(Path(name).stem.split("_")[1])
-            result[fault_id] = fault_bin_to_off(_read(karst_zip, name))
+            result[fault_id] = fault_bin_to_off(_read(karstnsim_zip, name))
 
     assert result, "No fault_*.bin files found in zip"
     return result
 
 
 @pytest.fixture(scope="session")
-def karst_nsim_data_dict(karst_zip, karst_voxels_str) -> dict:
+def karstnsim_data_dict(karstnsim_zip, karstnsim_voxels_str) -> dict:
     """The JSON body that Spring would POST to /compute/karstnsim."""
 
-    config = json.loads(_read_text(karst_zip, "config.json"))
-    project_box = json.loads(_read_text(karst_zip, "project_box.json"))
-    dem_res = json.loads(_read_text(karst_zip, "dem_resolution.json"))
-    stratigraphy = json.loads(_read_text(karst_zip, "stratigraphy.json"))
-    vox_units = json.loads(_read_text(karst_zip, "voxels_units.json"))
+    config = json.loads(_read_text(karstnsim_zip, "config.json"))
+    project_box = json.loads(_read_text(karstnsim_zip, "project_box.json"))
+    dem_res = json.loads(_read_text(karstnsim_zip, "dem_resolution.json"))
+    stratigraphy = json.loads(_read_text(karstnsim_zip, "stratigraphy.json"))
+    vox_units = json.loads(_read_text(karstnsim_zip, "voxels_units.json"))
 
     # Parse voxels header
-    header_line = karst_voxels_str.splitlines()[0]
+    header_line = karstnsim_voxels_str.splitlines()[0]
     parts = dict(p.split("=") for p in header_line.split())
 
     voxels_header = {
@@ -134,20 +134,20 @@ def karst_nsim_data_dict(karst_zip, karst_voxels_str) -> dict:
     }
 
     gwbs = [
-        json.loads(_read_text(karst_zip, name))
-        for name in sorted(karst_zip.namelist())
+        json.loads(_read_text(karstnsim_zip, name))
+        for name in sorted(karstnsim_zip.namelist())
         if name.startswith("gwb_") and name.endswith(".json")
     ]
 
     springs = [
-        json.loads(_read_text(karst_zip, name))
-        for name in sorted(karst_zip.namelist())
+        json.loads(_read_text(karstnsim_zip, name))
+        for name in sorted(karstnsim_zip.namelist())
         if name.startswith("poi_") and name.endswith(".json")
     ]
 
     fault_ids = [
         int(Path(name).stem.split("_")[1])
-        for name in sorted(karst_zip.namelist())
+        for name in sorted(karstnsim_zip.namelist())
         if name.startswith("fault_") and name.endswith(".bin")
     ]
 

@@ -4,7 +4,7 @@ from datetime import datetime
 from pykarstnsim.models import KarstNSimResult
 
 from geocruncher.computations import Vec3Int
-from geocruncher.karst.models import SimulationParameters
+from geocruncher.karstnsim.models import SimulationParameters
 
 
 def serialize_output(

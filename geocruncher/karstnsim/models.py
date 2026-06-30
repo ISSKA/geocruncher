@@ -33,7 +33,7 @@ class Point3D(Point2D):
     z: float
 
 
-class KarstProjectBox(BaseModel):
+class KarstNSimProjectBox(BaseModel):
     width: float
     height: float
     min_elevation: float
@@ -44,29 +44,29 @@ class KarstProjectBox(BaseModel):
         return self.max_elevation - self.min_elevation
 
 
-class KarstDemResolution(BaseModel):
+class KarstNSimDemResolution(BaseModel):
     n_cols: int
     n_rows: int
 
 
-class KarstGeologicalUnit(BaseModel):
+class KarstNSimGeologicalUnit(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, validate_by_name=True)
     name: str
     permeability: Permeability
     strati_unit_id: int
 
 
-KarstStratigraphy = RootModel[list[KarstGeologicalUnit]]
+KarstNSimStratigraphy = RootModel[list[KarstNSimGeologicalUnit]]
 
 
-class KarstSpring(Point3D):
+class KarstNSimSpring(Point3D):
     """Spring as received from the API — distinct from computations.Spring (gwb meshes)"""
 
     poi_id: int
     catchment: list[tuple[float, float]]
 
 
-class KarstVoxelsHeader(BaseModel):
+class KarstNSimVoxelsHeader(BaseModel):
     xmin: float
     xmax: float
     ymin: float
@@ -79,16 +79,16 @@ class KarstVoxelsHeader(BaseModel):
     novalue: int
 
 
-KarstVoxelsUnits = RootModel[list[int]]
+KarstNSimVoxelsUnits = RootModel[list[int]]
 
 
-class KarstGroundwaterBody(BaseModel):
+class KarstNSimGroundwaterBody(BaseModel):
     gwb_id: int
     spring_id: int
 
 
 @dataclass
-class KarstFault:
+class KarstNSimFault:
     vertices: np.ndarray  # shape (n, 3), float32
     triangles: np.ndarray  # shape (m, 3), int32
 

@@ -833,10 +833,10 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
 
 
 class TestKarstNSimDataContract:
-    def test_required_top_level_fields(self, karst_nsim_data_dict):
+    def test_required_top_level_fields(self, karstnsim_data_dict):
         from geocruncher.computations import KarstNSimData
 
-        data = KarstNSimData.model_validate(karst_nsim_data_dict)
+        data = KarstNSimData.model_validate(karstnsim_data_dict)
         # all fields must be present and non-empty
         assert data.simulation_params is not None
         assert data.project_box is not None
