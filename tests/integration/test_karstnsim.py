@@ -30,11 +30,10 @@ def simulation_result(
 
 
 class TestKarstNSimOutput:
-    def test_returns_bytes(self, simulation_result, tmp_path):
+    def test_returns_bytes(self, simulation_result):
         assert simulation_result
 
         assert isinstance(simulation_result, bytes)
-        (tmp_path / "output.txt").write_bytes(simulation_result)
 
     def test_output_structure(self, simulation_result):
         text = simulation_result.decode()

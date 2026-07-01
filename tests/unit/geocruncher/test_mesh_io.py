@@ -19,12 +19,12 @@ def test_generate_off_and_read_off_roundtrip_triangular_mesh():
     mesh = read_off(off)
 
     np.testing.assert_allclose(
-        mesh.points,
+        mesh.vertices,
         np.array([[0, 0, 0], [1.23, 0, 0], [0, 1, 0]], dtype=float),
     )
-    assert len(mesh.cells) == 1
-    assert mesh.cells[0].type == "triangle"
-    np.testing.assert_array_equal(mesh.cells[0].data, np.array([[0, 1, 2]]))
+    assert len(mesh.triangles) == 1
+    assert mesh.triangles.shape[1] == 3
+    np.testing.assert_array_equal(mesh.triangles[0], np.array([0, 1, 2]))
 
 
 def test_read_off_ignores_blank_lines_and_comments_before_counts_and_vertices():
@@ -44,7 +44,7 @@ def test_read_off_ignores_blank_lines_and_comments_before_counts_and_vertices():
 
     mesh = read_off(off)
 
-    np.testing.assert_array_equal(mesh.cells[0].data, np.array([[0, 1, 2]]))
+    np.testing.assert_array_equal(mesh.triangles[0], np.array([0, 1, 2]))
 
 
 def test_read_off_rejects_invalid_header():
@@ -98,26 +98,16 @@ def test_generate_mesh_dispatches_to_draco_by_default(monkeypatch):
     assert mesh_io.generate_mesh(np.array([[0, 0, 0]]), [[0, 0, 0]]) == b"draco"
 
 
-def test_read_mesh_to_polydata_reads_off_bytes(monkeypatch):
+def test_read_mesh_reads_off_bytes(monkeypatch):
     sentinel_mesh = object()
-    sentinel_polydata = object()
-
-    class FakePyVistaMesh:
-        def extract_geometry(self):
-            return sentinel_polydata
 
     def fake_read_off(mesh):
         assert mesh.startswith("OFF\n")
         return sentinel_mesh
 
-    def fake_from_meshio(mesh):
-        assert mesh is sentinel_mesh
-        return FakePyVistaMesh()
-
     monkeypatch.setattr(mesh_io, "read_off", fake_read_off)
-    monkeypatch.setattr(mesh_io.pv, "from_meshio", fake_from_meshio)
 
-    assert mesh_io.read_mesh_to_polydata(b"OFF\n0 0 0\n") is sentinel_polydata
+    assert mesh_io.read_mesh(b"OFF\n0 0 0\n") is sentinel_mesh
 
 
 def test_read_mesh_to_polydata_wraps_off_errors():
@@ -127,26 +117,26 @@ def test_read_mesh_to_polydata_wraps_off_errors():
     assert exc_info.value.__cause__ is not None
 
 
-def test_read_mesh_to_polydata_dispatches_draco_bytes(monkeypatch):
-    sentinel_polydata = object()
+def test_read_mesh_dispatches_draco_bytes(monkeypatch):
+    sentinel_mesh = object()
 
-    def fake_read_draco_to_polydata(data):
+    def fake_read_draco(data):
         assert data == b"not-off"
-        return sentinel_polydata
+        return sentinel_mesh
 
-    monkeypatch.setattr(mesh_io, "read_draco_to_polydata", fake_read_draco_to_polydata)
+    monkeypatch.setattr(mesh_io, "read_draco", fake_read_draco)
 
-    assert mesh_io.read_mesh_to_polydata(b"not-off") is sentinel_polydata
+    assert mesh_io.read_mesh(b"not-off") is sentinel_mesh
 
 
-def test_read_mesh_to_polydata_wraps_draco_errors(monkeypatch):
-    def fake_read_draco_to_polydata(data):
+def test_read_mesh_wraps_draco_errors(monkeypatch):
+    def fake_read_draco(data):
         raise RuntimeError("decode failed")
 
-    monkeypatch.setattr(mesh_io, "read_draco_to_polydata", fake_read_draco_to_polydata)
+    monkeypatch.setattr(mesh_io, "read_draco", fake_read_draco)
 
     with pytest.raises(ValueError, match="Invalid Draco file") as exc_info:
-        mesh_io.read_mesh_to_polydata(b"not-off")
+        mesh_io.read_mesh(b"not-off")
 
     assert isinstance(exc_info.value.__cause__, RuntimeError)
 

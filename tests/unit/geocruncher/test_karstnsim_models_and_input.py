@@ -31,11 +31,10 @@ def parsed_voxels(karstnsim_voxels_str):
 
 @pytest.fixture(scope="session")
 def parsed_faults(karstnsim_fault_bytes):
-    from geocruncher.karstnsim.input import load_fault_from_off
+    from geocruncher.karstnsim.input import load_fault
 
     return {
-        fault_id: load_fault_from_off(bytes)
-        for fault_id, bytes in karstnsim_fault_bytes.items()
+        fault_id: load_fault(bytes) for fault_id, bytes in karstnsim_fault_bytes.items()
     }
 
 
@@ -149,8 +148,8 @@ class TestLoadFaultFromOff:
 
     def test_dtypes(self, parsed_faults):
         for fault_id, fault in parsed_faults.items():
-            assert fault.vertices.dtype == np.float32, (
-                f"Fault {fault_id}: vertices dtype should be float32"
+            assert fault.vertices.dtype == np.float64, (
+                f"Fault {fault_id}: vertices dtype should be float64"
             )
             assert fault.triangles.dtype == np.int32, (
                 f"Fault {fault_id}: triangles dtype should be int32"
@@ -222,13 +221,13 @@ class TestCoordinates:
     ):
         """Fault vertex x/y must be in local box coordinates."""
         from geocruncher.computations import KarstNSimData
-        from geocruncher.karstnsim.input import load_fault_from_off
+        from geocruncher.karstnsim.input import load_fault
 
         data = KarstNSimData.model_validate(karstnsim_data_dict)
         box = data.project_box
-        eps = 0.1  # float32 rounding tolerance
+        eps = 0.1  # float rounding tolerance
         for fault_id, bytes in karstnsim_fault_bytes.items():
-            fault = load_fault_from_off(bytes)
+            fault = load_fault(bytes)
             xs, ys = fault.vertices[:, 0], fault.vertices[:, 1]
             assert xs.min() >= -eps and xs.max() <= box.width + eps, (
                 f"Fault {fault_id} x [{xs.min():.3f}, {xs.max():.3f}] outside [0, {box.width:.1f}]"

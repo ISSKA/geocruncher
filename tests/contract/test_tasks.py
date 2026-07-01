@@ -356,7 +356,7 @@ class TestComputeKarstNSimTask:
 
         captured = {}
 
-        def fake_run(data, dem, voxels, faults):
+        def fake_run(data, dem, voxels, faults, metadata):
             captured["dem"] = dem
             captured["voxels"] = voxels
             captured["faults"] = faults
@@ -439,7 +439,7 @@ class TestComputeKarstNSimTask:
 
         captured = {}
 
-        def fake_run(data, dem, voxels, faults):
+        def fake_run(data, dem, voxels, faults, metadata):
             captured.update(faults)
             return b"output"
 

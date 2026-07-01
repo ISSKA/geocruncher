@@ -9,7 +9,6 @@ import numpy as np
 from geocruncher.computations import KarstNSimData, Vec3Int
 from geocruncher.karstnsim.models import (
     KarstNSimDemResolution,
-    KarstNSimFault,
     KarstNSimGroundwaterBody,
     KarstNSimProjectBox,
     KarstNSimSpring,
@@ -19,6 +18,8 @@ from geocruncher.karstnsim.models import (
     Point2D,
     SimulationParameters,
 )
+from geocruncher.mesh_io.mesh_io import read_mesh
+from geocruncher.mesh_io.triangle_mesh import TriangleMesh
 
 LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class KarstNSimContent:
     voxels_header: KarstNSimVoxelsHeader
     voxels: np.ndarray  # shape (nx, ny, nz, 2)
     voxels_units: KarstNSimVoxelsUnits
-    faults: list[KarstNSimFault]
+    faults: list[TriangleMesh]
     springs: list[KarstNSimSpring]
     gwbs: list[KarstNSimGroundwaterBody]
     surface_resolution: Point2D
@@ -104,55 +105,15 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndar
     return (header, voxels)
 
 
-def load_fault(fault_bytes: bytes) -> KarstNSimFault:
-    # faults are packed as follows:
-    # - int32: number of vertices (N)
-    # - float32[3*N]: vertex positions (x1, y1, z1, x2, y2, z2, ..., xN, yN, zN)
-    # - int32: number of triangles (M)
-    # - int32[3*M]: triangle indices (i1_1, i1_2, i1_3, i2_1, i2_2, i2_3, ..., iM_1, iM_2, iM_3)
-    data = np.frombuffer(fault_bytes, dtype=np.uint8)
-    offset = 0
-    n_vertices = int(np.frombuffer(data[offset : offset + 4], dtype=np.int32)[0])
-    offset += 4
-    vertices = np.frombuffer(
-        data[offset : offset + 4 * 3 * n_vertices], dtype=np.float32
-    ).reshape((n_vertices, 3))
-    offset += 4 * 3 * n_vertices
-    n_triangles = int(np.frombuffer(data[offset : offset + 4], dtype=np.int32)[0])
-    offset += 4
-    triangles = np.frombuffer(
-        data[offset : offset + 4 * 3 * n_triangles], dtype=np.int32
-    ).reshape((n_triangles, 3))
-    offset += 4 * 3 * n_triangles
-    if offset != len(data):
-        raise ValueError("Malformed fault file, extra data at the end")
-    LOGGER.info(f"Loaded fault with {n_vertices} vertices and {n_triangles} triangles")
-    return KarstNSimFault(vertices=vertices, triangles=triangles)
-
-
-def load_fault_from_off(bytes: bytes) -> KarstNSimFault:
-    """Parse an OFF mesh into a KarstNSimFault.
-    Replaces load_fault() which parsed the custom Angular binary format.
-    OFF format: header, then 'n_verts n_faces n_edges', then xyz lines, then face lines."""
-    lines = bytes.decode("utf-8").splitlines()
-    # skip "OFF" header line
-    start = 1 if lines[0].strip() == "OFF" else 0
-    n_verts, n_faces, _ = map(int, lines[start].split())
-    vertices = np.array(
-        [list(map(float, lines[start + 1 + i].split())) for i in range(n_verts)],
-        dtype=np.float32,
-    )
-    triangles = np.array(
-        [
-            list(map(int, lines[start + 1 + n_verts + i].split()))[1:]
-            for i in range(n_faces)
-        ],
-        dtype=np.int32,
-    )
+def load_fault(fault_bytes: bytes) -> TriangleMesh:
+    """Read a fault mesh from either OFF or Draco bytes into a TriangleMesh."""
+    mesh = read_mesh(fault_bytes)
     LOGGER.info(
-        f"Loaded fault with {n_verts} vertices and {n_faces} triangles from OFF"
+        "Loaded fault: %d vertices, %d triangles",
+        len(mesh.vertices),
+        len(mesh.triangles),
     )
-    return KarstNSimFault(vertices=vertices, triangles=triangles)
+    return mesh
 
 
 def build_karstnsim_content(
@@ -190,7 +151,7 @@ def build_karstnsim_content(
         n_cols=surface_data.shape[1],
         n_rows=surface_data.shape[0],
     )
-    faults = [load_fault_from_off(bytes) for bytes in fault_bytes.values()]
+    faults = [load_fault(bytes) for bytes in fault_bytes.values()]
 
     return KarstNSimContent(
         simulation_params=data.simulation_params,

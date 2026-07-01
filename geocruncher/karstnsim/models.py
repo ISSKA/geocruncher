@@ -1,10 +1,8 @@
 # Based on https://github.com/ISSKA/pykarstnsim-demo/blob/main/src/pykarstnsim_demo/models
 
 import enum
-from dataclasses import dataclass
 from typing import Literal
 
-import numpy as np
 from pydantic import BaseModel, ConfigDict, RootModel
 from pydantic.alias_generators import to_camel
 
@@ -85,12 +83,6 @@ KarstNSimVoxelsUnits = RootModel[list[int]]
 class KarstNSimGroundwaterBody(BaseModel):
     gwb_id: int
     spring_id: int
-
-
-@dataclass
-class KarstNSimFault:
-    vertices: np.ndarray  # shape (n, 3), float32
-    triangles: np.ndarray  # shape (m, 3), int32
 
 
 class SimulationParameters(BaseModel):
