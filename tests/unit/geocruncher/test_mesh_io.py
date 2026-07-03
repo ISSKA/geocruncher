@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from meshio._exceptions import ReadError
 
 import geocruncher.mesh_io.mesh_io as mesh_io
 from geocruncher.mesh_io.draco import triangulate_faces
@@ -48,7 +47,7 @@ def test_read_off_ignores_blank_lines_and_comments_before_counts_and_vertices():
 
 
 def test_read_off_rejects_invalid_header():
-    with pytest.raises(ReadError, match="Expected the first line"):
+    with pytest.raises(ValueError, match="Expected the first line"):
         read_off("NOFF\n0 0 0\n")
 
 
@@ -58,7 +57,7 @@ def test_read_off_rejects_non_triangular_faces():
         faces=[[0, 1, 2, 3]],
     )
 
-    with pytest.raises(ReadError, match="triangular faces"):
+    with pytest.raises(ValueError, match="triangular faces"):
         read_off(off)
 
 
