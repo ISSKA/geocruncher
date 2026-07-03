@@ -16,7 +16,7 @@ def simulation_result(
     karstnsim_voxels_str,
     karstnsim_fault_bytes,
 ):
-    from geocruncher.computations import KarstNSimData
+    from geocruncher.karstnsim.models import KarstNSimData
     from geocruncher.karstnsim.simulation import run_karstnsim
 
     data = KarstNSimData.model_validate(karstnsim_data_dict)
@@ -72,7 +72,7 @@ class TestKarstNSimOutput:
         karstnsim_voxels_str,
         karstnsim_fault_bytes,
     ):
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
         from geocruncher.karstnsim.simulation import run_karstnsim
 
         broken = KarstNSimData.model_validate({**karstnsim_data_dict, "gwbs": []})

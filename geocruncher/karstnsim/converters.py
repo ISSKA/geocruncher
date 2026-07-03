@@ -14,7 +14,7 @@ from pykarstnsim.models import (
 )
 from shapely import Point, Polygon
 
-from geocruncher.computations import Vec3Int
+from geocruncher.geometry import Vec2Float, Vec3Int
 from geocruncher.karstnsim.models import (
     PERMEABILITY_MAP,
     KarstNSimDemResolution,
@@ -23,7 +23,6 @@ from geocruncher.karstnsim.models import (
     KarstNSimSpring,
     KarstNSimStratigraphy,
     Permeability,
-    Point2D,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -156,7 +155,7 @@ def load_sinks(
     n_sinks: int,
     springs: list[KarstNSimSpring],
     dem_resolution: KarstNSimDemResolution,
-    surface_resolution: Point2D,
+    surface_resolution: Vec2Float,
     surface_data: np.ndarray,
     rng: np.random.Generator,
     num_springs: int,
@@ -189,8 +188,8 @@ def load_sinks(
     def elevation_at_xy(x: float, y: float) -> float:
         """Bilinear interpolation of elevation at given (x,y) in local box coordinates"""
         # convert to grid indices
-        col = x / surface_resolution.x
-        row = y / surface_resolution.y
+        col = x / surface_resolution["x"]
+        row = y / surface_resolution["y"]
         if (
             col < 0
             or col >= dem_resolution.n_cols - 1
@@ -222,11 +221,11 @@ def load_sinks(
     catchment_ids: list[str | int] = []
     catchment_polygons: list[Polygon] = []
     for spring in springs:
-        coords = np.array(spring.catchment, dtype=np.float64)
+        coords = np.array(spring["catchment"], dtype=np.float64)
         polygon = Polygon(coords)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
-        catchment_ids.append(spring.poi_id)
+        catchment_ids.append(spring["poi_id"])
         catchment_polygons.append(polygon)
 
     areas = np.array([poly.area for poly in catchment_polygons], dtype=np.float64)

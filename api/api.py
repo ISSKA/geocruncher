@@ -8,11 +8,11 @@ from pydantic import TypeAdapter, ValidationError
 
 from geocruncher.computations import (
     IntersectionsData,
-    KarstNSimData,
     MeshesData,
     Spring,
     TunnelMeshesData,
 )
+from geocruncher.karstnsim.models import KarstNSimData
 
 from . import tasks
 from .redis import redis_client as r

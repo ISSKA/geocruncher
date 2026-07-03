@@ -10,13 +10,13 @@ from pykarstnsim.karstnsim import run_simulation
 from pykarstnsim.models.spring import Spring
 from pykarstnsim.models.surface import Surface
 
-from geocruncher.computations import KarstNSimData
 from geocruncher.karstnsim.converters import (
     load_project_box,
     load_sinks,
     load_water_tables,
 )
 from geocruncher.karstnsim.input import build_karstnsim_content
+from geocruncher.karstnsim.models import KarstNSimData
 from geocruncher.karstnsim.output import serialize_output
 from geocruncher.profiler import (
     PROFILES,
@@ -56,7 +56,12 @@ def run_karstnsim(
         content.project_box.height,
     )
     springs = [
-        Spring(origin=(s.x, s.y, s.z), index=i + 1, water_table_index=0, radius=0.0)
+        Spring(
+            origin=(s["x"], s["y"], s["z"]),
+            index=i + 1,
+            water_table_index=0,
+            radius=0.0,
+        )
         for i, s in enumerate(content.springs)
     ]
     gwb_surfaces = load_water_tables(content.voxels, content.project_box)
@@ -69,11 +74,11 @@ def run_karstnsim(
         if gwb.gwb_id == gwb_id
     }
     for spring, karstnsim_spring in zip(springs, content.springs):
-        if karstnsim_spring.poi_id not in spring_to_wt_index:
+        if karstnsim_spring["poi_id"] not in spring_to_wt_index:
             raise ValueError(
                 f"Spring {spring.index} has no associated groundwater body"
             )
-        spring.water_table_index = spring_to_wt_index[karstnsim_spring.poi_id]
+        spring.water_table_index = spring_to_wt_index[karstnsim_spring["poi_id"]]
 
     faults = [
         Surface.from_vertices_and_triangles(f.vertices, f.triangles)

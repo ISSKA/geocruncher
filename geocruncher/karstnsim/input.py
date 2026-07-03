@@ -2,46 +2,21 @@
 
 
 import logging
-from dataclasses import dataclass
 
 import numpy as np
 
-from geocruncher.computations import KarstNSimData, Vec3Int
+from geocruncher.geometry import Vec2Float, Vec3Int
 from geocruncher.karstnsim.models import (
+    KarstNSimContent,
+    KarstNSimData,
     KarstNSimDemResolution,
-    KarstNSimGroundwaterBody,
-    KarstNSimProjectBox,
-    KarstNSimSpring,
     KarstNSimStratigraphy,
     KarstNSimVoxelsHeader,
     KarstNSimVoxelsUnits,
-    Point2D,
-    SimulationParameters,
 )
-from geocruncher.mesh_io.mesh_io import read_mesh
-from geocruncher.mesh_io.triangle_mesh import TriangleMesh
+from geocruncher.mesh_io.mesh_io import TriangleMesh, read_mesh
 
 LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class KarstNSimContent:
-    """Replaces VkZipContent — holds all parsed simulation inputs"""
-
-    simulation_params: SimulationParameters
-    project_box: KarstNSimProjectBox
-    dem_resolution: KarstNSimDemResolution
-    surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
-    stratigraphy: KarstNSimStratigraphy
-    compute_resolution: Vec3Int
-    voxels_header: KarstNSimVoxelsHeader
-    voxels: np.ndarray  # shape (nx, ny, nz, 2)
-    voxels_units: KarstNSimVoxelsUnits
-    faults: list[TriangleMesh]
-    springs: list[KarstNSimSpring]
-    gwbs: list[KarstNSimGroundwaterBody]
-    surface_resolution: Point2D
-    resampled_dem_resolution: KarstNSimDemResolution
 
 
 def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndarray]:
@@ -117,7 +92,7 @@ def load_fault(fault_bytes: bytes) -> TriangleMesh:
 
 
 def build_karstnsim_content(
-    data: "KarstNSimData",
+    data: KarstNSimData,
     dem_bytes: bytes,
     voxels_str: str,
     fault_bytes: dict[int, bytes],
@@ -143,7 +118,7 @@ def build_karstnsim_content(
     if surface_data.shape[0] < 2 or surface_data.shape[1] < 2:
         raise ValueError("Surface data grid must have at least 2 rows and 2 columns")
 
-    surface_resolution = Point2D(
+    surface_resolution = Vec2Float(
         x=data.project_box.width / (surface_data.shape[1] - 1),
         y=data.project_box.height / (surface_data.shape[0] - 1),
     )

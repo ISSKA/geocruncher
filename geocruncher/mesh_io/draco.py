@@ -63,6 +63,7 @@ def generate_draco(verts: np.ndarray | list, faces: np.ndarray | list) -> bytes:
 
 def read_draco(draco_bytes: bytes) -> TriangleMesh:
     """Decode Draco bytes into a TriangleMesh."""
+
     data = DracoPy.decode_buffer_to_mesh(draco_bytes)
     if data.faces is None:
         raise ValueError("Draco mesh must contain triangular faces.")

@@ -4,24 +4,24 @@ These functions take data as input and return data as output, with no Disk inter
 """
 
 import math
-from enum import Enum
-from typing import NotRequired, TypedDict, cast
+from typing import cast
 
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
-from pydantic import BaseModel
 
-from geocruncher.karstnsim.models import (
-    KarstNSimDemResolution,
-    KarstNSimGeologicalUnit,
-    KarstNSimGroundwaterBody,
-    KarstNSimProjectBox,
-    KarstNSimSpring,
-    KarstNSimVoxelsHeader,
-    SimulationParameters,
-)
 from geocruncher.profiler.profiler import start_step
 
+from .computation_models import (
+    FaultIntersectionsResult,
+    IntersectionsData,
+    IntersectionsResult,
+    MeshesData,
+    MeshesResult,
+    MeshIntersectionsResult,
+    Spring,
+    TunnelMeshesData,
+    TunnelShape,
+)
 from .compute_intersections import (
     calculate_resolution,
     compute_cross_section_ranks,
@@ -47,45 +47,6 @@ from .tunnel_shape_generation import (
     tunnel_to_meshes,
 )
 from .voxel_computation import Voxels
-
-
-class TunnelShape(str, Enum):
-    """Possible shapes for tunnels"""
-
-    CIRCLE = "Circle"
-    RECTANGLE = "Rectangle"
-    ELLIPTIC = "Elliptic"
-
-
-class TunnelFunction(TypedDict):
-    """Tunnel functions in all three dimensions"""
-
-    x: str
-    y: str
-    z: str
-
-
-class Tunnel(TypedDict):
-    """Data defining a tunnel"""
-
-    name: str
-    shape: TunnelShape
-    functions: list[TunnelFunction]
-    radius: NotRequired[float | None]
-    width: NotRequired[float | None]
-    height: NotRequired[float | None]
-
-
-class TunnelMeshesData(TypedDict):
-    """Data given to the tunnel meshes computation"""
-
-    tunnels: list[Tunnel]
-    nb_vertices: int
-    step: float
-    idxStart: int
-    idxEnd: int
-    tStart: float
-    tEnd: float
 
 
 def compute_tunnel_meshes(
@@ -139,39 +100,6 @@ def compute_tunnel_meshes(
         # write profiler result before moving on to the next tunnel
         profiler.save_results()
     return output
-
-
-class BoxDict(TypedDict):
-    """3D Box"""
-
-    xmin: float
-    ymin: float
-    zmin: float
-    xmax: float
-    ymax: float
-    zmax: float
-
-
-class Vec3Int(TypedDict):
-    """3D Integer vector"""
-
-    x: int
-    y: int
-    z: int
-
-
-class MeshesData(TypedDict):
-    """Data given to the meshes computation"""
-
-    resolution: Vec3Int
-    box: NotRequired[BoxDict | None]
-
-
-class MeshesResult(TypedDict):
-    """Data returned by the meshes computation"""
-
-    mesh: dict[str, bytes]
-    fault: dict[str, bytes]
 
 
 def compute_meshes(
@@ -230,67 +158,6 @@ def compute_meshes(
     output = cast(MeshesResult, generate_volumes(model, shape, box))
     profiler.save_results()
     return output
-
-
-class Vec3Float(TypedDict):
-    """3D Float vector"""
-
-    x: float
-    y: float
-    z: float
-
-
-class Rectangle3D(TypedDict):
-    """Rectangle defined by it's bounds. Could be replaced with Box"""
-
-    lowerLeft: Vec3Float
-    upperRight: Vec3Float
-
-
-class Line3D(TypedDict):
-    """Line defined by it's start and end"""
-
-    start: Vec3Float
-    end: Vec3Float
-
-
-class IntersectionsData(TypedDict):
-    """Data given to the intersections computation"""
-
-    # ID as string to 3D point
-    springs: NotRequired[dict[str, Vec3Float] | None]
-    # ID as string to box
-    drillholes: NotRequired[dict[str, BoxDict] | None]
-    resolution: int
-    # cross sections, ID as string to box for each segment
-    toCompute: dict[str, list[BoxDict]]
-    computeMap: bool
-
-
-class MeshIntersectionsResult(TypedDict):
-    """Data returned by the mesh intersections computation"""
-
-    forCrossSections: dict[str, list[list[list[int]]]]
-    drillholes: dict[str, list[dict[str, list[list[float]]]]]
-    springs: dict[str, list[dict[str, list[float]]]]
-    matrixGwb: dict[str, list[list[int]]]
-    forMaps: NotRequired[list[list[int]]]
-
-
-class FaultIntersectionsResult(TypedDict):
-    """Data returned by the fault intersections computation"""
-
-    # For Fault intersections, we return floats and not ints, as we return the distance from the fault in the potential field, whereas we returned the unit ID for the Meshes intersections
-    forCrossSections: dict[str, list[dict[str, list[list[float]]]]]
-    # Optional
-    forMaps: dict[str, list[list[float]]]
-
-
-class IntersectionsResult(TypedDict):
-    """Combined result of mesh and fault intersections computation"""
-
-    mesh: MeshIntersectionsResult
-    fault: FaultIntersectionsResult
 
 
 RATIO_MAX_DIST_PROJ = 0.2
@@ -543,21 +410,6 @@ def compute_voxels(
     return output
 
 
-class Spring(TypedDict):
-    """Spring data needed for the gwb meshes computation"""
-
-    id: int
-    location: Vec3Float
-    unit_id: int
-
-
-class UnitMesh(TypedDict):
-    """UnitMesh"""
-
-    unit_id: int
-    mesh: str
-
-
 def compute_gwb_meshes(
     unit_meshes: dict[str, bytes],
     springs: list[Spring],
@@ -574,18 +426,3 @@ def compute_gwb_meshes(
     results = GeoAlgo.output(unit_meshes, springs)
     profiler.save_results()
     return results
-
-
-class KarstNSimData(BaseModel):
-    """Data given to the KarstNSim computation.
-    Binary inputs (dem_values, voxels, faults) are sent as separate files."""
-
-    simulation_params: SimulationParameters
-    project_box: KarstNSimProjectBox
-    dem_resolution: KarstNSimDemResolution
-    stratigraphy: list[KarstNSimGeologicalUnit]
-    voxels_header: KarstNSimVoxelsHeader
-    voxels_units: list[int]
-    fault_ids: list[int]
-    springs: list[KarstNSimSpring]
-    gwbs: list[KarstNSimGroundwaterBody]

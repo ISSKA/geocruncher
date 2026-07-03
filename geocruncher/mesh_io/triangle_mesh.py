@@ -1,9 +1,14 @@
+"""
+Defines a generic mesh made of triangles
+Put in a separate file to avoid circular imports between mesh_io.py and off.py / draco.py
+"""
+
 from dataclasses import dataclass
 
-from numpy import ndarray
+import numpy as np
 
 
 @dataclass
 class TriangleMesh:
-    vertices: ndarray  # (N, 3) float64
-    triangles: ndarray  # (M, 3) int32
+    vertices: np.ndarray  # (N, 3) float64
+    triangles: np.ndarray  # (M, 3) int32

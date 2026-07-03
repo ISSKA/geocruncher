@@ -3,7 +3,8 @@ from collections import defaultdict
 
 from celery import Task
 
-from geocruncher import computations
+from geocruncher import computation_models, computations
+from geocruncher.karstnsim.models import KarstNSimData
 from geocruncher.karstnsim.simulation import run_karstnsim
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
@@ -16,7 +17,7 @@ from .utils import get_and_delete, get_hash_bytes, hset_bytes
 @app.task(bind=True)
 def compute_tunnel_meshes(
     self: Task,
-    data: computations.TunnelMeshesData,
+    data: computation_models.TunnelMeshesData,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
@@ -30,7 +31,7 @@ def compute_tunnel_meshes(
 @app.task(bind=True)
 def compute_meshes(
     self: Task,
-    data: computations.MeshesData,
+    data: computation_models.MeshesData,
     xml_key: str,
     dem_key: str,
     output_key: str,
@@ -57,7 +58,7 @@ def compute_meshes(
 @app.task(bind=True)
 def compute_intersections(
     self: Task,
-    data: computations.IntersectionsData,
+    data: computation_models.IntersectionsData,
     xml_key: str,
     dem_key: str,
     gwb_meshes_key: str,
@@ -86,7 +87,7 @@ def compute_intersections(
 @app.task(bind=True)
 def compute_faults(
     self: Task,
-    data: computations.MeshesData,
+    data: computation_models.MeshesData,
     xml_key: str,
     dem_key: str,
     output_key: str,
@@ -108,7 +109,7 @@ def compute_faults(
 @app.task(bind=True)
 def compute_voxels(
     self: Task,
-    data: computations.MeshesData,
+    data: computation_models.MeshesData,
     xml_key: str,
     dem_key: str,
     gwb_meshes_key: str,
@@ -135,7 +136,7 @@ def compute_voxels(
 @app.task(bind=True)
 def compute_gwb_meshes(
     self: Task,
-    data: list[computations.Spring],
+    data: list[computation_models.Spring],
     meshes_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
@@ -165,7 +166,7 @@ def compute_gwb_meshes(
 @app.task(bind=True)
 def compute_karstnsim(
     self: Task,
-    data: computations.KarstNSimData,
+    data: KarstNSimData,
     files_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,

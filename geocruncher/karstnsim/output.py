@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pykarstnsim.models import KarstNSimResult
 
-from geocruncher.computations import Vec3Int
+from geocruncher.geometry import Vec3Int
 from geocruncher.karstnsim.models import SimulationParameters
 
 

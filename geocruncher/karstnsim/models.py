@@ -1,10 +1,15 @@
 # Based on https://github.com/ISSKA/pykarstnsim-demo/blob/main/src/pykarstnsim_demo/models
 
 import enum
+from dataclasses import dataclass
 from typing import Literal
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, RootModel
 from pydantic.alias_generators import to_camel
+
+from geocruncher.geometry import Vec2Float, Vec3Float, Vec3Int
+from geocruncher.mesh_io.mesh_io import TriangleMesh
 
 
 class Permeability(enum.Enum):
@@ -20,15 +25,6 @@ PERMEABILITY_MAP: dict[Permeability, float] = {
     Permeability.PorousPermeability: 0.0,
     Permeability.Undefined: 0.0,
 }
-
-
-class Point2D(BaseModel):
-    x: float
-    y: float
-
-
-class Point3D(Point2D):
-    z: float
 
 
 class KarstNSimProjectBox(BaseModel):
@@ -57,7 +53,7 @@ class KarstNSimGeologicalUnit(BaseModel):
 KarstNSimStratigraphy = RootModel[list[KarstNSimGeologicalUnit]]
 
 
-class KarstNSimSpring(Point3D):
+class KarstNSimSpring(Vec3Float):
     """Spring as received from the API — distinct from computations.Spring (gwb meshes)"""
 
     poi_id: int
@@ -97,3 +93,38 @@ class SimulationParameters(BaseModel):
     max_inception_surface_distance: Literal["auto"] | float = "auto"
     r_min_pervious: Literal["auto"] | float = "auto"
     r_min_impervious: Literal["auto"] | float = "auto"
+
+
+@dataclass
+class KarstNSimContent:
+    """Replaces VkZipContent — holds all parsed simulation inputs"""
+
+    simulation_params: SimulationParameters
+    project_box: KarstNSimProjectBox
+    dem_resolution: KarstNSimDemResolution
+    surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
+    stratigraphy: KarstNSimStratigraphy
+    compute_resolution: Vec3Int
+    voxels_header: KarstNSimVoxelsHeader
+    voxels: np.ndarray  # shape (nx, ny, nz, 2)
+    voxels_units: KarstNSimVoxelsUnits
+    faults: list[TriangleMesh]
+    springs: list[KarstNSimSpring]
+    gwbs: list[KarstNSimGroundwaterBody]
+    surface_resolution: Vec2Float
+    resampled_dem_resolution: KarstNSimDemResolution
+
+
+class KarstNSimData(BaseModel):
+    """Data given to the KarstNSim computation.
+    Binary inputs (dem_values, voxels, faults) are sent as separate files."""
+
+    simulation_params: SimulationParameters
+    project_box: KarstNSimProjectBox
+    dem_resolution: KarstNSimDemResolution
+    stratigraphy: list[KarstNSimGeologicalUnit]
+    voxels_header: KarstNSimVoxelsHeader
+    voxels_units: list[int]
+    fault_ids: list[int]
+    springs: list[KarstNSimSpring]
+    gwbs: list[KarstNSimGroundwaterBody]

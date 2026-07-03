@@ -352,7 +352,7 @@ class TestComputeKarstNSimTask:
         karstnsim_fault_bytes,
     ):
         from api.tasks import compute_karstnsim
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
 
         captured = {}
 
@@ -385,7 +385,7 @@ class TestComputeKarstNSimTask:
         karstnsim_data_dict,
     ):
         from api.tasks import compute_karstnsim
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
 
         output = b"# Run info\n{}\n# Data\n"
 
@@ -411,7 +411,7 @@ class TestComputeKarstNSimTask:
         karstnsim_data_dict,
     ):
         from api.tasks import compute_karstnsim
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
 
         with (
             patch("api.tasks.r", redis_with_inputs),
@@ -435,7 +435,7 @@ class TestComputeKarstNSimTask:
         karstnsim_fault_bytes,
     ):
         from api.tasks import compute_karstnsim
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
 
         captured = {}
 

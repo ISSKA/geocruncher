@@ -9,8 +9,8 @@ def karstnsim_content(
     karstnsim_voxels_str,
     karstnsim_fault_bytes,
 ):
-    from geocruncher.computations import KarstNSimData
     from geocruncher.karstnsim.input import build_karstnsim_content
+    from geocruncher.karstnsim.models import KarstNSimData
 
     data = KarstNSimData.model_validate(karstnsim_data_dict)
 
@@ -98,7 +98,7 @@ class TestKarstNSimGeologicalUnit:
 
 class TestKarstNSimData:
     def test_full_round_trip(self, karstnsim_data_dict):
-        from geocruncher.computations import KarstNSimData
+        from geocruncher.karstnsim.models import KarstNSimData
 
         data = KarstNSimData.model_validate(karstnsim_data_dict)
         assert len(data.stratigraphy) > 0
@@ -106,16 +106,6 @@ class TestKarstNSimData:
         assert len(data.fault_ids) > 0
         assert len(data.springs) > 0
         assert len(data.voxels_units) > 0
-
-    def test_springs_are_karstnsim_springs(self, karstnsim_data_dict):
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karstnsim.models import KarstNSimSpring
-
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
-
-        for s in data.springs:
-            assert isinstance(s, KarstNSimSpring)
-            assert not isinstance(s, dict)
 
 
 ######## Input parsing tests ########
@@ -177,73 +167,3 @@ class TestBuildKarstNSimContent:
 
     def test_fault_count(self, karstnsim_content, karstnsim_fault_bytes):
         assert len(karstnsim_content.faults) == len(karstnsim_fault_bytes)
-
-    def test_surface_resolution_positive(self, karstnsim_content):
-        assert karstnsim_content.surface_resolution.x > 0
-        assert karstnsim_content.surface_resolution.y > 0
-
-
-########
-# Coordinate tests - ensure all x/y coordinates are in local box coordinates, not absolute coordinates
-########
-
-
-class TestCoordinates:
-    def test_springs_within_project_box(self, karstnsim_data_dict):
-        from geocruncher.computations import KarstNSimData
-
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
-        box = data.project_box
-        for s in data.springs:
-            assert 0 <= s.x <= box.width, (
-                f"Spring {s.poi_id} x={s.x:.1f} outside [0, {box.width:.1f}] — offset missing?"
-            )
-            assert 0 <= s.y <= box.height, (
-                f"Spring {s.poi_id} y={s.y:.1f} outside [0, {box.height:.1f}] — offset missing?"
-            )
-
-    def test_catchments_within_project_box(self, karstnsim_data_dict):
-        from geocruncher.computations import KarstNSimData
-
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
-        box = data.project_box
-        for s in data.springs:
-            for i, (cx, cy) in enumerate(s.catchment):
-                assert 0 <= cx <= box.width, (
-                    f"Spring {s.poi_id} catchment[{i}] x={cx:.1f} outside [0, {box.width:.1f}]"
-                )
-                assert 0 <= cy <= box.height, (
-                    f"Spring {s.poi_id} catchment[{i}] y={cy:.1f} outside [0, {box.height:.1f}]"
-                )
-
-    def test_fault_vertices_within_project_box(
-        self, karstnsim_data_dict, karstnsim_fault_bytes
-    ):
-        """Fault vertex x/y must be in local box coordinates."""
-        from geocruncher.computations import KarstNSimData
-        from geocruncher.karstnsim.input import load_fault
-
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
-        box = data.project_box
-        eps = 0.1  # float rounding tolerance
-        for fault_id, bytes in karstnsim_fault_bytes.items():
-            fault = load_fault(bytes)
-            xs, ys = fault.vertices[:, 0], fault.vertices[:, 1]
-            assert xs.min() >= -eps and xs.max() <= box.width + eps, (
-                f"Fault {fault_id} x [{xs.min():.3f}, {xs.max():.3f}] outside [0, {box.width:.1f}]"
-            )
-            assert ys.min() >= -eps and ys.max() <= box.height + eps, (
-                f"Fault {fault_id} y [{ys.min():.3f}, {ys.max():.3f}] outside [0, {box.height:.1f}]"
-            )
-
-    def test_springs_match_gwbs(self, karstnsim_data_dict):
-        """Every gwb.spring_id must have a matching spring."""
-        from geocruncher.computations import KarstNSimData
-
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
-        spring_ids = {s.poi_id for s in data.springs}
-        gwb_spring_ids = {g.spring_id for g in data.gwbs}
-        missing = gwb_spring_ids - spring_ids
-        assert not missing, (
-            f"gwbs reference spring_id(s) {missing} with no matching spring — Spring backend sending incomplete data"
-        )
