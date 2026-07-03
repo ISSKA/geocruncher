@@ -2,7 +2,7 @@
 
 import enum
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, RootModel
@@ -115,7 +115,7 @@ class KarstNSimContent:
     resampled_dem_resolution: KarstNSimDemResolution
 
 
-class KarstNSimData(BaseModel):
+class KarstNSimData(TypedDict):
     """Data given to the KarstNSim computation.
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 

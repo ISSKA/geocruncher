@@ -8,11 +8,11 @@ def karstnsim_content(
     karstnsim_dem_bytes,
     karstnsim_voxels_str,
     karstnsim_fault_bytes,
+    karstnsim_data_adapter,
 ):
     from geocruncher.karstnsim.input import build_karstnsim_content
-    from geocruncher.karstnsim.models import KarstNSimData
 
-    data = KarstNSimData.model_validate(karstnsim_data_dict)
+    data = karstnsim_data_adapter.validate_python(karstnsim_data_dict)
 
     return build_karstnsim_content(
         data,
@@ -97,10 +97,10 @@ class TestKarstNSimGeologicalUnit:
 
 
 class TestKarstNSimData:
-    def test_full_round_trip(self, karstnsim_data_dict):
-        from geocruncher.karstnsim.models import KarstNSimData
+    def test_full_round_trip(self, karstnsim_data_dict, karstnsim_data_adapter):
 
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
+        data = karstnsim_data_adapter.validate_python(karstnsim_data_dict)
+
         assert len(data.stratigraphy) > 0
         assert len(data.gwbs) > 0
         assert len(data.fault_ids) > 0

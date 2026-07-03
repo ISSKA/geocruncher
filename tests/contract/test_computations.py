@@ -834,23 +834,25 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
 
 
 class TestKarstNSimDataContract:
-    def test_required_top_level_fields(self, karstnsim_data_dict):
-        from geocruncher.karstnsim.models import KarstNSimData
+    def test_required_top_level_fields(
+        self, karstnsim_data_dict, karstnsim_data_adapter
+    ):
 
-        data = KarstNSimData.model_validate(karstnsim_data_dict)
+        data = karstnsim_data_adapter.validate_python(
+            karstnsim_data_dict, karstnsim_data_adapter
+        )
         # all fields must be present and non-empty
-        assert data.simulation_params is not None
-        assert data.project_box is not None
-        assert data.dem_resolution is not None
-        assert data.stratigraphy
-        assert data.voxels_header is not None
-        assert data.voxels_units
-        assert data.fault_ids
-        assert data.springs
-        assert data.gwbs
+        assert data["simulation_params"] is not None
+        assert data["project_box"] is not None
+        assert data["dem_resolution"] is not None
+        assert data["stratigraphy"]
+        assert data["voxels_header"] is not None
+        assert data["voxels_units"]
+        assert data["fault_ids"]
+        assert data["springs"]
+        assert data["gwbs"]
 
-    def test_simulation_params_camel_case_aliases(self):
-        from geocruncher.karstnsim.models import KarstNSimData
+    def test_simulation_params_camel_case_aliases(self, karstnsim_data_adapter):
 
         payload = {
             "simulation_params": {
@@ -899,7 +901,7 @@ class TestKarstNSimDataContract:
             ],
             "gwbs": [{"gwb_id": 1, "spring_id": 1}],
         }
-        data = KarstNSimData.model_validate(payload)
-        assert data.simulation_params.k_pts == 15
-        assert data.simulation_params.cohesion_factor == 0.8
-        assert data.simulation_params.n_sinks == 200
+        data = karstnsim_data_adapter.validate_python(payload)
+        assert data["simulation_params"].k_pts == 15
+        assert data["simulation_params"].cohesion_factor == 0.8
+        assert data["simulation_params"].n_sinks == 200

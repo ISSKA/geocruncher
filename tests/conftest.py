@@ -44,6 +44,15 @@ def reset_progress_recorder_task():
     profiler_module._progress_recorder.task = None
 
 
+@pytest.fixture(scope="session")
+def karstnsim_data_adapter():
+    from pydantic import TypeAdapter
+
+    from geocruncher.karstnsim.models import KarstNSimData
+
+    return TypeAdapter(KarstNSimData)
+
+
 # ---------------------------------------------------------------------------
 # Fault binary → OFF conversion
 # ---------------------------------------------------------------------------

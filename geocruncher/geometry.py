@@ -1,24 +1,29 @@
 from typing import TypedDict
 
 
-class Vec2Float(TypedDict):
-    x: float
-    y: float
-
-
-class Vec3Int(TypedDict):
-    """3D Integer vector"""
+class Vec2Int(TypedDict):
+    """2D Integer vector"""
 
     x: int
     y: int
-    z: int
 
 
-class Vec3Float(TypedDict):
-    """3D Float vector"""
+class Vec2Float(TypedDict):
+    """2D Float vector"""
 
     x: float
     y: float
+
+
+class Vec3Int(Vec2Int):
+    """3D Integer vector"""
+
+    z: int
+
+
+class Vec3Float(Vec2Float):
+    """3D Float vector"""
+
     z: float
 
 

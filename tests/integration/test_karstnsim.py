@@ -15,11 +15,11 @@ def simulation_result(
     karstnsim_dem_bytes,
     karstnsim_voxels_str,
     karstnsim_fault_bytes,
+    karstnsim_data_adapter,
 ):
-    from geocruncher.karstnsim.models import KarstNSimData
     from geocruncher.karstnsim.simulation import run_karstnsim
 
-    data = KarstNSimData.model_validate(karstnsim_data_dict)
+    data = karstnsim_data_adapter.validate_python(karstnsim_data_dict)
 
     return run_karstnsim(
         data,
@@ -71,11 +71,13 @@ class TestKarstNSimOutput:
         karstnsim_dem_bytes,
         karstnsim_voxels_str,
         karstnsim_fault_bytes,
+        karstnsim_data_adapter,
     ):
-        from geocruncher.karstnsim.models import KarstNSimData
         from geocruncher.karstnsim.simulation import run_karstnsim
 
-        broken = KarstNSimData.model_validate({**karstnsim_data_dict, "gwbs": []})
+        broken = karstnsim_data_adapter.validate_python(
+            {**karstnsim_data_dict, "gwbs": []}
+        )
 
         with pytest.raises(ValueError, match="groundwater body"):
             run_karstnsim(

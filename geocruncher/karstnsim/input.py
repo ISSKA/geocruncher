@@ -100,7 +100,7 @@ def build_karstnsim_content(
     # dem: same logic as read_zip
     surface_data = np.frombuffer(dem_bytes, dtype=np.float32)
     surface_data = surface_data.reshape(
-        (data.dem_resolution.n_rows, data.dem_resolution.n_cols)
+        (data["dem_resolution"].n_rows, data["dem_resolution"].n_cols)
     )
     voxels_lines = voxels_str.splitlines()
     voxels_header, voxels = load_voxels(voxels_lines)
@@ -110,8 +110,8 @@ def build_karstnsim_content(
 
     # resample + flip: same arithmetic as read_zip
     surface_data = surface_data[
-        :: data.dem_resolution.n_rows // compute_resolution["y"],
-        :: data.dem_resolution.n_cols // compute_resolution["x"],
+        :: data["dem_resolution"].n_rows // compute_resolution["y"],
+        :: data["dem_resolution"].n_cols // compute_resolution["x"],
     ]
     surface_data = np.flipud(surface_data).copy()
 
@@ -119,8 +119,8 @@ def build_karstnsim_content(
         raise ValueError("Surface data grid must have at least 2 rows and 2 columns")
 
     surface_resolution = Vec2Float(
-        x=data.project_box.width / (surface_data.shape[1] - 1),
-        y=data.project_box.height / (surface_data.shape[0] - 1),
+        x=data["project_box"].width / (surface_data.shape[1] - 1),
+        y=data["project_box"].height / (surface_data.shape[0] - 1),
     )
     resampled_dem_resolution = KarstNSimDemResolution(
         n_cols=surface_data.shape[1],
@@ -129,18 +129,18 @@ def build_karstnsim_content(
     faults = [load_fault(bytes) for bytes in fault_bytes.values()]
 
     return KarstNSimContent(
-        simulation_params=data.simulation_params,
-        project_box=data.project_box,
-        dem_resolution=data.dem_resolution,
+        simulation_params=data["simulation_params"],
+        project_box=data["project_box"],
+        dem_resolution=data["dem_resolution"],
         surface_data=surface_data,
-        stratigraphy=KarstNSimStratigraphy(data.stratigraphy),
+        stratigraphy=KarstNSimStratigraphy(data["stratigraphy"]),
         compute_resolution=compute_resolution,
         voxels_header=voxels_header,
         voxels=voxels,
-        voxels_units=KarstNSimVoxelsUnits(data.voxels_units),
+        voxels_units=KarstNSimVoxelsUnits(data["voxels_units"]),
         faults=faults,
-        springs=data.springs,
-        gwbs=data.gwbs,
+        springs=data["springs"],
+        gwbs=data["gwbs"],
         surface_resolution=surface_resolution,
         resampled_dem_resolution=resampled_dem_resolution,
     )
