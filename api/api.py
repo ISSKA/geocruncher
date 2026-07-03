@@ -331,16 +331,11 @@ def compute_karstnsim():
         if response is not None:
             return response
         output_key = res.get()
-        output = get_hash_bytes(r, output_key)
+        output = get_bytes(r, output_key)
         r.delete(output_key)
         if not output:
             return Response("", 204, mimetype="text/plain")
-        return send_file(
-            filemap_to_tar(output),
-            mimetype="application/x-tar",
-            as_attachment=True,
-            download_name="karstnsim.tar",
-        )
+        return Response(output.decode("utf-8"), mimetype="text/plain")
 
 
 @app.post("/poll")

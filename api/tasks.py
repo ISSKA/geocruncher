@@ -184,5 +184,5 @@ def compute_karstnsim(
     }
 
     result_bytes = run_karstnsim(data, dem_bytes, voxels_str, fault_bytes, metadata)
-    hset_bytes(r, output_key, "output.txt", result_bytes)
+    r.set(output_key, result_bytes)
     return output_key
