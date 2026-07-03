@@ -17,7 +17,6 @@ from geocruncher.karstnsim.converters import (
 )
 from geocruncher.karstnsim.input import build_karstnsim_content
 from geocruncher.karstnsim.models import KarstNSimData
-from geocruncher.karstnsim.output import serialize_output
 from geocruncher.profiler import (
     PROFILES,
     ProfilerMetadata,
@@ -151,6 +150,4 @@ def run_karstnsim(
         len(result.segments),
     )
     profiler.save_results()
-    return serialize_output(
-        result, content.simulation_params, content.compute_resolution, runtime_s
-    )
+    return result.to_string().encode("utf-8")
