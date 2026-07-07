@@ -2,7 +2,7 @@
 
 Geocruncher is a standalone application for Geological Computations. It is a dependency of the [VisualKarsys webservice](https://visualkarsys.com) developped by [ISSKA/SISKA](https://www.isska.ch/en/).
 
-It implements certain types of computations in Python and C++, and also acts as a link to libraries such as gmlib, develop by the [BRGM](https://www.brgm.fr/en).
+It implements certain types of computations in Python and C++, and also acts as a link to libraries such as [gmlib](https://gitlab.com/brgm/geomodelling/model/gmlib), develop by the [BRGM](https://www.brgm.fr/en).
 
 It has the following architecture, handled by docker compose:
 
@@ -16,7 +16,7 @@ Documentation for each existing computation, their parameters and returned value
 
 Alternatively, a command line interface can be used to launch computations (**DEPRECATED**). See [documentation](./doc/command-line.md).
 
-It posesses an optional integrated Profiler (currently only working in the command line version), used in production by the VisualKarsys team to estimate computation times and identify key areas where speed should be improved. 
+It posesses an optional integrated profiler and monitoring stack, used in production by the VisualKarsys team for observability and to estimate computation times and identify key areas where performance should be improved. 
 
 ## Installation
 
@@ -29,7 +29,7 @@ No other steps are requiered after cloning the repository. We recommand using th
 git clone https://github.com/ISSKA/geocruncher
 cd geocruncher
 git checkout master
-git submodule update --init # For VISKAR team, pre-built dependencies are available as a private submodule
+git submodule update --init
 ```
 
 ## Development
@@ -44,7 +44,7 @@ source .venv/bin/activate
 ```
 
 The script uses `uv`, builds the native Draco and PyGeoAlgo pieces, and stores downloaded native dependencies under `.cache/local-dev`.
-On Linux, the local venv requires glibc 2.39 or newer because the published `forgeo-gmlib` wheel targets `manylinux_2_39_x86_64`. Older Linux distributions should use the Docker setup.
+On Linux, the local venv requires glibc 2.39 or newer because the published `forgeo-gmlib` wheel targets `manylinux_2_39_x86_64`. Older Linux distributions should use the Docker setup. We are working with BRGM to get a published version of `forgeo-gmlib` for older glibc versions.
 
 Recommanded extensions : `ms-python.python`, `charliermarsh.ruff` and `astral-sh.ty`.
 
