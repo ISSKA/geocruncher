@@ -2,8 +2,6 @@
 
 
 import json
-import logging
-import time
 
 import numpy as np
 from pykarstnsim.config import KarstConfig
@@ -27,8 +25,6 @@ from geocruncher.profiler import (
     start_step,
 )
 
-LOGGER = logging.getLogger(__name__)
-
 
 def run_karstnsim(
     data: KarstNSimData,
@@ -39,9 +35,11 @@ def run_karstnsim(
 ) -> bytes:
     profiler = set_profiler(PROFILES["karstnsim"]).update_metadata(metadata)
 
-    start_step("load_project_data")
+    start_step("build_content")
     content = build_karstnsim_content(data, dem_bytes, voxels_str, fault_bytes)
+    profile_step("build_content")
 
+    start_step("load_project_box")
     project_box = load_project_box(
         content.project_box,
         content.stratigraphy,
@@ -51,11 +49,17 @@ def run_karstnsim(
         content.simulation_params.r_min_pervious,
         content.simulation_params.r_min_impervious,
     )
+    profile_step("load_project_box")
+
+    start_step("load_surface")
     dem = Surface.from_dem_grid(
         content.surface_data,
         content.project_box.width,
         content.project_box.height,
     )
+    profile_step("load_surface")
+
+    start_step("load_springs")
     springs = [
         Spring(
             origin=(s["x"], s["y"], s["z"]),
@@ -65,27 +69,56 @@ def run_karstnsim(
         )
         for i, s in enumerate(content.springs)
     ]
-    gwb_surfaces = load_water_tables(content.voxels, content.project_box)
+    profile_step("load_springs")
+
+    start_step("load_water_tables")
+    gwb_surfaces = load_water_tables(
+        content.voxels,
+        content.project_box,
+    )
+    profile_step("load_water_tables")
+
+    start_step("associate_springs_water_tables")
     ordered_gwb_ids = sorted(gwb_surfaces.keys())
+
     water_tables = [gwb_surfaces[gwb_id] for gwb_id in ordered_gwb_ids]
+
     spring_to_wt_index = {
         gwb.spring_id: wt_index
-        for wt_index, gwb_id in enumerate(ordered_gwb_ids, start=1)
+        for wt_index, gwb_id in enumerate(
+            ordered_gwb_ids,
+            start=1,
+        )
         for gwb in content.gwbs
         if gwb.gwb_id == gwb_id
     }
-    for spring, karstnsim_spring in zip(springs, content.springs):
+
+    for spring, karstnsim_spring in zip(
+        springs,
+        content.springs,
+    ):
         if karstnsim_spring["poi_id"] not in spring_to_wt_index:
             raise ValueError(
                 f"Spring {spring.index} has no associated groundwater body"
             )
+
         spring.water_table_index = spring_to_wt_index[karstnsim_spring["poi_id"]]
 
+    profile_step("associate_springs_water_tables")
+
+    start_step("load_faults")
     faults = [
-        Surface.from_vertices_and_triangles(f.vertices, f.triangles)
+        Surface.from_vertices_and_triangles(
+            f.vertices,
+            f.triangles,
+        )
         for f in content.faults
     ]
+    profile_step("load_faults")
+
+    start_step("load_sinks")
     rng = np.random.default_rng(content.simulation_params.seed)
+
     sinks, connectivity_matrix = load_sinks(
         content.simulation_params.n_sinks,
         content.springs,
@@ -95,14 +128,16 @@ def run_karstnsim(
         rng,
         len(springs),
     )
+    profile_step("load_sinks")
+
+    start_step("compute_dimensions")
     max_dim = max(
         content.project_box.width / content.compute_resolution["x"],
         content.project_box.height / content.compute_resolution["y"],
         content.project_box.depth / content.compute_resolution["z"],
     )
-    profile_step("load_project_data")
+    profile_step("compute_dimensions")
 
-    start_step("configuration")
     config = KarstConfig()
     config.karstic_network_name = content.simulation_params.name
     config.selected_seed = content.simulation_params.seed
@@ -127,10 +162,8 @@ def run_karstnsim(
     config.karstification_potential_weight = 1.0
     config.nb_deadend_points = 0
     config.create_vset_sampling = False
-    profile_step("configuration")
 
     start_step("run_karstnsim")
-    start = time.time_ns()
     result = run_simulation(
         config,
         project_box=project_box,
@@ -141,19 +174,18 @@ def run_karstnsim(
         topo_surface=dem,
         inception_surfaces=faults,
     )
+
     if result is None:
         raise ValueError("Simulation returned no result")
 
-    runtime_s = (time.time_ns() - start) / 1e9
     profile_step("run_karstnsim")
-    LOGGER.info(
-        "Simulation completed in %.2f seconds, %d segments",
-        runtime_s,
-        len(result.segments),
-    )
-    profiler.save_results()
+
+    start_step("serialize_result")
     result_bytes = json.dumps(
         serialize_karstnsim_result(result),
         separators=(",", ":"),
     ).encode("utf-8")
+    profile_step("serialize_result")
+    profiler.save_results()
+
     return result_bytes
