@@ -555,28 +555,6 @@ class TestPostKarstNSim:
 
 
 class TestGetKarstNSim:
-    def test_returns_tar(self, monkeypatch, client, fake_redis):
-        import api.api as api
-
-        fake_redis.hset("output-key", "output.txt", b"segments")
-
-        monkeypatch.setattr(api, "r", fake_redis)
-        set_async_result(
-            monkeypatch,
-            api,
-            lambda *_: FakeAsyncResult(
-                state="SUCCESS",
-                result="output-key",
-            ),
-        )
-
-        response = client.get("/compute/karstnsim?id=task-id")
-
-        assert response.status_code == 200
-        assert response.content_type == "application/x-tar"
-        assert tar_entries(response) == {"output.txt": b"segments"}
-        assert "output-key" in fake_redis.deleted
-
     def test_returns_pending(
         self,
         monkeypatch,

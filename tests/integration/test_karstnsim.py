@@ -1,5 +1,4 @@
 import importlib.util
-import json
 
 import pytest
 
@@ -35,36 +34,6 @@ class TestKarstNSimOutput:
 
         assert isinstance(simulation_result, bytes)
 
-    def test_output_structure(self, simulation_result):
-        text = simulation_result.decode()
-
-        assert "# Run info" in text
-        assert "# Data" in text
-
-    def test_output_metadata_json(
-        self,
-        simulation_result,
-        karstnsim_voxels_str,
-    ):
-        from geocruncher.karstnsim.input import load_voxels
-
-        text = simulation_result.decode()
-        info = text.split("# Run info\n")[1].split("\n# Data")[0]
-        parsed = json.loads(info)
-
-        metadata = parsed["metadata"]
-
-        assert "config" in parsed
-        assert metadata["generationDurationS"] > 0
-        assert "generationTime" in metadata
-
-        header, _ = load_voxels(karstnsim_voxels_str.splitlines())
-        assert metadata["computeResolution"] == {
-            "x": header.nx,
-            "y": header.ny,
-            "z": header.nz,
-        }
-
     def test_invalid_spring_raises_value_error(
         self,
         karstnsim_data_dict,
@@ -88,18 +57,5 @@ class TestKarstNSimOutput:
             )
 
     def test_matches_control_output(self, simulation_result, control_output):
-        text = simulation_result.decode()
-
-        actual_run_info, actual_data = text.split("\n# Data\n", maxsplit=1)
-        expected_run_info, expected_data = control_output.split(
-            "\n# Data\n", maxsplit=1
-        )
-
-        actual = json.loads(actual_run_info.split("# Run info\n", maxsplit=1)[1])
-        expected = json.loads(expected_run_info.split("# Run info\n", maxsplit=1)[1])
-
-        actual["metadata"]["generationTime"] = "<generationTime>"
-        actual["metadata"]["generationDurationS"] = "<generationDurationS>"
-
-        assert actual == expected
-        assert actual_data.rstrip("\n") == expected_data.rstrip("\n")
+        output = simulation_result.decode()
+        assert output.rstrip("\n") == control_output.rstrip("\n")

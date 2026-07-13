@@ -101,11 +101,11 @@ class TestKarstNSimData:
 
         data = karstnsim_data_adapter.validate_python(karstnsim_data_dict)
 
-        assert len(data.stratigraphy) > 0
-        assert len(data.gwbs) > 0
-        assert len(data.fault_ids) > 0
-        assert len(data.springs) > 0
-        assert len(data.voxels_units) > 0
+        assert len(data["stratigraphy"]) > 0
+        assert len(data["gwbs"]) > 0
+        assert len(data["fault_ids"]) > 0
+        assert len(data["springs"]) > 0
+        assert len(data["voxels_units"]) > 0
 
 
 ######## Input parsing tests ########

@@ -838,9 +838,7 @@ class TestKarstNSimDataContract:
         self, karstnsim_data_dict, karstnsim_data_adapter
     ):
 
-        data = karstnsim_data_adapter.validate_python(
-            karstnsim_data_dict, karstnsim_data_adapter
-        )
+        data = karstnsim_data_adapter.validate_python(karstnsim_data_dict)
         # all fields must be present and non-empty
         assert data["simulation_params"] is not None
         assert data["project_box"] is not None
@@ -872,7 +870,7 @@ class TestKarstNSimDataContract:
                 "min_elevation": 0,
                 "max_elevation": 500,
             },
-            "dem_resolution": {"n_cols": 10, "n_rows": 10},
+            "dem_resolution": {"x": 10, "y": 10},
             "stratigraphy": [
                 {"name": "Unit", "permeability": "Karstified", "stratiUnitId": 1}
             ],

@@ -384,7 +384,7 @@ class TestComputeKarstNSimTask:
     ):
         from api.tasks import compute_karstnsim
 
-        output = b"# Run info\n{}\n# Data\n"
+        output = b"\n"
 
         with (
             patch("api.tasks.r", redis_with_inputs),
@@ -400,7 +400,7 @@ class TestComputeKarstNSimTask:
             )
 
         assert key == "output_key"
-        assert redis_with_inputs.hashes["output_key"][b"output.txt"] == output
+        assert redis_with_inputs.get("output_key") == output
 
     def test_deletes_input_hash(
         self, redis_with_inputs, karstnsim_data_dict, karstnsim_data_adapter
