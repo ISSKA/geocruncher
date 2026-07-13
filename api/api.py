@@ -335,7 +335,7 @@ def compute_karstnsim():
         r.delete(output_key)
         if not output:
             return Response("", 204, mimetype="text/plain")
-        return Response(output.decode("utf-8"), mimetype="text/plain")
+        return Response(output, mimetype="application/json")
 
 
 @app.post("/poll")

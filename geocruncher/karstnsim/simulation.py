@@ -1,6 +1,7 @@
 # Based on https://github.com/ISSKA/pykarstnsim-demo/blob/main/demo.py
 
 
+import json
 import logging
 import time
 
@@ -17,6 +18,7 @@ from geocruncher.karstnsim.converters import (
 )
 from geocruncher.karstnsim.input import build_karstnsim_content
 from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.serializers import serialize_karstnsim_result
 from geocruncher.profiler import (
     PROFILES,
     ProfilerMetadata,
@@ -150,4 +152,8 @@ def run_karstnsim(
         len(result.segments),
     )
     profiler.save_results()
-    return result.to_string().encode("utf-8")
+    result_bytes = json.dumps(
+        serialize_karstnsim_result(result),
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return result_bytes

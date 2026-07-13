@@ -1,4 +1,5 @@
 import importlib.util
+import json
 
 import pytest
 
@@ -57,5 +58,7 @@ class TestKarstNSimOutput:
             )
 
     def test_matches_control_output(self, simulation_result, control_output):
-        output = simulation_result.decode()
-        assert output.rstrip("\n") == control_output.rstrip("\n")
+        actual = json.loads(simulation_result)
+        expected = json.loads(control_output)
+
+        assert actual == expected
