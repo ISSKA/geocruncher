@@ -8,7 +8,7 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, RootModel
 from pydantic.alias_generators import to_camel
 
-from geocruncher.geometry import Vec2Float, Vec3Float, Vec3Int
+from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Float, Vec3Int
 from geocruncher.mesh_io.mesh_io import TriangleMesh
 
 
@@ -36,11 +36,6 @@ class KarstNSimProjectBox(BaseModel):
     @property
     def depth(self) -> float:
         return self.max_elevation - self.min_elevation
-
-
-class KarstNSimDemResolution(BaseModel):
-    n_cols: int
-    n_rows: int
 
 
 class KarstNSimGeologicalUnit(BaseModel):
@@ -101,7 +96,7 @@ class KarstNSimContent:
 
     simulation_params: SimulationParameters
     project_box: KarstNSimProjectBox
-    dem_resolution: KarstNSimDemResolution
+    dem_resolution: Vec2Int
     surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
     stratigraphy: KarstNSimStratigraphy
     compute_resolution: Vec3Int
@@ -112,7 +107,7 @@ class KarstNSimContent:
     springs: list[KarstNSimSpring]
     gwbs: list[KarstNSimGroundwaterBody]
     surface_resolution: Vec2Float
-    resampled_dem_resolution: KarstNSimDemResolution
+    resampled_dem_resolution: Vec2Int
 
 
 class KarstNSimData(TypedDict):
@@ -121,7 +116,7 @@ class KarstNSimData(TypedDict):
 
     simulation_params: SimulationParameters
     project_box: KarstNSimProjectBox
-    dem_resolution: KarstNSimDemResolution
+    dem_resolution: Vec2Int
     stratigraphy: list[KarstNSimGeologicalUnit]
     voxels_header: KarstNSimVoxelsHeader
     voxels_units: list[int]

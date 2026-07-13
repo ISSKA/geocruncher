@@ -5,11 +5,10 @@ import logging
 
 import numpy as np
 
-from geocruncher.geometry import Vec2Float, Vec3Int
+from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
     KarstNSimContent,
     KarstNSimData,
-    KarstNSimDemResolution,
     KarstNSimStratigraphy,
     KarstNSimVoxelsHeader,
     KarstNSimVoxelsUnits,
@@ -97,10 +96,9 @@ def build_karstnsim_content(
     voxels_str: str,
     fault_bytes: dict[int, bytes],
 ) -> KarstNSimContent:
-    # dem: same logic as read_zip
     surface_data = np.frombuffer(dem_bytes, dtype=np.float32)
     surface_data = surface_data.reshape(
-        (data["dem_resolution"].n_rows, data["dem_resolution"].n_cols)
+        (data["dem_resolution"]["y"], data["dem_resolution"]["x"])
     )
     voxels_lines = voxels_str.splitlines()
     voxels_header, voxels = load_voxels(voxels_lines)
@@ -110,8 +108,8 @@ def build_karstnsim_content(
 
     # resample + flip: same arithmetic as read_zip
     surface_data = surface_data[
-        :: data["dem_resolution"].n_rows // compute_resolution["y"],
-        :: data["dem_resolution"].n_cols // compute_resolution["x"],
+        :: data["dem_resolution"]["y"] // compute_resolution["y"],
+        :: data["dem_resolution"]["x"] // compute_resolution["x"],
     ]
     surface_data = np.flipud(surface_data).copy()
 
@@ -122,9 +120,9 @@ def build_karstnsim_content(
         x=data["project_box"].width / (surface_data.shape[1] - 1),
         y=data["project_box"].height / (surface_data.shape[0] - 1),
     )
-    resampled_dem_resolution = KarstNSimDemResolution(
-        n_cols=surface_data.shape[1],
-        n_rows=surface_data.shape[0],
+    resampled_dem_resolution = Vec2Int(
+        x=surface_data.shape[1],
+        y=surface_data.shape[0],
     )
     faults = [load_fault(bytes) for bytes in fault_bytes.values()]
 

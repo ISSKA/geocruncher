@@ -14,10 +14,9 @@ from pykarstnsim.models import (
 )
 from shapely import Point, Polygon
 
-from geocruncher.geometry import Vec2Float, Vec3Int
+from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
     PERMEABILITY_MAP,
-    KarstNSimDemResolution,
     KarstNSimGeologicalUnit,
     KarstNSimProjectBox,
     KarstNSimSpring,
@@ -154,7 +153,7 @@ def load_project_box(
 def load_sinks(
     n_sinks: int,
     springs: list[KarstNSimSpring],
-    dem_resolution: KarstNSimDemResolution,
+    dem_resolution: Vec2Int,
     surface_resolution: Vec2Float,
     surface_data: np.ndarray,
     rng: np.random.Generator,
@@ -192,9 +191,9 @@ def load_sinks(
         row = y / surface_resolution["y"]
         if (
             col < 0
-            or col >= dem_resolution.n_cols - 1
+            or col >= dem_resolution["x"] - 1
             or row < 0
-            or row >= dem_resolution.n_rows - 1
+            or row >= dem_resolution["y"] - 1
         ):
             raise ValueError(f"Point ({x},{y}) out of DEM bounds")
         col0 = int(np.floor(col))
