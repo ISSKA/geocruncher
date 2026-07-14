@@ -13,6 +13,9 @@ from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from .mesh_io.mesh_io import read_mesh_to_polydata
 from .profiler import profile_step, start_step
 
+# How many decimals to return for all intersections data. Could be an API parameter, but that's probably overkill
+INTERSECTIONS_PRECISION = 2
+
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
     """Calculates a proportional resolution where the larger dimension matches `res`.
@@ -256,7 +259,10 @@ def project_hydro_features_on_slice(
         """
         delta_x = q[0] - p0[0]
         delta_y = q[1] - p0[1]
-        return [math.sqrt(delta_x**2 + delta_y**2), q[2]]
+        return [
+            round(math.sqrt(delta_x**2 + delta_y**2), INTERSECTIONS_PRECISION),
+            round(q[2], INTERSECTIONS_PRECISION),
+        ]
 
     matrix_gwb = []
     drillholes_line = {}

@@ -3,6 +3,7 @@ from collections import defaultdict
 import numpy as np
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 
+from .compute_intersections import INTERSECTIONS_PRECISION
 from .profiler import profile_step, start_step
 
 CLIP_VALUE = np.nan
@@ -69,7 +70,9 @@ class FaultIntersector:
 
         # Evaluate all faults upfront
         for name, field in model.faults.items():
-            fault_potentials[name] = field(self._grid_points).reshape(res)
+            fault_potentials[name] = np.around(
+                field(self._grid_points).reshape(res), INTERSECTIONS_PRECISION
+            )
 
         # Process each fault in dependency order
         for name in self._sort_faults():
