@@ -24,19 +24,35 @@ def _header_float(pattern: str, line: str) -> float:
 def ascii_grid_to_implicit_dtm(dem: str) -> ImplicitDTM:
     """Read ASCIIGrid DEM datapoints and return a GMLIB ImplicitDTM."""
 
-    lines = dem.splitlines()
-    # We do not actually care about the first 2 line (ncols, nrows), skip them
-    xllcorner = _header_float(r"-?\d+\.?\d*", lines[2])
-    yllcorner = _header_float(r"-?\d+\.?\d*", lines[3])
-    cellsize = _header_float(r"\d+\.?\d*", lines[4])
+    USEFUL_HEADERS = {"xllcorner", "yllcorner", "cellsize", "dx", "dy"}
 
-    offset = 5  # Skip the required header lines
-    if len(lines) > offset and lines[offset].strip().startswith("NODATA_value"):
-        logger.warning("Skipping NODATA_value line")
+    headers: dict[str, float] = {}
+    lines = dem.splitlines()
+
+    offset = 0
+    for line in lines:
+        keyword, _, value = line.strip().partition(" ")
+        # Stop parsing headers when we reach the first line that starts with a number (first line of the data section)
+        if re.match(r"^[-\d]|^[+-]?(nan|inf)", keyword, re.IGNORECASE):
+            break
+        try:
+            parsed = float(value.strip())
+        except ValueError:
+            break
+        if keyword.lower() in USEFUL_HEADERS:
+            headers[keyword.lower()] = parsed
         offset += 1
+
+    xllcorner = headers["xllcorner"]
+    yllcorner = headers["yllcorner"]
+
+    if "cellsize" in headers:
+        dx = dy = headers["cellsize"]
+    elif "dx" in headers and "dy" in headers:
+        dx, dy = headers["dx"], headers["dy"]
 
     data_string = "\n".join(lines[offset:])
     zmap = np.loadtxt(StringIO(data_string), dtype=np.float64)
     zmap = zmap[::-1].T
 
-    return ImplicitDTM((xllcorner, yllcorner), (float(cellsize), float(cellsize)), zmap)
+    return ImplicitDTM((xllcorner, yllcorner), (dx, dy), zmap)
