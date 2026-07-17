@@ -96,12 +96,11 @@ class KarstNSimContent:
 
     simulation_params: SimulationParameters
     project_box: KarstNSimProjectBox
-    dem_resolution: Vec2Int
-    surface_data: np.ndarray  # resampled, flipped, shape (ny, nx)
+    surface_data: np.ndarray
     stratigraphy: KarstNSimStratigraphy
     compute_resolution: Vec3Int
     voxels_header: KarstNSimVoxelsHeader
-    voxels: np.ndarray  # shape (nx, ny, nz, 2)
+    voxels: np.ndarray
     voxels_units: KarstNSimVoxelsUnits
     faults: list[TriangleMesh]
     springs: list[KarstNSimSpring]

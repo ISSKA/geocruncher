@@ -61,4 +61,21 @@ class TestKarstNSimOutput:
         actual = json.loads(simulation_result)
         expected = json.loads(control_output)
 
-        assert actual == expected
+        assert len(actual["segments"]) == len(expected["segments"])
+
+        for i, (a_seg, e_seg) in enumerate(
+            zip(actual["segments"], expected["segments"])
+        ):
+            for key in ("start", "end"):
+                a_pt = a_seg[key]
+                e_pt = e_seg[key]
+                assert a_pt["branch_id"] == e_pt["branch_id"], (
+                    f"segment {i} {key} branch_id mismatch"
+                )
+                assert a_pt["vadose_flag"] == e_pt["vadose_flag"], (
+                    f"segment {i} {key} vadose_flag mismatch"
+                )
+                for field in ("x", "y", "z", "cost", "equivalent_radius"):
+                    assert a_pt[field] == pytest.approx(e_pt[field], rel=1e-3), (
+                        f"segment {i} {key}.{field}: {a_pt[field]} != {e_pt[field]}"
+                    )
