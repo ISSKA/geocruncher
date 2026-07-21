@@ -1,5 +1,6 @@
 import importlib.util
 import json
+from math import isclose
 
 import pytest
 
@@ -30,11 +31,6 @@ def simulation_result(
 
 
 class TestKarstNSimOutput:
-    def test_returns_bytes(self, simulation_result):
-        assert simulation_result
-
-        assert isinstance(simulation_result, bytes)
-
     def test_invalid_spring_raises_value_error(
         self,
         karstnsim_data_dict,
@@ -76,6 +72,6 @@ class TestKarstNSimOutput:
                     f"segment {i} {key} vadose_flag mismatch"
                 )
                 for field in ("x", "y", "z", "cost", "equivalent_radius"):
-                    assert a_pt[field] == pytest.approx(e_pt[field], rel=1e-3), (
+                    assert isclose(a_pt[field], e_pt[field], rel_tol=1e-3), (
                         f"segment {i} {key}.{field}: {a_pt[field]} != {e_pt[field]}"
                     )

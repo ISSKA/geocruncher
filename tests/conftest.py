@@ -86,9 +86,7 @@ def fault_bin_to_off(bin_bytes: bytes) -> bytes:
     return "\n".join(lines).encode("utf-8")
 
 
-# ---------------------------------------------------------------------------
-# Raw file fixtures
-# ---------------------------------------------------------------------------
+######## Raw file fixtures ########
 
 
 @pytest.fixture(scope="session")

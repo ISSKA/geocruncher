@@ -5,6 +5,16 @@ from io import BytesIO
 import pytest
 
 import api.api as api_module
+from tests.fixtures.payloads import (
+    GWB_MESHES_DATA,
+    INTERSECTIONS_DATA,
+    KARSTNSIM_DATA,
+    KARSTNSIM_DEM_BYTES,
+    KARSTNSIM_FAULT_BYTES,
+    KARSTNSIM_VOXELS_STR,
+    MESHES_DATA,
+    TUNNEL_MESHES_DATA,
+)
 from tests.support.api import (
     FakeAsyncResult,
     FakeRedis,
@@ -16,42 +26,6 @@ from tests.support.api import (
 )
 
 ######## Fixtures/Fakes ########
-
-MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}}
-
-BOX = {
-    "xmin": 0,
-    "ymin": 1,
-    "zmin": 2,
-    "xmax": 10,
-    "ymax": 11,
-    "zmax": 12,
-}
-
-INTERSECTIONS_DATA = {
-    "resolution": 25,
-    "toCompute": {"section-a": [BOX]},
-    "computeMap": False,
-}
-
-TUNNEL_MESHES_DATA = {
-    "tunnels": [
-        {
-            "name": "main",
-            "shape": "Circle",
-            "functions": [{"x": "t", "y": "0", "z": "0"}],
-            "radius": 2.0,
-        }
-    ],
-    "nb_vertices": 8,
-    "step": 0.5,
-    "idxStart": -1,
-    "idxEnd": -1,
-    "tStart": 0.0,
-    "tEnd": 1.0,
-}
-
-GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
 
 
 @pytest.fixture
@@ -68,19 +42,14 @@ def fake_redis(monkeypatch):
 
 
 @pytest.fixture
-def form_data(
-    karstnsim_data_dict,
-    karstnsim_dem_bytes,
-    karstnsim_voxels_str,
-    karstnsim_fault_bytes,
-):
+def form_data():
     return multipart_with_files(
-        karstnsim_data_dict,
-        dem=karstnsim_dem_bytes,
-        voxels=karstnsim_voxels_str.encode(),
+        KARSTNSIM_DATA,
+        dem=KARSTNSIM_DEM_BYTES,
+        voxels=KARSTNSIM_VOXELS_STR.encode(),
         **{
             f"fault_{fault_id}": data
-            for fault_id, data in karstnsim_fault_bytes.items()
+            for fault_id, data in KARSTNSIM_FAULT_BYTES.items()
         },
     )
 
@@ -508,6 +477,23 @@ class TestPostKarstNSim:
     @pytest.mark.parametrize(
         "payload",
         [
+            {"data": json.dumps(KARSTNSIM_DATA)},
+            multipart_with_files(KARSTNSIM_DATA, dem=KARSTNSIM_DEM_BYTES),
+            multipart_with_files(KARSTNSIM_DATA, voxels=KARSTNSIM_VOXELS_STR.encode()),
+        ],
+    )
+    def test_missing_required_files_return_400(self, client, payload):
+        response = client.post(
+            "/compute/karstnsim",
+            data=payload,
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
             {},
             {"data": "not json"},
         ],
@@ -516,10 +502,9 @@ class TestPostKarstNSim:
         self,
         client,
         payload,
-        karstnsim_dem_bytes,
     ):
         if payload:
-            payload["dem"] = (BytesIO(karstnsim_dem_bytes), "dem.bin")
+            payload["dem"] = (BytesIO(b"dem-bytes"), "dem.bin")
 
         response = client.post(
             "/compute/karstnsim",
@@ -529,9 +514,7 @@ class TestPostKarstNSim:
 
         assert response.status_code == 400
 
-    def test_stores_uploaded_files(
-        self, monkeypatch, client, form_data, karstnsim_fault_bytes, fake_redis
-    ):
+    def test_stores_uploaded_files(self, monkeypatch, client, form_data, fake_redis):
         import api.api as api
 
         task = FakeTask()
@@ -550,7 +533,7 @@ class TestPostKarstNSim:
 
         assert b"dem" in stored
         assert b"voxels" in stored
-        for fault_id in karstnsim_fault_bytes:
+        for fault_id in KARSTNSIM_FAULT_BYTES:
             assert f"fault_{fault_id}".encode() in stored
 
 
@@ -576,6 +559,19 @@ class TestGetKarstNSim:
     def test_missing_id_returns_400(self, client):
         response = client.get("/compute/karstnsim")
         assert response.status_code == 400
+
+    def test_empty_success_output_returns_204(self, client, fake_redis, monkeypatch):
+        fake_redis.values["output-key"] = b""
+        set_async_result(
+            monkeypatch,
+            api_module,
+            lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
+        )
+
+        response = client.get("/compute/karstnsim?id=task-id")
+
+        assert response.status_code == 204
+        assert fake_redis.deleted == ["output-key"]
 
 
 class TestPollKarstNSimJob:
