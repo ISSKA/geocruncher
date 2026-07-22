@@ -7,14 +7,14 @@ from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
     KarstNSimContent,
     KarstNSimData,
-    KarstNSimStratigraphy,
-    KarstNSimVoxelsHeader,
-    KarstNSimVoxelsUnits,
+    StratigraphyInput,
+    VoxelsHeader,
+    VoxelsUnitsInput,
 )
 from geocruncher.mesh_io.mesh_io import TriangleMesh, read_mesh
 
 
-def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndarray]:
+def load_voxels(voxels_lines: list[str]) -> tuple[VoxelsHeader, np.ndarray]:
     """Load voxel grid and return as ndarray of shape (nx, ny, nz, 2) where last dimension is (rank, gwb_id)"""
     # File has 3 lines:
     # format is:
@@ -40,7 +40,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndar
         raise ValueError(
             f"Voxel count mismatch: header says {expected_n_voxels}, but found {actual_n_voxels} data lines"
         )
-    header = KarstNSimVoxelsHeader(
+    header = VoxelsHeader(
         xmin=xmin,
         xmax=xmax,
         ymin=ymin,
@@ -53,7 +53,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[KarstNSimVoxelsHeader, np.ndar
         novalue=novalue,
     )
     # Load the voxel data into an array of shape (n_voxels, 2)
-    voxel_data = np.loadtxt(voxels_lines[2:], dtype=np.int32)
+    voxel_data = np.loadtxt(voxels_lines[2:], dtype=np.int32, ndmin=2)
 
     if voxel_data.shape != (expected_n_voxels, 2):
         raise ValueError(
@@ -122,11 +122,11 @@ def build_karstnsim_content(
         simulation_params=data["simulation_params"],
         project_box=data["project_box"],
         surface_data=surface_data,
-        stratigraphy=KarstNSimStratigraphy(data["stratigraphy"]),
+        stratigraphy=StratigraphyInput(data["stratigraphy"]),
         compute_resolution=compute_resolution,
         voxels_header=voxels_header,
         voxels=voxels,
-        voxels_units=KarstNSimVoxelsUnits(data["voxels_units"]),
+        voxels_units=VoxelsUnitsInput(data["voxels_units"]),
         faults=faults,
         springs=data["springs"],
         gwbs=data["gwbs"],

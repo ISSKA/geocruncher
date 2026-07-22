@@ -8,8 +8,16 @@ import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 from pydantic.alias_generators import to_camel
 
-from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Float, Vec3Int
+from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.mesh_io.mesh_io import TriangleMesh
+
+
+class ApiInputModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        validate_by_alias=True,
+        validate_by_name=True,
+    )
 
 
 class Permeability(enum.Enum):
@@ -27,7 +35,7 @@ PERMEABILITY_MAP: dict[Permeability, float] = {
 }
 
 
-class KarstNSimProjectBox(BaseModel):
+class ProjectBoxInput(ApiInputModel):
     width: float = Field(gt=0)
     height: float = Field(gt=0)
     min_elevation: float
@@ -44,24 +52,26 @@ class KarstNSimProjectBox(BaseModel):
         return self
 
 
-class KarstNSimGeologicalUnit(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, validate_by_name=True)
+class GeologicalUnitInput(ApiInputModel):
     name: str
     permeability: Permeability
     strati_unit_id: int
 
 
-KarstNSimStratigraphy = RootModel[list[KarstNSimGeologicalUnit]]
+StratigraphyInput = RootModel[list[GeologicalUnitInput]]
 
 
-class KarstNSimSpring(Vec3Float):
+class SpringInput(ApiInputModel):
     """Spring as received from the API — distinct from computations.Spring (gwb meshes)"""
 
+    x: float
+    y: float
+    z: float
     poi_id: int
     catchment: list[tuple[float, float]]
 
 
-class KarstNSimVoxelsHeader(BaseModel):
+class VoxelsHeader(BaseModel):
     xmin: float
     xmax: float
     ymin: float
@@ -84,16 +94,15 @@ class KarstNSimVoxelsHeader(BaseModel):
         return self
 
 
-KarstNSimVoxelsUnits = RootModel[list[int]]
+VoxelsUnitsInput = RootModel[list[int]]
 
 
-class KarstNSimGroundwaterBody(BaseModel):
+class GroundwaterBodyInput(ApiInputModel):
     gwb_id: int
     spring_id: int
 
 
-class SimulationParameters(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class SimulationParameters(ApiInputModel):
     name: str = "Karst Network"
     seed: int = Field(default=-1, ge=-1)
     k_pts: int = Field(default=20, gt=0)
@@ -111,19 +120,19 @@ class SimulationParameters(BaseModel):
 
 @dataclass
 class KarstNSimContent:
-    """Replaces VkZipContent — holds all parsed simulation inputs"""
+    """Prepared content for the KarstNSim computation, after loading and processing the input data."""
 
     simulation_params: SimulationParameters
-    project_box: KarstNSimProjectBox
+    project_box: ProjectBoxInput
     surface_data: np.ndarray
-    stratigraphy: KarstNSimStratigraphy
+    stratigraphy: StratigraphyInput
     compute_resolution: Vec3Int
-    voxels_header: KarstNSimVoxelsHeader
+    voxels_header: VoxelsHeader
     voxels: np.ndarray
-    voxels_units: KarstNSimVoxelsUnits
+    voxels_units: VoxelsUnitsInput
     faults: list[TriangleMesh]
-    springs: list[KarstNSimSpring]
-    gwbs: list[KarstNSimGroundwaterBody]
+    springs: list[SpringInput]
+    gwbs: list[GroundwaterBodyInput]
     surface_resolution: Vec2Float
     resampled_dem_resolution: Vec2Int
 
@@ -133,11 +142,11 @@ class KarstNSimData(TypedDict):
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 
     simulation_params: SimulationParameters
-    project_box: KarstNSimProjectBox
+    project_box: ProjectBoxInput
     dem_resolution: Vec2Int
-    stratigraphy: list[KarstNSimGeologicalUnit]
-    voxels_header: KarstNSimVoxelsHeader
+    stratigraphy: list[GeologicalUnitInput]
+    voxels_header: VoxelsHeader
     voxels_units: list[int]
     fault_ids: list[int]
-    springs: list[KarstNSimSpring]
-    gwbs: list[KarstNSimGroundwaterBody]
+    springs: list[SpringInput]
+    gwbs: list[GroundwaterBodyInput]

@@ -1,5 +1,4 @@
 import json
-from unittest.mock import patch
 
 import pytest
 
@@ -310,117 +309,44 @@ def test_compute_gwb_meshes_reads_unit_meshes_and_writes_metadata_and_meshes(
     }
 
 
-class TestComputeKarstNSimTask:
-    def test_reads_inputs(
-        self,
-        redis_with_inputs,
-        karstnsim_data_adapter,
-    ):
-        from api.tasks import compute_karstnsim
+def test_compute_karstnsim_reads_inputs_and_stores_output(
+    monkeypatch, redis_with_inputs
+):
+    captured = {}
+    monkeypatch.setattr(tasks, "r", redis_with_inputs)
 
-        captured = {}
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["dem"] = dem
+        captured["voxels"] = voxels
+        captured["faults"] = faults
+        return b"output"
 
-        def fake_run(data, dem, voxels, faults, metadata):
-            captured["dem"] = dem
-            captured["voxels"] = voxels
-            captured["faults"] = faults
-            return b"output"
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
-        with (
-            patch("api.tasks.r", redis_with_inputs),
-            patch(
-                "api.tasks.run_karstnsim",
-                side_effect=fake_run,
-            ),
-        ):
-            compute_karstnsim(
-                karstnsim_data_adapter.validate_python(KARSTNSIM_DATA),
-                "files_key",
-                "output_key",
-            )
+    result = tasks.compute_karstnsim.run(KARSTNSIM_DATA, "files_key", "output_key")
 
-        assert captured["dem"] == KARSTNSIM_DEM_BYTES
-        assert captured["voxels"] == KARSTNSIM_VOXELS_STR
-        assert captured["faults"] == KARSTNSIM_FAULT_BYTES
+    assert result == "output_key"
+    assert captured["dem"] == KARSTNSIM_DEM_BYTES
+    assert captured["voxels"] == KARSTNSIM_VOXELS_STR
+    assert captured["faults"] == KARSTNSIM_FAULT_BYTES
+    assert redis_with_inputs.get("output_key") == b"output"
+    assert "files_key" in redis_with_inputs.deleted
 
-    def test_stores_output(self, redis_with_inputs, karstnsim_data_adapter):
-        from api.tasks import compute_karstnsim
 
-        output = b"\n"
+def test_compute_karstnsim_handles_missing_faults(monkeypatch):
+    redis = FakeRedis()
+    redis.hset("files_key", "dem", KARSTNSIM_DEM_BYTES)
+    redis.hset("files_key", "voxels", KARSTNSIM_VOXELS_STR)
+    monkeypatch.setattr(tasks, "r", redis)
 
-        with (
-            patch("api.tasks.r", redis_with_inputs),
-            patch(
-                "api.tasks.run_karstnsim",
-                return_value=output,
-            ),
-        ):
-            key = compute_karstnsim(
-                karstnsim_data_adapter.validate_python(KARSTNSIM_DATA),
-                "files_key",
-                "output_key",
-            )
+    captured = {}
 
-        assert key == "output_key"
-        assert redis_with_inputs.get("output_key") == output
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["faults"] = faults
+        return b"output"
 
-    def test_deletes_input_hash(self, redis_with_inputs, karstnsim_data_adapter):
-        from api.tasks import compute_karstnsim
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
-        with (
-            patch("api.tasks.r", redis_with_inputs),
-            patch(
-                "api.tasks.run_karstnsim",
-                return_value=b"output",
-            ),
-        ):
-            compute_karstnsim(
-                karstnsim_data_adapter.validate_python(KARSTNSIM_DATA),
-                "files_key",
-                "output_key",
-            )
+    tasks.compute_karstnsim.run(KARSTNSIM_DATA, "files_key", "output_key")
 
-        assert "files_key" in redis_with_inputs.deleted
-
-    def test_parses_fault_ids(self, redis_with_inputs, karstnsim_data_adapter):
-        from api.tasks import compute_karstnsim
-
-        captured = {}
-
-        def fake_run(data, dem, voxels, faults, metadata):
-            captured.update(faults)
-            return b"output"
-
-        with (
-            patch("api.tasks.r", redis_with_inputs),
-            patch(
-                "api.tasks.run_karstnsim",
-                side_effect=fake_run,
-            ),
-        ):
-            compute_karstnsim(
-                karstnsim_data_adapter.validate_python(KARSTNSIM_DATA),
-                "files_key",
-                "output_key",
-            )
-
-        assert captured == KARSTNSIM_FAULT_BYTES
-
-    def test_handles_missing_faults(self, monkeypatch):
-        from api.tasks import compute_karstnsim
-
-        redis = FakeRedis()
-        redis.hset("files_key", "dem", KARSTNSIM_DEM_BYTES)
-        redis.hset("files_key", "voxels", KARSTNSIM_VOXELS_STR)
-        monkeypatch.setattr(tasks, "r", redis)
-
-        captured = {}
-
-        def fake_run(data, dem, voxels, faults, metadata):
-            captured["faults"] = faults
-            return b"output"
-
-        with patch("api.tasks.run_karstnsim", side_effect=fake_run):
-            compute_karstnsim(KARSTNSIM_DATA, "files_key", "output_key")
-
-        assert captured["faults"] == {}
+    assert captured["faults"] == {}

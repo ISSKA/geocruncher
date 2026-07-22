@@ -1,3 +1,5 @@
+import numpy as np
+
 MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}}
 
 INTERSECTIONS_DATA = {
@@ -45,7 +47,10 @@ KARSTNSIM_DATA = {
         "min_elevation": 0.0,
         "max_elevation": 10.0,
     },
-    "dem_resolution": {"x": 2, "y": 2},
+    "dem_resolution": {
+        "x": 4,
+        "y": 4,
+    },
     "stratigraphy": [{"name": "Unit", "permeability": "Karstified", "stratiUnitId": 1}],
     "voxels_header": {
         "xmin": 0.0,
@@ -54,13 +59,13 @@ KARSTNSIM_DATA = {
         "ymax": 10.0,
         "zmin": 0.0,
         "zmax": 10.0,
-        "nx": 1,
-        "ny": 1,
+        "nx": 2,
+        "ny": 2,
         "nz": 1,
         "novalue": 0,
     },
-    "voxels_units": [1],
-    "fault_ids": [1],
+    "voxels_units": [1, 1, 1, 1],
+    "fault_ids": [],
     "springs": [
         {
             "poi_id": 1,
@@ -73,6 +78,23 @@ KARSTNSIM_DATA = {
     "gwbs": [{"gwb_id": 1, "spring_id": 1}],
 }
 
-KARSTNSIM_DEM_BYTES = b"dem-bytes"
-KARSTNSIM_VOXELS_STR = "header\nrank gwb_id\n1 1\n"
-KARSTNSIM_FAULT_BYTES = {1: b"fault-bytes"}
+KARSTNSIM_DEM_BYTES = np.array(
+    [
+        [1, 2, 3, 4],
+        [5, 6, 7, 8],
+        [9, 10, 11, 12],
+        [13, 14, 15, 16],
+    ],
+    dtype=np.float32,
+).tobytes()
+
+KARSTNSIM_VOXELS_STR = """
+XMIN=0 XMAX=10 YMIN=0 YMAX=10 ZMIN=0 ZMAX=10 NUMBERX=2 NUMBERY=2 NUMBERZ=1 NOVALUE=0
+rank gwb_id
+1 10
+2 20
+3 30
+4 40
+""".strip()
+
+KARSTNSIM_FAULT_BYTES = {}

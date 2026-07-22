@@ -62,7 +62,7 @@ def run_karstnsim(
     start_step("load_springs")
     springs = [
         Spring(
-            origin=(s["x"], s["y"], s["z"]),
+            origin=(s.x, s.y, s.z),
             index=i + 1,
             water_table_index=0,
             radius=0.0,
@@ -93,16 +93,16 @@ def run_karstnsim(
         if gwb.gwb_id == gwb_id
     }
 
-    for spring, karstnsim_spring in zip(
+    for spring, input_spring in zip(
         springs,
         content.springs,
     ):
-        if karstnsim_spring["poi_id"] not in spring_to_wt_index:
+        if input_spring.poi_id not in spring_to_wt_index:
             raise ValueError(
                 f"Spring {spring.index} has no associated groundwater body"
             )
 
-        spring.water_table_index = spring_to_wt_index[karstnsim_spring["poi_id"]]
+        spring.water_table_index = spring_to_wt_index[input_spring.poi_id]
 
     profile_step("associate_springs_water_tables")
 

@@ -12,20 +12,20 @@ class TestLoadProjectBox:
     def test_densities_reflect_permeability(self):
         from geocruncher.karstnsim.converters import load_project_box
         from geocruncher.karstnsim.models import (
-            KarstNSimGeologicalUnit,
-            KarstNSimProjectBox,
-            KarstNSimStratigraphy,
+            GeologicalUnitInput,
+            ProjectBoxInput,
+            StratigraphyInput,
         )
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 30.0}
         )
-        stratigraphy = KarstNSimStratigraphy(
+        stratigraphy = StratigraphyInput(
             [
-                KarstNSimGeologicalUnit.model_validate(
+                GeologicalUnitInput.model_validate(
                     {"name": "Aquifer", "permeability": "Karstified", "stratiUnitId": 1}
                 ),
-                KarstNSimGeologicalUnit.model_validate(
+                GeologicalUnitInput.model_validate(
                     {
                         "name": "Impervious",
                         "permeability": "NonKarstified",
@@ -54,17 +54,17 @@ class TestLoadProjectBox:
         """Cells inside a GWB (gwb_id > 0) must have potential 1.0 regardless of rank."""
         from geocruncher.karstnsim.converters import load_project_box
         from geocruncher.karstnsim.models import (
-            KarstNSimGeologicalUnit,
-            KarstNSimProjectBox,
-            KarstNSimStratigraphy,
+            GeologicalUnitInput,
+            ProjectBoxInput,
+            StratigraphyInput,
         )
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 20.0}
         )
-        stratigraphy = KarstNSimStratigraphy(
+        stratigraphy = StratigraphyInput(
             [
-                KarstNSimGeologicalUnit.model_validate(
+                GeologicalUnitInput.model_validate(
                     {"name": "Aquifer", "permeability": "Karstified", "stratiUnitId": 1}
                 )
             ]
@@ -77,24 +77,24 @@ class TestLoadProjectBox:
         )
 
         potentials = result.karstification_potential
-        assert potentials[0] != 1.0  # not in gwb
+        assert potentials[0] == pytest.approx(0.5)  # not in gwb
         assert potentials[1] == pytest.approx(1.0)  # in gwb
 
     def test_raises_when_density_exceeds_one(self):
         """cells_w / depth > 1 must raise, not silently produce invalid densities."""
         from geocruncher.karstnsim.converters import load_project_box
         from geocruncher.karstnsim.models import (
-            KarstNSimGeologicalUnit,
-            KarstNSimProjectBox,
-            KarstNSimStratigraphy,
+            GeologicalUnitInput,
+            ProjectBoxInput,
+            StratigraphyInput,
         )
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 5.0}
         )
-        stratigraphy = KarstNSimStratigraphy(
+        stratigraphy = StratigraphyInput(
             [
-                KarstNSimGeologicalUnit.model_validate(
+                GeologicalUnitInput.model_validate(
                     {"name": "Aquifer", "permeability": "Karstified", "stratiUnitId": 1}
                 )
             ]
@@ -109,10 +109,10 @@ class TestLoadSinks:
     def test_sinks_land_inside_catchment_polygon(self):
         """All generated sink XY coordinates must lie within the spring's catchment polygon."""
         from geocruncher.karstnsim.converters import load_sinks
-        from geocruncher.karstnsim.models import KarstNSimSpring
+        from geocruncher.karstnsim.models import SpringInput
 
         springs = [
-            KarstNSimSpring(
+            SpringInput(
                 poi_id=1,
                 x=5.0,
                 y=5.0,
@@ -136,18 +136,18 @@ class TestLoadSinks:
         assert len(sinks) == 10
         for sink in sinks:
             x, y = sink.origin.x, sink.origin.y
-            assert 0.0 <= x <= 10.0
-            assert 0.0 <= y <= 10.0
+            assert 2.0 <= x <= 8.0
+            assert 2.0 <= y <= 8.0
 
     def test_sink_elevation_matches_surface(self):
         """Sink z must equal the bilinearly interpolated surface elevation at its XY."""
         from geocruncher.karstnsim.converters import load_sinks
-        from geocruncher.karstnsim.models import KarstNSimSpring
+        from geocruncher.karstnsim.models import SpringInput
 
         # Flat surface at known elevation
         surface = np.full((11, 11), 250.0, dtype=np.float64)
         springs = [
-            KarstNSimSpring(
+            SpringInput(
                 poi_id=1,
                 x=5.0,
                 y=5.0,
@@ -173,17 +173,17 @@ class TestLoadSinks:
     def test_connectivity_matrix_links_sink_to_correct_spring(self):
         """Each sink must be connected to exactly the spring whose catchment it was sampled from."""
         from geocruncher.karstnsim.converters import load_sinks
-        from geocruncher.karstnsim.models import KarstNSimSpring
+        from geocruncher.karstnsim.models import SpringInput
 
         springs = [
-            KarstNSimSpring(
+            SpringInput(
                 poi_id=1,
                 x=5.0,
                 y=5.0,
                 z=1.0,
                 catchment=[(2.0, 2.0), (2.0, 8.0), (8.0, 8.0), (8.0, 2.0)],
             ),
-            KarstNSimSpring(
+            SpringInput(
                 poi_id=2,
                 x=7.0,
                 y=7.0,
@@ -204,24 +204,31 @@ class TestLoadSinks:
             2,
         )
 
+        catchments = [springs[0].catchment, springs[1].catchment]
+
         for i, sink in enumerate(sinks):
+            row = connectivity.matrix[i]
+            connected = [
+                j for j, v in enumerate(row) if v == ConnectivityType.CONNECTED
+            ]
+            assert len(connected) == 1
+
+            spring_idx = connected[0]
             x, y = sink.origin.x, sink.origin.y
-            row = connectivity.matrix[i]  # was .rows
-            if x <= 4.0 and y <= 4.0:
-                assert row[0] == ConnectivityType.CONNECTED
-                assert row[1] == ConnectivityType.NOT_CONNECTED
-            else:
-                assert row[0] == ConnectivityType.NOT_CONNECTED
-                assert row[1] == ConnectivityType.CONNECTED
+            coords = catchments[spring_idx]
+            xs = [p[0] for p in coords]
+            ys = [p[1] for p in coords]
+            assert min(xs) <= x <= max(xs)
+            assert min(ys) <= y <= max(ys)
 
 
 class TestLoadWaterTables:
     def test_vertex_z_coords_match_voxel_top_layer(self):
         """Z coordinates of surface vertices must equal (top_layer_index + 1) * dz + min_elevation."""
         from geocruncher.karstnsim.converters import load_water_tables
-        from geocruncher.karstnsim.models import KarstNSimProjectBox
+        from geocruncher.karstnsim.models import ProjectBoxInput
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {
                 "width": 10.0,
                 "height": 10.0,
@@ -247,9 +254,9 @@ class TestLoadWaterTables:
     def test_each_gwb_produces_separate_surface(self):
         """Distinct gwb_ids in the voxel array must produce distinct surfaces."""
         from geocruncher.karstnsim.converters import load_water_tables
-        from geocruncher.karstnsim.models import KarstNSimProjectBox
+        from geocruncher.karstnsim.models import ProjectBoxInput
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 20.0}
         )
         voxels = np.zeros((4, 4, 2, 2), dtype=np.int32)
@@ -265,9 +272,9 @@ class TestLoadWaterTables:
     def test_gwb_zero_is_excluded(self):
         """Voxels with gwb_id=0 must not produce a surface."""
         from geocruncher.karstnsim.converters import load_water_tables
-        from geocruncher.karstnsim.models import KarstNSimProjectBox
+        from geocruncher.karstnsim.models import ProjectBoxInput
 
-        box = KarstNSimProjectBox.model_validate(
+        box = ProjectBoxInput.model_validate(
             {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 10.0}
         )
         voxels = np.zeros((2, 2, 2, 2), dtype=np.int32)  # all gwb_id=0

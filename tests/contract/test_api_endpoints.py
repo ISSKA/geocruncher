@@ -1,6 +1,5 @@
 import json
 import tarfile
-from io import BytesIO
 
 import pytest
 
@@ -100,6 +99,7 @@ def test_post_tunnel_meshes_valid_data_queues_task(client, monkeypatch):
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
+        "/compute/karstnsim",
     ],
 )
 def test_post_endpoints_invalid_json_returns_400(client, path):
@@ -260,6 +260,7 @@ def test_post_gwb_meshes_stores_unit_meshes_and_queues_task(
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
+        "/compute/karstnsim",
     ],
 )
 def test_get_compute_endpoints_require_id(client, path):
@@ -278,6 +279,7 @@ def test_get_compute_endpoints_require_id(client, path):
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
+        "/compute/karstnsim",
     ],
 )
 def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, path):
@@ -300,6 +302,7 @@ def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, pat
         ("/compute/intersections", "value"),
         ("/compute/voxels", "value"),
         ("/compute/gwb_meshes", "hash"),
+        ("/compute/karstnsim", "value"),
     ],
 )
 def test_get_compute_endpoints_return_204_for_empty_success_output(
@@ -448,152 +451,95 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
     assert response.text == "Task task-id could not be revoked"
 
 
-class TestPostKarstNSim:
-    def test_returns_202_with_task_id(
-        self,
-        monkeypatch,
-        client,
-        form_data,
-        fake_redis,
-    ):
-        import api.api as api
+def test_post_karstnsim_stores_inputs_and_queues_task(
+    client, fake_redis, monkeypatch, karstnsim_data_adapter
+):
+    task = FakeTask("karstnsim-id")
+    metadata = {"request_id": "req-karst"}
+    set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
+    monkeypatch.setattr(api_module.tasks, "compute_karstnsim", task)
 
-        task = FakeTask("task-id")
-
-        monkeypatch.setattr(api, "r", fake_redis)
-        monkeypatch.setattr(api.tasks, "compute_karstnsim", task)
-        set_generated_keys(monkeypatch, api, "files-key", "output-key")
-
-        response = client.post(
-            "/compute/karstnsim",
-            data=form_data,
-            content_type="multipart/form-data",
-        )
-
-        assert response.status_code == 202
-        assert response.data == b"task-id"
-        assert task.calls
-
-    @pytest.mark.parametrize(
-        "payload",
-        [
-            {"data": json.dumps(KARSTNSIM_DATA)},
-            multipart_with_files(KARSTNSIM_DATA, dem=KARSTNSIM_DEM_BYTES),
-            multipart_with_files(KARSTNSIM_DATA, voxels=KARSTNSIM_VOXELS_STR.encode()),
-        ],
+    response = client.post(
+        "/compute/karstnsim",
+        data=multipart_with_files(
+            KARSTNSIM_DATA,
+            metadata=metadata,
+            dem=KARSTNSIM_DEM_BYTES,
+            voxels=KARSTNSIM_VOXELS_STR.encode(),
+            **{
+                f"fault_{fault_id}": data
+                for fault_id, data in KARSTNSIM_FAULT_BYTES.items()
+            },
+        ),
+        content_type="multipart/form-data",
     )
-    def test_missing_required_files_return_400(self, client, payload):
-        response = client.post(
-            "/compute/karstnsim",
-            data=payload,
-            content_type="multipart/form-data",
-        )
 
-        assert response.status_code == 400
+    assert response.status_code == 202
+    assert response.text == "karstnsim-id"
+    stored = fake_redis.hashes["files-key"]
+    assert b"dem" in stored
+    assert b"voxels" in stored
+    for fault_id in KARSTNSIM_FAULT_BYTES:
+        assert f"fault_{fault_id}".encode() in stored
 
-    @pytest.mark.parametrize(
-        "payload",
-        [
-            {},
-            {"data": "not json"},
-        ],
+    assert len(task.calls) == 1
+    call_data, call_files_key, call_output_key, call_metadata = task.calls[0]
+    assert call_files_key == "files-key"
+    assert call_output_key == "output-key"
+    assert call_metadata == metadata
+    assert call_data == karstnsim_data_adapter.validate_python(KARSTNSIM_DATA)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        multipart_with_files(KARSTNSIM_DATA, dem=KARSTNSIM_DEM_BYTES),
+        multipart_with_files(KARSTNSIM_DATA, voxels=KARSTNSIM_VOXELS_STR.encode()),
+    ],
+    ids=["missing-voxels", "missing-dem"],
+)
+def test_post_karstnsim_missing_required_files_returns_400(client, payload):
+    response = client.post(
+        "/compute/karstnsim",
+        data=payload,
+        content_type="multipart/form-data",
     )
-    def test_invalid_requests_return_400(
-        self,
-        client,
-        payload,
-    ):
-        if payload:
-            payload["dem"] = (BytesIO(b"dem-bytes"), "dem.bin")
-
-        response = client.post(
-            "/compute/karstnsim",
-            data=payload,
-            content_type="multipart/form-data",
-        )
-
-        assert response.status_code == 400
-
-    def test_stores_uploaded_files(self, monkeypatch, client, form_data, fake_redis):
-        import api.api as api
-
-        task = FakeTask()
-
-        monkeypatch.setattr(api, "r", fake_redis)
-        monkeypatch.setattr(api.tasks, "compute_karstnsim", task)
-        set_generated_keys(monkeypatch, api, "files-key", "output-key")
-
-        client.post(
-            "/compute/karstnsim",
-            data=form_data,
-            content_type="multipart/form-data",
-        )
-
-        stored = fake_redis.hashes["files-key"]
-
-        assert b"dem" in stored
-        assert b"voxels" in stored
-        for fault_id in KARSTNSIM_FAULT_BYTES:
-            assert f"fault_{fault_id}".encode() in stored
+    assert response.status_code == 400
 
 
-class TestGetKarstNSim:
-    def test_returns_pending(
-        self,
+def test_get_karstnsim_returns_json_and_deletes_output(client, fake_redis, monkeypatch):
+    fake_redis.values["output-key"] = b'{"segments":[]}'
+    set_async_result(
         monkeypatch,
-        client,
-    ):
-        import api.api as api
+        api_module,
+        lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
+    )
 
-        set_async_result(
-            monkeypatch,
-            api,
-            lambda *_: FakeAsyncResult(state="PENDING"),
-        )
+    response = client.get("/compute/karstnsim", query_string={"id": "task-id"})
 
-        response = client.get("/compute/karstnsim?id=task-id")
-
-        assert response.status_code == 200
-        assert response.data == b"PENDING"
-
-    def test_missing_id_returns_400(self, client):
-        response = client.get("/compute/karstnsim")
-        assert response.status_code == 400
-
-    def test_empty_success_output_returns_204(self, client, fake_redis, monkeypatch):
-        fake_redis.values["output-key"] = b""
-        set_async_result(
-            monkeypatch,
-            api_module,
-            lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
-        )
-
-        response = client.get("/compute/karstnsim?id=task-id")
-
-        assert response.status_code == 204
-        assert fake_redis.deleted == ["output-key"]
+    assert response.status_code == 200
+    assert response.mimetype == "application/json"
+    assert response.text == '{"segments":[]}'
+    assert fake_redis.deleted == ["output-key"]
 
 
-class TestPollKarstNSimJob:
-    def test_returns_null_progress(
-        self,
-        monkeypatch,
-        client,
-    ):
-        import api.api as api
+def test_post_karstnsim_without_faults_succeeds(client, fake_redis, monkeypatch):
+    task = FakeTask("karstnsim-id")
+    set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
+    monkeypatch.setattr(api_module.tasks, "compute_karstnsim", task)
 
-        set_async_result(
-            monkeypatch,
-            api,
-            lambda *_: FakeAsyncResult(state="STARTED"),
-        )
+    response = client.post(
+        "/compute/karstnsim",
+        data=multipart_with_files(
+            KARSTNSIM_DATA,
+            dem=KARSTNSIM_DEM_BYTES,
+            voxels=KARSTNSIM_VOXELS_STR.encode(),
+        ),
+        content_type="multipart/form-data",
+    )
 
-        response = client.post("/poll", json=["task-id"])
-
-        assert response.status_code == 200
-
-        body = json.loads(response.data)
-        assert body["task-id"] == {
-            "state": "STARTED",
-            "progress": None,
-        }
+    assert response.status_code == 202
+    stored = fake_redis.hashes["files-key"]
+    assert b"dem" in stored
+    assert b"voxels" in stored
+    assert not any(k.startswith(b"fault_") for k in stored)

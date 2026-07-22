@@ -17,26 +17,26 @@ from shapely import Polygon, contains_xy
 from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
     PERMEABILITY_MAP,
-    KarstNSimGeologicalUnit,
-    KarstNSimProjectBox,
-    KarstNSimSpring,
-    KarstNSimStratigraphy,
+    GeologicalUnitInput,
     Permeability,
+    ProjectBoxInput,
+    SpringInput,
+    StratigraphyInput,
 )
 
 LOGGER = logging.getLogger(__name__)
 
-SKY = KarstNSimGeologicalUnit(
+SKY = GeologicalUnitInput(
     name="Sky", permeability=Permeability.NonKarstified, strati_unit_id=0
 )
-DUMMY = KarstNSimGeologicalUnit(
+DUMMY = GeologicalUnitInput(
     name="Dummy", permeability=Permeability.Undefined, strati_unit_id=0
 )
 
 
 def load_project_box(
-    box: KarstNSimProjectBox,
-    stratigraphy: KarstNSimStratigraphy,
+    box: ProjectBoxInput,
+    stratigraphy: StratigraphyInput,
     compute_resolution: Vec3Int,
     voxels: np.ndarray,
     voxels_units: list[int],
@@ -59,7 +59,7 @@ def load_project_box(
     rank_count = len(units)
 
     # Build rank -> unit lookup
-    rank_to_unit: dict[int, KarstNSimGeologicalUnit] = {}
+    rank_to_unit: dict[int, GeologicalUnitInput] = {}
     for j, unit_id in enumerate(voxels_units):
         # Find the unit with the matching strati_unit_id
         unit = next(filter(lambda uN: uN.strati_unit_id == unit_id, units), None)
@@ -137,7 +137,7 @@ def load_project_box(
 
 def load_sinks(
     n_sinks: int,
-    springs: list[KarstNSimSpring],
+    springs: list[SpringInput],
     dem_resolution: Vec2Int,
     surface_resolution: Vec2Float,
     surface_data: np.ndarray,
@@ -228,12 +228,12 @@ def load_sinks(
     catchment_ids: list[str | int] = []
     catchment_polygons: list[Polygon] = []
     for spring in springs:
-        coords = np.array(spring["catchment"], dtype=np.float64)
+        coords = np.array(spring.catchment, dtype=np.float64)
         polygon = Polygon(coords)
         # Shapely trick to fix invalid polygons (self-intersections, duplicate points, ...)
         if not polygon.is_valid:
             polygon = polygon.buffer(0)
-        catchment_ids.append(spring["poi_id"])
+        catchment_ids.append(spring.poi_id)
         catchment_polygons.append(polygon)
 
     areas = np.array([poly.area for poly in catchment_polygons], dtype=np.float64)
@@ -288,7 +288,7 @@ def load_sinks(
 
 def load_water_tables(
     voxels: np.ndarray,
-    project_box: KarstNSimProjectBox,
+    project_box: ProjectBoxInput,
 ) -> dict[int, Surface]:
     """Build a triangulated water-table surface for each groundwater body present in the voxels."""
 
