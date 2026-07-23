@@ -2,9 +2,9 @@ import pytest
 
 
 def test_camel_case_aliases():
-    from geocruncher.karstnsim.models import SimulationParameters
+    from geocruncher.karstnsim.models import SimulationParametersInput
 
-    params = SimulationParameters.model_validate(
+    params = SimulationParametersInput.model_validate(
         {
             "kPts": 15,
             "cohesionFactor": 0.8,
@@ -32,10 +32,10 @@ def test_camel_case_aliases():
 def test_simulation_parameters_rejects_invalid_parameters(field, value):
     from pydantic import ValidationError
 
-    from geocruncher.karstnsim.models import SimulationParameters
+    from geocruncher.karstnsim.models import SimulationParametersInput
 
     with pytest.raises(ValidationError):
-        SimulationParameters(**{field: value})
+        SimulationParametersInput(**{field: value})
 
 
 def test_project_box_rejects_invalid_elevation_range():
@@ -78,24 +78,4 @@ def test_geological_unit_rejects_invalid_permeability():
                 "permeability": "NotARealValue",
                 "stratiUnitId": 7,
             }
-        )
-
-
-def test_voxels_header_rejects_invalid_voxel_bounds():
-    from pydantic import ValidationError
-
-    from geocruncher.karstnsim.models import VoxelsHeader
-
-    with pytest.raises(ValidationError):
-        VoxelsHeader(
-            xmin=10,
-            xmax=0,
-            ymin=0,
-            ymax=1,
-            zmin=0,
-            zmax=1,
-            nx=1,
-            ny=1,
-            nz=1,
-            novalue=0,
         )

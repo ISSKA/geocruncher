@@ -317,9 +317,14 @@ def compute_karstnsim():
         for key, f in request.files.items():
             if key.startswith("fault_"):
                 hset_bytes(r, files_key, key, f.read())
-
         output_key = generate_key()
-        res = tasks.compute_karstnsim.delay(data, files_key, output_key, metadata)
+        # dump the data to JSON because the KarstNSimData object contains models that are not serializable by Celery
+        res = tasks.compute_karstnsim.delay(
+            _karstnsim_adapter.dump_python(data, mode="json"),
+            files_key,
+            output_key,
+            metadata,
+        )
         return Response(res.id, 202, mimetype="text/plain")
 
     elif request.method == "GET":

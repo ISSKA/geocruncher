@@ -32,9 +32,8 @@ class TestLoadVoxels:
 
         voxels_lines = KARSTNSIM_VOXELS_STR.splitlines()
 
-        header, voxels = load_voxels(list(voxels_lines))
+        voxels = load_voxels(list(voxels_lines))
 
-        assert (header.nx, header.ny, header.nz) == (2, 2, 1)
         assert voxels.shape == (2, 2, 1, 2)
         assert voxels.dtype == np.int32
 
@@ -59,7 +58,7 @@ class TestLoadVoxels:
             "8 108",
         ]
 
-        _, voxels = load_voxels(voxels_lines)
+        voxels = load_voxels(voxels_lines)
 
         assert voxels.shape == (2, 2, 2, 2)
 
@@ -79,9 +78,8 @@ class TestLoadVoxels:
             "99 123",
         ]
 
-        header, voxels = load_voxels(voxels_lines)
+        voxels = load_voxels(voxels_lines)
 
-        assert (header.nx, header.ny, header.nz) == (1, 1, 1)
         assert voxels.shape == (1, 1, 1, 2)
         assert voxels[0, 0, 0].tolist() == [99, 123]
 

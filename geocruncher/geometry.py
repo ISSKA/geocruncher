@@ -28,14 +28,14 @@ class Vec3Float(Vec2Float):
 
 
 class Rectangle3D(TypedDict):
-    """Rectangle defined by it's bounds. Could be replaced with Box"""
+    """Rectangle defined by its bounds. Could be replaced with Box"""
 
     lowerLeft: Vec3Float
     upperRight: Vec3Float
 
 
 class Line3D(TypedDict):
-    """Line defined by it's start and end"""
+    """Line defined by its start and end"""
 
     start: Vec3Float
     end: Vec3Float

@@ -46,7 +46,9 @@ def read_off(string: str) -> TriangleMesh:
         [[int(x) for x in line.strip().split()] for line in face_lines], dtype=np.int32
     )
     if not np.all(faces_raw[:, 0] == 3):
-        raise ValueError("Can only read triangular faces")
+        raise ValueError(
+            "Found non-triangular faces in OFF file. Only triangular meshes are supported."
+        )
     faces = faces_raw[:, 1:].astype(np.int32)
 
     return TriangleMesh(verts, faces)

@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 
 from celery import Task
+from pydantic import TypeAdapter
 
 from geocruncher import computation_models, computations
 from geocruncher.karstnsim.models import KarstNSimData
@@ -182,7 +183,10 @@ def compute_karstnsim(
         for k, v in stored.items()
         if k.startswith(b"fault_")
     }
-
-    result_bytes = run_karstnsim(data, dem_bytes, voxels_str, fault_bytes, metadata)
+    # Turn the serialized data back into a validated KarstNSimData object
+    validated_data = TypeAdapter(KarstNSimData).validate_python(data)
+    result_bytes = run_karstnsim(
+        validated_data, dem_bytes, voxels_str, fault_bytes, metadata
+    )
     r.set(output_key, result_bytes)
     return output_key

@@ -40,7 +40,7 @@ TUNNEL_MESHES_DATA = {
 GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
 
 KARSTNSIM_DATA = {
-    "simulation_params": {"seed": 7, "nSinks": 1},
+    "simulation_params": {"seed": 7, "n_sinks": 1},
     "project_box": {
         "width": 10.0,
         "height": 10.0,
@@ -51,19 +51,9 @@ KARSTNSIM_DATA = {
         "x": 4,
         "y": 4,
     },
-    "stratigraphy": [{"name": "Unit", "permeability": "Karstified", "stratiUnitId": 1}],
-    "voxels_header": {
-        "xmin": 0.0,
-        "xmax": 10.0,
-        "ymin": 0.0,
-        "ymax": 10.0,
-        "zmin": 0.0,
-        "zmax": 10.0,
-        "nx": 2,
-        "ny": 2,
-        "nz": 1,
-        "novalue": 0,
-    },
+    "stratigraphy": [
+        {"name": "Unit", "permeability": "Karstified", "strati_unit_id": 1}
+    ],
     "voxels_units": [1, 1, 1, 1],
     "fault_ids": [],
     "springs": [

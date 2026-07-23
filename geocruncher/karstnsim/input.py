@@ -8,13 +8,12 @@ from geocruncher.karstnsim.models import (
     KarstNSimContent,
     KarstNSimData,
     StratigraphyInput,
-    VoxelsHeader,
     VoxelsUnitsInput,
 )
 from geocruncher.mesh_io.mesh_io import TriangleMesh, read_mesh
 
 
-def load_voxels(voxels_lines: list[str]) -> tuple[VoxelsHeader, np.ndarray]:
+def load_voxels(voxels_lines: list[str]) -> np.ndarray:
     """Load voxel grid and return as ndarray of shape (nx, ny, nz, 2) where last dimension is (rank, gwb_id)"""
     # File has 3 lines:
     # format is:
@@ -29,10 +28,14 @@ def load_voxels(voxels_lines: list[str]) -> tuple[VoxelsHeader, np.ndarray]:
     header_parts = header.split()
     if len(header_parts) != 10:
         raise ValueError("Malformed voxel header line (expected 10 tokens)")
-    xmin, xmax, ymin, ymax, zmin, zmax, nx, ny, nz, novalue = map(
-        float, [part.split("=")[1] for part in header_parts]
-    )
-    nx, ny, nz, novalue = int(nx), int(ny), int(nz), int(novalue)
+    values = {part.split("=")[0]: float(part.split("=")[1]) for part in header_parts}
+    try:
+        nx = int(values["NUMBERX"])
+        ny = int(values["NUMBERY"])
+        nz = int(values["NUMBERZ"])
+    except KeyError as e:
+        raise ValueError(f"Missing key in voxel header: {e}")
+
     # Sanity check
     expected_n_voxels = nx * ny * nz
     actual_n_voxels = len(voxels_lines) - 2
@@ -40,18 +43,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[VoxelsHeader, np.ndarray]:
         raise ValueError(
             f"Voxel count mismatch: header says {expected_n_voxels}, but found {actual_n_voxels} data lines"
         )
-    header = VoxelsHeader(
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        zmin=zmin,
-        zmax=zmax,
-        nx=nx,
-        ny=ny,
-        nz=nz,
-        novalue=novalue,
-    )
+
     # Load the voxel data into an array of shape (n_voxels, 2)
     voxel_data = np.loadtxt(voxels_lines[2:], dtype=np.int32, ndmin=2)
 
@@ -63,7 +55,7 @@ def load_voxels(voxels_lines: list[str]) -> tuple[VoxelsHeader, np.ndarray]:
     # File order is z -> y -> x (x changes fastest)
     # Reshape from (n_voxels, 2) to (nz, ny, nx, 2) and then transpose to (nx, ny, nz, 2)
     voxels = voxel_data.reshape(nz, ny, nx, 2).transpose(2, 1, 0, 3)
-    return (header, voxels)
+    return voxels
 
 
 def load_fault(fault_bytes: bytes) -> TriangleMesh:
@@ -88,9 +80,9 @@ def build_karstnsim_content(
 
     # Load and process the voxel grid
     voxels_lines = voxels_str.splitlines()
-    voxels_header, voxels = load_voxels(voxels_lines)
+    voxels = load_voxels(voxels_lines)
     compute_resolution = Vec3Int(
-        x=voxels_header.nx, y=voxels_header.ny, z=voxels_header.nz
+        x=voxels.shape[0], y=voxels.shape[1], z=voxels.shape[2]
     )
 
     if surface_data.shape[0] < 2 or surface_data.shape[1] < 2:
@@ -124,7 +116,6 @@ def build_karstnsim_content(
         surface_data=surface_data,
         stratigraphy=StratigraphyInput(data["stratigraphy"]),
         compute_resolution=compute_resolution,
-        voxels_header=voxels_header,
         voxels=voxels,
         voxels_units=VoxelsUnitsInput(data["voxels_units"]),
         faults=faults,

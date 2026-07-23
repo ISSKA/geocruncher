@@ -487,7 +487,9 @@ def test_post_karstnsim_stores_inputs_and_queues_task(
     assert call_files_key == "files-key"
     assert call_output_key == "output-key"
     assert call_metadata == metadata
-    assert call_data == karstnsim_data_adapter.validate_python(KARSTNSIM_DATA)
+    assert call_data == karstnsim_data_adapter.dump_python(
+        karstnsim_data_adapter.validate_python(KARSTNSIM_DATA), mode="json"
+    )
 
 
 @pytest.mark.parametrize(

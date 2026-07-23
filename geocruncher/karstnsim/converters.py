@@ -12,7 +12,7 @@ from pykarstnsim.models import (
     Sink,
     Surface,
 )
-from shapely import Polygon, contains_xy
+from shapely import Polygon, contains_xy, make_valid
 
 from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
@@ -43,6 +43,7 @@ def load_project_box(
     r_min_pervious: Literal["auto"] | float = "auto",
     r_min_impervious: Literal["auto"] | float = "auto",
 ) -> ProjectBox:
+    """Build a ProjectBox object made of the karstification potential and density for each compute-cell in the project box."""
 
     units = stratigraphy.root
 
@@ -125,7 +126,7 @@ def load_project_box(
     density_vol[potential_vol > 0] = base_density
     density_vol[potential_vol == 0] = sparse_density
 
-    # Flatten with Fortran order, u changing fastest
+    # Flatten with Fortran ("F") order, u changing fastest
     karstification_potential = potential_vol.flatten(order="F").tolist()
     densities = density_vol.flatten(order="F").tolist()
 
@@ -144,6 +145,7 @@ def load_sinks(
     rng: np.random.Generator,
     num_springs: int,
 ) -> tuple[list[Sink], ConnectivityMatrix]:
+    """Generate random sink points within the catchment polygons of the springs and build a connectivity matrix between sinks and springs."""
 
     def random_points_in_polygon(poly: Polygon, n_points: int) -> np.ndarray:
         """Uniform random points inside a polygon via rejection sampling (polygon can be concave)."""
@@ -160,6 +162,7 @@ def load_sinks(
         while remaining > 0:
             # Oversample by 2× to reduce iterations
             batch_size = max(remaining * 2, 32)
+            # Generate random x, y coordinates within the bounding box of the polygon
             xs = rng.uniform(minx, maxx, size=batch_size)
             ys = rng.uniform(miny, maxy, size=batch_size)
 
@@ -204,7 +207,7 @@ def load_sinks(
             bad = np.argmax(out_of_bounds)
             raise ValueError(f"Point ({xs[bad]},{ys[bad]}) out of DEM bounds")
 
-        # Bilinear interpolation
+        # Bilinear interpolation for each point (x, y) using the four surrounding DEM grid points
         col0 = np.floor(cols).astype(np.int32)
         row0 = np.floor(rows).astype(np.int32)
         col1 = col0 + 1
@@ -230,21 +233,33 @@ def load_sinks(
     for spring in springs:
         coords = np.array(spring.catchment, dtype=np.float64)
         polygon = Polygon(coords)
-        # Shapely trick to fix invalid polygons (self-intersections, duplicate points, ...)
+
         if not polygon.is_valid:
-            polygon = polygon.buffer(0)
+            polygon = make_valid(polygon)
+        if (
+            polygon.is_empty
+            or not polygon.is_valid
+            or polygon.geom_type not in {"Polygon", "MultiPolygon"}
+        ):
+            raise ValueError(
+                f"Could not construct a valid polygon for catchment {spring.poi_id}"
+            )
+
         catchment_ids.append(spring.poi_id)
         catchment_polygons.append(polygon)
 
+    if not catchment_polygons:
+        raise ValueError("No valid catchment polygons.")
+
     areas = np.array([poly.area for poly in catchment_polygons], dtype=np.float64)
 
-    # Assign a number of sinks to each catchment polygon, weighted by area
     weights = (
         np.full(len(catchment_polygons), 1.0 / len(catchment_polygons))
         if np.all(areas == 0)
         else areas / areas.sum()
     )
 
+    # Assign sinks randomly to each catchment polygon, weighted by area
     if len(catchment_polygons) == 1:
         assignments = np.zeros(n_sinks, dtype=int)
     else:
@@ -290,7 +305,7 @@ def load_water_tables(
     voxels: np.ndarray,
     project_box: ProjectBoxInput,
 ) -> dict[int, Surface]:
-    """Build a triangulated water-table surface for each groundwater body present in the voxels."""
+    """Build a water-table surface for each groundwater body present in the voxels."""
 
     if voxels.ndim != 4 or voxels.shape[-1] < 2:
         raise ValueError(

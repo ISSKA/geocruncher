@@ -71,29 +71,6 @@ class SpringInput(ApiInputModel):
     catchment: list[tuple[float, float]]
 
 
-class VoxelsHeader(BaseModel):
-    xmin: float
-    xmax: float
-    ymin: float
-    ymax: float
-    zmin: float
-    zmax: float
-    nx: int = Field(gt=0)
-    ny: int = Field(gt=0)
-    nz: int = Field(gt=0)
-    novalue: int
-
-    @model_validator(mode="after")
-    def validate_bounds(self):
-        if self.xmax <= self.xmin:
-            raise ValueError("xmax must be greater than xmin")
-        if self.ymax <= self.ymin:
-            raise ValueError("ymax must be greater than ymin")
-        if self.zmax <= self.zmin:
-            raise ValueError("zmax must be greater than zmin")
-        return self
-
-
 VoxelsUnitsInput = RootModel[list[int]]
 
 
@@ -102,7 +79,7 @@ class GroundwaterBodyInput(ApiInputModel):
     spring_id: int
 
 
-class SimulationParameters(ApiInputModel):
+class SimulationParametersInput(ApiInputModel):
     name: str = "Karst Network"
     seed: int = Field(default=-1, ge=-1)
     k_pts: int = Field(default=20, gt=0)
@@ -122,12 +99,11 @@ class SimulationParameters(ApiInputModel):
 class KarstNSimContent:
     """Prepared content for the KarstNSim computation, after loading and processing the input data."""
 
-    simulation_params: SimulationParameters
+    simulation_params: SimulationParametersInput
     project_box: ProjectBoxInput
     surface_data: np.ndarray
     stratigraphy: StratigraphyInput
     compute_resolution: Vec3Int
-    voxels_header: VoxelsHeader
     voxels: np.ndarray
     voxels_units: VoxelsUnitsInput
     faults: list[TriangleMesh]
@@ -141,11 +117,10 @@ class KarstNSimData(TypedDict):
     """Data given to the KarstNSim computation.
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 
-    simulation_params: SimulationParameters
+    simulation_params: SimulationParametersInput
     project_box: ProjectBoxInput
     dem_resolution: Vec2Int
     stratigraphy: list[GeologicalUnitInput]
-    voxels_header: VoxelsHeader
     voxels_units: list[int]
     fault_ids: list[int]
     springs: list[SpringInput]

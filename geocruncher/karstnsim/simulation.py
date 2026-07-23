@@ -33,6 +33,7 @@ def run_karstnsim(
     fault_bytes: dict[int, bytes],
     metadata: ProfilerMetadata | None = None,
 ) -> bytes:
+    """Run the karstnsim simulation and return the result as bytes."""
     profiler = set_profiler(PROFILES["karstnsim"]).update_metadata(metadata)
 
     start_step("build_content")
@@ -60,6 +61,7 @@ def run_karstnsim(
     profile_step("load_surface")
 
     start_step("load_springs")
+    # Create pykarstnsim Spring objects from the input springs
     springs = [
         Spring(
             origin=(s.x, s.y, s.z),
@@ -72,16 +74,16 @@ def run_karstnsim(
     profile_step("load_springs")
 
     start_step("load_water_tables")
-    gwb_surfaces = load_water_tables(
+    water_tables = load_water_tables(
         content.voxels,
         content.project_box,
     )
     profile_step("load_water_tables")
 
     start_step("associate_springs_water_tables")
-    ordered_gwb_ids = sorted(gwb_surfaces.keys())
+    ordered_gwb_ids = sorted(water_tables.keys())
 
-    water_tables = [gwb_surfaces[gwb_id] for gwb_id in ordered_gwb_ids]
+    ordered_water_tables = [water_tables[gwb_id] for gwb_id in ordered_gwb_ids]
 
     spring_to_wt_index = {
         gwb.spring_id: wt_index
@@ -130,13 +132,11 @@ def run_karstnsim(
     )
     profile_step("load_sinks")
 
-    start_step("compute_dimensions")
     max_dim = max(
         content.project_box.width / content.compute_resolution["x"],
         content.project_box.height / content.compute_resolution["y"],
         content.project_box.depth / content.compute_resolution["z"],
     )
-    profile_step("compute_dimensions")
 
     config = KarstConfig()
     config.karstic_network_name = content.simulation_params.name
@@ -170,7 +170,7 @@ def run_karstnsim(
         sinks=sinks,
         springs=springs,
         connectivity_matrix=connectivity_matrix,
-        water_tables=water_tables,
+        water_tables=ordered_water_tables,
         topo_surface=dem,
         inception_surfaces=faults,
     )

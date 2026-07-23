@@ -9,7 +9,7 @@ import pytest
 @pytest.fixture(scope="session")
 def control_output():
     return (
-        Path(__file__).parent.parent / "fixtures" / "control_output.txt"
+        Path(__file__).parent.parent / "fixtures" / "control_output.json"
     ).read_text()
 
 

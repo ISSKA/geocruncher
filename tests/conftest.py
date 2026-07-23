@@ -114,7 +114,7 @@ def karstnsim_fault_bytes(karstnsim_zip) -> dict[int, bytes]:
 
 
 @pytest.fixture(scope="session")
-def karstnsim_data_dict(karstnsim_zip, karstnsim_voxels_str) -> dict:
+def karstnsim_data_dict(karstnsim_zip) -> dict:
     """The JSON body that Spring would POST to /compute/karstnsim."""
 
     config = json.loads(_read_text(karstnsim_zip, "config.json"))
@@ -122,23 +122,6 @@ def karstnsim_data_dict(karstnsim_zip, karstnsim_voxels_str) -> dict:
     dem_res = json.loads(_read_text(karstnsim_zip, "dem_resolution.json"))
     stratigraphy = json.loads(_read_text(karstnsim_zip, "stratigraphy.json"))
     vox_units = json.loads(_read_text(karstnsim_zip, "voxels_units.json"))
-
-    # Parse voxels header
-    header_line = karstnsim_voxels_str.splitlines()[0]
-    parts = dict(p.split("=") for p in header_line.split())
-
-    voxels_header = {
-        "xmin": float(parts["XMIN"]),
-        "xmax": float(parts["XMAX"]),
-        "ymin": float(parts["YMIN"]),
-        "ymax": float(parts["YMAX"]),
-        "zmin": float(parts["ZMIN"]),
-        "zmax": float(parts["ZMAX"]),
-        "nx": int(parts["NUMBERX"]),
-        "ny": int(parts["NUMBERY"]),
-        "nz": int(parts["NUMBERZ"]),
-        "novalue": int(parts["NOVALUE"]),
-    }
 
     gwbs = [
         json.loads(_read_text(karstnsim_zip, name))
@@ -163,7 +146,6 @@ def karstnsim_data_dict(karstnsim_zip, karstnsim_voxels_str) -> dict:
         "project_box": project_box,
         "dem_resolution": dem_res,
         "stratigraphy": stratigraphy,
-        "voxels_header": voxels_header,
         "voxels_units": vox_units,
         "fault_ids": fault_ids,
         "springs": springs,
