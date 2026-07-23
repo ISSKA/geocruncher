@@ -107,7 +107,7 @@ def karstnsim_fault_bytes(karstnsim_zip) -> dict[int, bytes]:
     for name in sorted(karstnsim_zip.namelist()):
         if name.startswith("fault_") and name.endswith(".bin"):
             fault_id = int(Path(name).stem.split("_")[1])
-            result[fault_id] = fault_bin_to_off(_read(karstnsim_zip, name))
+            result[fault_id] = _read(karstnsim_zip, name)
 
     assert result, "No fault_*.bin files found in zip"
     return result
