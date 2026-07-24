@@ -12,7 +12,7 @@ from geocruncher.computations import (
     Spring,
     TunnelMeshesData,
 )
-from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.models import KarstNSimDataInput
 
 from . import tasks
 from .redis import redis_client as r
@@ -305,7 +305,7 @@ def compute_gwb_meshes():
 def compute_karstnsim():
     if request.method == "POST":
         try:
-            data: KarstNSimData = KarstNSimData.model_validate_json(
+            data: KarstNSimDataInput = KarstNSimDataInput.model_validate_json(
                 request.form["data"]
             )
         except ValidationError as e:
@@ -313,15 +313,17 @@ def compute_karstnsim():
         metadata = parse_metadata_from_request()
 
         files_key = generate_key()
+        if "dem" not in request.files or "voxels" not in request.files:
+            return Response("Missing dem or voxels file", 400, mimetype="text/plain")
         hset_bytes(r, files_key, "dem", request.files["dem"].read())
         hset_bytes(r, files_key, "voxels", request.files["voxels"].read())
         for key, f in request.files.items():
             if key.startswith("fault_"):
                 hset_bytes(r, files_key, key, f.read())
         output_key = generate_key()
-        # dump the data to JSON because KarstNSimData model and other models it contains are not serializable by Celery
+        # dump the data to JSON because KarstNSimDataInput model and other models it contains are not serializable by Celery
         res = tasks.compute_karstnsim.delay(
-            KarstNSimData.model_dump_json(data),
+            KarstNSimDataInput.model_dump_json(data),
             files_key,
             output_key,
             metadata,

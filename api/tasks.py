@@ -4,7 +4,7 @@ from collections import defaultdict
 from celery import Task
 
 from geocruncher import computation_models, computations
-from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.models import KarstNSimDataInput
 from geocruncher.karstnsim.simulation import run_karstnsim
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
@@ -182,8 +182,8 @@ def compute_karstnsim(
         for k, v in stored.items()
         if k.startswith(b"fault_")
     }
-    # Turn the serialized data back into a validated KarstNSimData object
-    validated_data = KarstNSimData.model_validate_json(data)
+    # Turn the serialized data back into a validated KarstNSimDataInput object
+    validated_data = KarstNSimDataInput.model_validate_json(data)
     result_bytes = run_karstnsim(
         validated_data, dem_bytes, voxels_str, fault_bytes, metadata
     )

@@ -87,4 +87,4 @@ rank gwb_id
 4 40
 """.strip()
 
-KARSTNSIM_FAULT_BYTES = {}
+KARSTNSIM_FAULT_BYTES = {1: b"fault 1 data", 2: b"fault 2 data"}

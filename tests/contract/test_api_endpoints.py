@@ -4,7 +4,7 @@ import tarfile
 import pytest
 
 import api.api as api_module
-from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.models import KarstNSimDataInput
 from tests.fixtures.payloads import (
     GWB_MESHES_DATA,
     INTERSECTIONS_DATA,
@@ -45,6 +45,7 @@ def fake_redis(monkeypatch):
 def form_data():
     return multipart_with_files(
         KARSTNSIM_DATA,
+        metadata={"request_id": "req-karst"},
         dem=KARSTNSIM_DEM_BYTES,
         voxels=KARSTNSIM_VOXELS_STR.encode(),
         **{
@@ -452,7 +453,9 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
     assert response.text == "Task task-id could not be revoked"
 
 
-def test_post_karstnsim_stores_inputs_and_queues_task(client, fake_redis, monkeypatch):
+def test_post_karstnsim_stores_inputs_and_queues_task(
+    client, fake_redis, form_data, monkeypatch
+):
     task = FakeTask("karstnsim-id")
     metadata = {"request_id": "req-karst"}
     set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
@@ -460,16 +463,7 @@ def test_post_karstnsim_stores_inputs_and_queues_task(client, fake_redis, monkey
 
     response = client.post(
         "/compute/karstnsim",
-        data=multipart_with_files(
-            KARSTNSIM_DATA,
-            metadata=metadata,
-            dem=KARSTNSIM_DEM_BYTES,
-            voxels=KARSTNSIM_VOXELS_STR.encode(),
-            **{
-                f"fault_{fault_id}": data
-                for fault_id, data in KARSTNSIM_FAULT_BYTES.items()
-            },
-        ),
+        data=form_data,
         content_type="multipart/form-data",
     )
 
@@ -486,9 +480,9 @@ def test_post_karstnsim_stores_inputs_and_queues_task(client, fake_redis, monkey
     assert call_files_key == "files-key"
     assert call_output_key == "output-key"
     assert call_metadata == metadata
-    assert KarstNSimData.model_validate_json(call_data) == KarstNSimData.model_validate(
-        KARSTNSIM_DATA
-    )
+    assert KarstNSimDataInput.model_validate_json(
+        call_data
+    ) == KarstNSimDataInput.model_validate(KARSTNSIM_DATA)
 
 
 @pytest.mark.parametrize(
@@ -540,6 +534,7 @@ def test_post_karstnsim_without_faults_succeeds(client, fake_redis, monkeypatch)
     )
 
     assert response.status_code == 202
+    assert len(task.calls) == 1
     stored = fake_redis.hashes["files-key"]
     assert b"dem" in stored
     assert b"voxels" in stored

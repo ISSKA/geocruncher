@@ -1,16 +1,18 @@
 import json
+import os
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-
-@pytest.fixture(scope="session")
-def control_output():
-    return (
-        Path(__file__).parent.parent / "fixtures" / "control_output.json"
-    ).read_text()
+KARSTNSIM_DATA_ZIP = Path(
+    os.environ.get(
+        "KARSTNSIM_DATA_ZIP",
+        Path(__file__).resolve().parents[1] / "fixtures" / "control_project.zip",
+    )
+)
 
 
 @dataclass(frozen=True)
@@ -23,6 +25,100 @@ class DummyProject:
 
     xml: bytes
     dem: str
+
+
+@dataclass(frozen=True)
+class ZipFixture:
+    archive: zipfile.ZipFile
+
+    def bytes(self, name: str) -> bytes:
+        return self.archive.read(name)
+
+    def text(self, name: str) -> str:
+        return self.bytes(name).decode("utf-8")
+
+    def json(self, name: str):
+        return json.loads(self.text(name))
+
+    def names(self):
+        return self.archive.namelist()
+
+
+@pytest.fixture(scope="session")
+def karstnsim_zip():
+    with zipfile.ZipFile(KARSTNSIM_DATA_ZIP, "r") as zf:
+        yield ZipFixture(zf)
+
+
+@pytest.fixture(scope="session")
+def karstnsim_dem_bytes(karstnsim_zip):
+    return karstnsim_zip.bytes("dem_values.bin")
+
+
+@pytest.fixture(scope="session")
+def karstnsim_voxels_str(karstnsim_zip):
+    return karstnsim_zip.text("voxels.txt")
+
+
+@pytest.fixture(scope="session")
+def karstnsim_fault_bytes(karstnsim_zip) -> dict[int, bytes]:
+    """Dict of fault_id -> OFF bytes."""
+    result = {}
+
+    for name in sorted(karstnsim_zip.names()):
+        if name.startswith("fault_") and name.endswith(".bin"):
+            fault_id = int(Path(name).stem.split("_")[1])
+            result[fault_id] = karstnsim_zip.bytes(name)
+
+    assert result, "No fault_*.bin files found in zip"
+    return result
+
+
+@pytest.fixture(scope="session")
+def karstnsim_data_dict(karstnsim_zip) -> dict:
+    """The JSON body that Spring would POST to /compute/karstnsim."""
+
+    config = karstnsim_zip.json("config.json")
+    project_box = karstnsim_zip.json("project_box.json")
+    dem_res = karstnsim_zip.json("dem_resolution.json")
+    stratigraphy = karstnsim_zip.json("stratigraphy.json")
+    vox_units = karstnsim_zip.json("voxels_units.json")
+
+    gwbs = [
+        karstnsim_zip.json(name)
+        for name in sorted(karstnsim_zip.names())
+        if name.startswith("gwb_") and name.endswith(".json")
+    ]
+
+    springs = [
+        karstnsim_zip.json(name)
+        for name in sorted(karstnsim_zip.names())
+        if name.startswith("poi_") and name.endswith(".json")
+    ]
+
+    fault_ids = [
+        int(Path(name).stem.split("_")[1])
+        for name in sorted(karstnsim_zip.names())
+        if name.startswith("fault_") and name.endswith(".bin")
+    ]
+
+    return {
+        "simulation_params": config,
+        "project_box": project_box,
+        "dem_resolution": dem_res,
+        "stratigraphy": stratigraphy,
+        "voxels_units": vox_units,
+        "fault_ids": fault_ids,
+        "springs": springs,
+        "gwbs": gwbs,
+    }
+
+
+@pytest.fixture(scope="session")
+def control_output():
+    return (
+        Path(__file__).parent.parent / "fixtures" / "control_output.json"
+    ).read_text()
 
 
 @pytest.fixture(scope="module")

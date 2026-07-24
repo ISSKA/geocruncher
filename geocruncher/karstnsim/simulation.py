@@ -15,7 +15,7 @@ from geocruncher.karstnsim.converters import (
     load_water_tables,
 )
 from geocruncher.karstnsim.input import build_karstnsim_content
-from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.models import KarstNSimDataInput
 from geocruncher.karstnsim.serializers import serialize_karstnsim_result
 from geocruncher.profiler import (
     PROFILES,
@@ -27,7 +27,7 @@ from geocruncher.profiler import (
 
 
 def run_karstnsim(
-    data: KarstNSimData,
+    data: KarstNSimDataInput,
     dem_bytes: bytes,
     voxels_str: str,
     fault_bytes: dict[int, bytes],

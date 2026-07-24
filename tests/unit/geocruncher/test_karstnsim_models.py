@@ -1,9 +1,17 @@
 import pytest
+from pydantic import ValidationError
+
+from geocruncher.karstnsim.models import (
+    GeologicalUnitInput,
+    ProjectBoxInput,
+    SimulationParametersInput,
+)
+
+######## ApiInputModel tests ########
 
 
 def test_camel_case_aliases():
-    from geocruncher.karstnsim.models import SimulationParametersInput
-
+    """Meant to test ApiInputModel alias behaviour, which is inherited by SimulationParametersInput"""
     params = SimulationParametersInput.model_validate(
         {
             "kPts": 15,
@@ -19,6 +27,19 @@ def test_camel_case_aliases():
     assert params.seed == 99
 
 
+######## SimulationParametersInput tests ########
+
+
+def test_simulation_parameters_defaults():
+    params = SimulationParametersInput.model_validate({})
+
+    assert params.name == "Karst Network"
+    assert params.seed == -1
+    assert params.k_pts == 20
+    assert params.cohesion_factor == 0.9
+    assert params.n_sinks == 100
+
+
 @pytest.mark.parametrize(
     "field,value",
     [
@@ -30,19 +51,32 @@ def test_camel_case_aliases():
     ],
 )
 def test_simulation_parameters_rejects_invalid_parameters(field, value):
-    from pydantic import ValidationError
-
-    from geocruncher.karstnsim.models import SimulationParametersInput
-
     with pytest.raises(ValidationError):
         SimulationParametersInput(**{field: value})
 
 
+######## ProjectBoxInput tests ########
+
+
+def test_project_box_rejects_non_positive_dimensions():
+    with pytest.raises(ValidationError):
+        ProjectBoxInput(
+            width=0,
+            height=100,
+            min_elevation=100,
+            max_elevation=200,
+        )
+
+    with pytest.raises(ValidationError):
+        ProjectBoxInput(
+            width=100,
+            height=-50,
+            min_elevation=100,
+            max_elevation=200,
+        )
+
+
 def test_project_box_rejects_invalid_elevation_range():
-    from pydantic import ValidationError
-
-    from geocruncher.karstnsim.models import ProjectBoxInput
-
     with pytest.raises(ValidationError):
         ProjectBoxInput(
             width=100,
@@ -53,8 +87,6 @@ def test_project_box_rejects_invalid_elevation_range():
 
 
 def test_project_box_depth_property():
-    from geocruncher.karstnsim.models import ProjectBoxInput
-
     box = ProjectBoxInput.model_validate(
         {
             "width": 1000.0,
@@ -66,16 +98,15 @@ def test_project_box_depth_property():
     assert box.depth == pytest.approx(200.0)
 
 
+######## GeologicalUnitInput tests ########
+
+
 def test_geological_unit_rejects_invalid_permeability():
-    from pydantic import ValidationError
-
-    from geocruncher.karstnsim.models import GeologicalUnitInput
-
     with pytest.raises(ValidationError):
         GeologicalUnitInput.model_validate(
             {
                 "name": "Aquifer",
                 "permeability": "NotARealValue",
-                "stratiUnitId": 7,
+                "strati_unit_id": 7,
             }
         )

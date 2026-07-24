@@ -3,7 +3,7 @@ import json
 import pytest
 
 import api.tasks as tasks
-from geocruncher.karstnsim.models import KarstNSimData
+from geocruncher.karstnsim.models import KarstNSimDataInput
 from tests.fixtures.payloads import (
     INTERSECTIONS_DATA,
     KARSTNSIM_DATA,
@@ -26,6 +26,11 @@ def redis_with_inputs():
     for fault_id, data in KARSTNSIM_FAULT_BYTES.items():
         fake_redis.hset("files_key", f"fault_{fault_id}", data)
     return fake_redis
+
+
+@pytest.fixture
+def karstnsim_json():
+    return KarstNSimDataInput.model_validate(KARSTNSIM_DATA).model_dump_json()
 
 
 ######## Tests ########
@@ -311,7 +316,7 @@ def test_compute_gwb_meshes_reads_unit_meshes_and_writes_metadata_and_meshes(
 
 
 def test_compute_karstnsim_reads_inputs_and_stores_output(
-    monkeypatch, redis_with_inputs
+    monkeypatch, redis_with_inputs, karstnsim_json
 ):
     captured = {}
     monkeypatch.setattr(tasks, "r", redis_with_inputs)
@@ -325,7 +330,7 @@ def test_compute_karstnsim_reads_inputs_and_stores_output(
     monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
     result = tasks.compute_karstnsim.run(
-        KarstNSimData.model_validate(KARSTNSIM_DATA).model_dump_json(),
+        karstnsim_json,
         "files_key",
         "output_key",
     )
@@ -338,7 +343,7 @@ def test_compute_karstnsim_reads_inputs_and_stores_output(
     assert "files_key" in redis_with_inputs.deleted
 
 
-def test_compute_karstnsim_handles_missing_faults(monkeypatch):
+def test_compute_karstnsim_handles_missing_faults(monkeypatch, karstnsim_json):
     redis = FakeRedis()
     redis.hset("files_key", "dem", KARSTNSIM_DEM_BYTES)
     redis.hset("files_key", "voxels", KARSTNSIM_VOXELS_STR)
@@ -353,9 +358,34 @@ def test_compute_karstnsim_handles_missing_faults(monkeypatch):
     monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
     tasks.compute_karstnsim.run(
-        KarstNSimData.model_validate(KARSTNSIM_DATA).model_dump_json(),
+        karstnsim_json,
         "files_key",
         "output_key",
     )
 
     assert captured["faults"] == {}
+
+
+def test_compute_karstnsim_parses_multiple_fault_ids(monkeypatch):
+    redis = FakeRedis()
+    redis.hset("files_key", "dem", KARSTNSIM_DEM_BYTES)
+    redis.hset("files_key", "voxels", KARSTNSIM_VOXELS_STR)
+    redis.hset("files_key", "fault_1", b"fault-1")
+    redis.hset("files_key", "fault_42", b"fault-42")
+    monkeypatch.setattr(tasks, "r", redis)
+
+    captured = {}
+
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["faults"] = faults
+        return b"output"
+
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
+
+    tasks.compute_karstnsim.run(
+        KarstNSimDataInput.model_validate(KARSTNSIM_DATA).model_dump_json(),
+        "files_key",
+        "output_key",
+    )
+
+    assert captured["faults"] == {1: b"fault-1", 42: b"fault-42"}

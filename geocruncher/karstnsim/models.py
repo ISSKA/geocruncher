@@ -98,7 +98,7 @@ class SimulationParametersInput(ApiInputModel):
     r_min_impervious: Literal["auto"] | Annotated[float, Field(ge=0.0, le=1.0)] = "auto"
 
 
-class KarstNSimData(ApiInputModel):
+class KarstNSimDataInput(ApiInputModel):
     """Data given to the KarstNSim computation.
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 

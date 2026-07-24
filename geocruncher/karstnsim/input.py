@@ -6,11 +6,11 @@ import numpy as np
 from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.karstnsim.models import (
     KarstNSimContent,
-    KarstNSimData,
+    KarstNSimDataInput,
     StratigraphyInput,
     VoxelsUnitsInput,
 )
-from geocruncher.mesh_io.mesh_io import TriangleMesh, read_mesh
+from geocruncher.mesh_io.mesh_io import read_mesh
 
 
 def load_voxels(voxels_lines: list[str]) -> np.ndarray:
@@ -58,14 +58,8 @@ def load_voxels(voxels_lines: list[str]) -> np.ndarray:
     return voxels
 
 
-def load_fault(fault_bytes: bytes) -> TriangleMesh:
-    """Read a fault mesh from either OFF or Draco bytes into a TriangleMesh."""
-    mesh = read_mesh(fault_bytes)
-    return mesh
-
-
 def build_karstnsim_content(
-    data: KarstNSimData,
+    data: KarstNSimDataInput,
     dem_bytes: bytes,
     voxels_str: str,
     fault_bytes: dict[int, bytes],
@@ -108,7 +102,7 @@ def build_karstnsim_content(
     )
 
     # Load the faults
-    faults = [load_fault(bytes) for bytes in fault_bytes.values()]
+    faults = [read_mesh(bytes) for bytes in fault_bytes.values()]
 
     return KarstNSimContent(
         simulation_params=data.simulation_params,
