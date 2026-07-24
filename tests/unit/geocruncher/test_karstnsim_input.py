@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from geocruncher.karstnsim.input import build_karstnsim_content
+from geocruncher.karstnsim.models import KarstNSimData
 from tests.fixtures.payloads import (
     KARSTNSIM_DATA,
     KARSTNSIM_DEM_BYTES,
@@ -11,12 +12,10 @@ from tests.fixtures.payloads import (
 
 
 @pytest.fixture
-def synthetic_karstnsim_content(
-    karstnsim_data_adapter,
-):
+def synthetic_karstnsim_content():
     from geocruncher.karstnsim.input import build_karstnsim_content
 
-    data = karstnsim_data_adapter.validate_python(KARSTNSIM_DATA)
+    data = KarstNSimData.model_validate(KARSTNSIM_DATA)
 
     return build_karstnsim_content(
         data,
@@ -150,9 +149,8 @@ class TestBuildKarstNSimContent:
 
     def test_rejects_single_cell_dem(
         self,
-        karstnsim_data_adapter,
     ):
-        data = karstnsim_data_adapter.validate_python(
+        data = KarstNSimData.model_validate(
             {
                 **KARSTNSIM_DATA,
                 "dem_resolution": {
@@ -173,7 +171,7 @@ class TestBuildKarstNSimContent:
                 {},
             )
 
-    def test_loads_all_faults(self, monkeypatch, karstnsim_data_adapter):
+    def test_loads_all_faults(self, monkeypatch):
         calls = []
 
         def fake_load_fault(data):
@@ -186,7 +184,7 @@ class TestBuildKarstNSimContent:
         )
 
         content = build_karstnsim_content(
-            karstnsim_data_adapter.validate_python(KARSTNSIM_DATA),
+            KarstNSimData.model_validate(KARSTNSIM_DATA),
             KARSTNSIM_DEM_BYTES,
             KARSTNSIM_VOXELS_STR,
             {1: b"a", 2: b"b"},

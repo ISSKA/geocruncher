@@ -2,7 +2,6 @@ import json
 from collections import defaultdict
 
 from celery import Task
-from pydantic import TypeAdapter
 
 from geocruncher import computation_models, computations
 from geocruncher.karstnsim.models import KarstNSimData
@@ -167,7 +166,7 @@ def compute_gwb_meshes(
 @app.task(bind=True)
 def compute_karstnsim(
     self: Task,
-    data: KarstNSimData,
+    data: str,
     files_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
@@ -184,7 +183,7 @@ def compute_karstnsim(
         if k.startswith(b"fault_")
     }
     # Turn the serialized data back into a validated KarstNSimData object
-    validated_data = TypeAdapter(KarstNSimData).validate_python(data)
+    validated_data = KarstNSimData.model_validate_json(data)
     result_bytes = run_karstnsim(
         validated_data, dem_bytes, voxels_str, fault_bytes, metadata
     )

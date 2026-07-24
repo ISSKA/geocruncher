@@ -4,6 +4,7 @@ import tarfile
 import pytest
 
 import api.api as api_module
+from geocruncher.karstnsim.models import KarstNSimData
 from tests.fixtures.payloads import (
     GWB_MESHES_DATA,
     INTERSECTIONS_DATA,
@@ -451,9 +452,7 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
     assert response.text == "Task task-id could not be revoked"
 
 
-def test_post_karstnsim_stores_inputs_and_queues_task(
-    client, fake_redis, monkeypatch, karstnsim_data_adapter
-):
+def test_post_karstnsim_stores_inputs_and_queues_task(client, fake_redis, monkeypatch):
     task = FakeTask("karstnsim-id")
     metadata = {"request_id": "req-karst"}
     set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
@@ -487,8 +486,8 @@ def test_post_karstnsim_stores_inputs_and_queues_task(
     assert call_files_key == "files-key"
     assert call_output_key == "output-key"
     assert call_metadata == metadata
-    assert call_data == karstnsim_data_adapter.dump_python(
-        karstnsim_data_adapter.validate_python(KARSTNSIM_DATA), mode="json"
+    assert KarstNSimData.model_validate_json(call_data) == KarstNSimData.model_validate(
+        KARSTNSIM_DATA
     )
 
 

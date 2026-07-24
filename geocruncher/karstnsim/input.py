@@ -75,7 +75,7 @@ def build_karstnsim_content(
     # Load the DEM surface data
     surface_data = np.frombuffer(dem_bytes, dtype=np.float32)
     surface_data = surface_data.reshape(
-        (data["dem_resolution"]["y"], data["dem_resolution"]["x"])
+        (data.dem_resolution["y"], data.dem_resolution["x"])
     )
 
     # Load and process the voxel grid
@@ -90,8 +90,8 @@ def build_karstnsim_content(
 
     # Resample the surface data to match the compute resolution
     surface_data = surface_data[
-        :: data["dem_resolution"]["y"] // compute_resolution["y"],
-        :: data["dem_resolution"]["x"] // compute_resolution["x"],
+        :: data.dem_resolution["y"] // compute_resolution["y"],
+        :: data.dem_resolution["x"] // compute_resolution["x"],
     ]
     # Flip the surface data vertically to match
     surface_data = np.flipud(surface_data).copy()
@@ -103,24 +103,24 @@ def build_karstnsim_content(
 
     # Compute the surface resolution in world units
     surface_resolution = Vec2Float(
-        x=data["project_box"].width / (surface_data.shape[1] - 1),
-        y=data["project_box"].height / (surface_data.shape[0] - 1),
+        x=data.project_box.width / (surface_data.shape[1] - 1),
+        y=data.project_box.height / (surface_data.shape[0] - 1),
     )
 
     # Load the faults
     faults = [load_fault(bytes) for bytes in fault_bytes.values()]
 
     return KarstNSimContent(
-        simulation_params=data["simulation_params"],
-        project_box=data["project_box"],
+        simulation_params=data.simulation_params,
+        project_box=data.project_box,
         surface_data=surface_data,
-        stratigraphy=StratigraphyInput(data["stratigraphy"]),
+        stratigraphy=StratigraphyInput(data.stratigraphy),
         compute_resolution=compute_resolution,
         voxels=voxels,
-        voxels_units=VoxelsUnitsInput(data["voxels_units"]),
+        voxels_units=VoxelsUnitsInput(data.voxels_units),
         faults=faults,
-        springs=data["springs"],
-        gwbs=data["gwbs"],
+        springs=data.springs,
+        gwbs=data.gwbs,
         surface_resolution=surface_resolution,
         resampled_dem_resolution=resampled_dem_resolution,
     )

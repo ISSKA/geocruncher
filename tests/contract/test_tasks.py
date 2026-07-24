@@ -3,6 +3,7 @@ import json
 import pytest
 
 import api.tasks as tasks
+from geocruncher.karstnsim.models import KarstNSimData
 from tests.fixtures.payloads import (
     INTERSECTIONS_DATA,
     KARSTNSIM_DATA,
@@ -323,7 +324,11 @@ def test_compute_karstnsim_reads_inputs_and_stores_output(
 
     monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
-    result = tasks.compute_karstnsim.run(KARSTNSIM_DATA, "files_key", "output_key")
+    result = tasks.compute_karstnsim.run(
+        KarstNSimData.model_validate(KARSTNSIM_DATA).model_dump_json(),
+        "files_key",
+        "output_key",
+    )
 
     assert result == "output_key"
     assert captured["dem"] == KARSTNSIM_DEM_BYTES
@@ -347,6 +352,10 @@ def test_compute_karstnsim_handles_missing_faults(monkeypatch):
 
     monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
 
-    tasks.compute_karstnsim.run(KARSTNSIM_DATA, "files_key", "output_key")
+    tasks.compute_karstnsim.run(
+        KarstNSimData.model_validate(KARSTNSIM_DATA).model_dump_json(),
+        "files_key",
+        "output_key",
+    )
 
     assert captured["faults"] == {}

@@ -30,7 +30,6 @@ _meshes_adapter = TypeAdapter(MeshesData)
 _tunnel_meshes_adapter = TypeAdapter(TunnelMeshesData)
 _intersections_adapter = TypeAdapter(IntersectionsData)
 _gwb_meshes_adapter = TypeAdapter(list[Spring])
-_karstnsim_adapter = TypeAdapter(KarstNSimData)
 
 
 def filemap_to_tar(files: dict[bytes, bytes]) -> BytesIO:
@@ -306,7 +305,9 @@ def compute_gwb_meshes():
 def compute_karstnsim():
     if request.method == "POST":
         try:
-            data: KarstNSimData = _karstnsim_adapter.validate_json(request.form["data"])
+            data: KarstNSimData = KarstNSimData.model_validate_json(
+                request.form["data"]
+            )
         except ValidationError as e:
             return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
@@ -318,9 +319,9 @@ def compute_karstnsim():
             if key.startswith("fault_"):
                 hset_bytes(r, files_key, key, f.read())
         output_key = generate_key()
-        # dump the data to JSON because the KarstNSimData object contains models that are not serializable by Celery
+        # dump the data to JSON because KarstNSimData model and other models it contains are not serializable by Celery
         res = tasks.compute_karstnsim.delay(
-            _karstnsim_adapter.dump_python(data, mode="json"),
+            KarstNSimData.model_dump_json(data),
             files_key,
             output_key,
             metadata,

@@ -2,7 +2,7 @@
 
 import enum
 from dataclasses import dataclass
-from typing import Literal, TypedDict
+from typing import Annotated, Literal
 
 import numpy as np
 from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
@@ -10,14 +10,6 @@ from pydantic.alias_generators import to_camel
 
 from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.mesh_io.mesh_io import TriangleMesh
-
-
-class ApiInputModel(BaseModel):
-    model_config = ConfigDict(
-        alias_generator=to_camel,
-        validate_by_alias=True,
-        validate_by_name=True,
-    )
 
 
 class Permeability(enum.Enum):
@@ -33,6 +25,17 @@ PERMEABILITY_MAP: dict[Permeability, float] = {
     Permeability.PorousPermeability: 0.0,
     Permeability.Undefined: 0.0,
 }
+
+########## API INPUT MODELS ##########
+# Models used to validate the input data received from the API
+
+
+class ApiInputModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        validate_by_alias=True,
+        validate_by_name=True,
+    )
 
 
 class ProjectBoxInput(ApiInputModel):
@@ -86,13 +89,27 @@ class SimulationParametersInput(ApiInputModel):
     cohesion_factor: float = Field(default=0.9, ge=0.0, le=1.0)
     n_sinks: int = Field(default=100, gt=0)
 
-    search_radius: Literal["auto"] | float = Field(default="auto", ge=0.0)
-    inception_surface_constraint_weight: float = Field(default=1.0, ge=0.0)
-    max_inception_surface_distance: Literal["auto"] | float = Field(
-        default="auto", ge=0.0
-    )
-    r_min_pervious: Literal["auto"] | float = Field(default="auto", ge=0.0, le=1.0)
-    r_min_impervious: Literal["auto"] | float = Field(default="auto", ge=0.0, le=1.0)
+    search_radius: Literal["auto"] | Annotated[float, Field(ge=0.0)] = "auto"
+    inception_surface_constraint_weight: Annotated[float, Field(ge=0.0)] = 1.0
+    max_inception_surface_distance: (
+        Literal["auto"] | Annotated[float, Field(ge=0.0)]
+    ) = "auto"
+    r_min_pervious: Literal["auto"] | Annotated[float, Field(ge=0.0, le=1.0)] = "auto"
+    r_min_impervious: Literal["auto"] | Annotated[float, Field(ge=0.0, le=1.0)] = "auto"
+
+
+class KarstNSimData(ApiInputModel):
+    """Data given to the KarstNSim computation.
+    Binary inputs (dem_values, voxels, faults) are sent as separate files."""
+
+    simulation_params: SimulationParametersInput
+    project_box: ProjectBoxInput
+    dem_resolution: Vec2Int
+    stratigraphy: list[GeologicalUnitInput]
+    voxels_units: list[int]
+    fault_ids: list[int]
+    springs: list[SpringInput]
+    gwbs: list[GroundwaterBodyInput]
 
 
 @dataclass
@@ -111,17 +128,3 @@ class KarstNSimContent:
     gwbs: list[GroundwaterBodyInput]
     surface_resolution: Vec2Float
     resampled_dem_resolution: Vec2Int
-
-
-class KarstNSimData(TypedDict):
-    """Data given to the KarstNSim computation.
-    Binary inputs (dem_values, voxels, faults) are sent as separate files."""
-
-    simulation_params: SimulationParametersInput
-    project_box: ProjectBoxInput
-    dem_resolution: Vec2Int
-    stratigraphy: list[GeologicalUnitInput]
-    voxels_units: list[int]
-    fault_ids: list[int]
-    springs: list[SpringInput]
-    gwbs: list[GroundwaterBodyInput]
