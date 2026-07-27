@@ -44,7 +44,7 @@ source .venv/bin/activate
 ```
 
 The script uses `uv`, builds the native Draco and PyGeoAlgo pieces, and stores downloaded native dependencies under `.cache/local-dev`.
-On Linux, the local venv requires glibc 2.39 or newer because the published `forgeo-gmlib` wheel targets `manylinux_2_39_x86_64`. Older Linux distributions should use the Docker setup. We are working with BRGM to get a published version of `forgeo-gmlib` for older glibc versions.
+On Linux, the local venv requires glibc 2.39 or newer because the published `forgeo-gmlib` wheel targets `manylinux_2_39_x86_64`. Older Linux distributions should use the Docker setup. BRGM **will not** publish a version of `forgeo-gmlib` for older glibc versions for safety reasons.
 
 Recommanded extensions : `ms-python.python`, `charliermarsh.ruff` and `astral-sh.ty`.
 
