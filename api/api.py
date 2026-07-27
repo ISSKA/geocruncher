@@ -317,9 +317,19 @@ def compute_karstnsim():
             return Response("Missing dem or voxels file", 400, mimetype="text/plain")
         hset_bytes(r, files_key, "dem", request.files["dem"].read())
         hset_bytes(r, files_key, "voxels", request.files["voxels"].read())
-        for key, f in request.files.items():
-            if key.startswith("fault_"):
-                hset_bytes(r, files_key, key, f.read())
+
+        for fault_id in data.fault_ids:
+            fault_file_key = f"fault_{fault_id}"
+            if fault_file_key not in request.files:
+                return Response(
+                    f"Missing fault file for fault ID {fault_id}",
+                    400,
+                    mimetype="text/plain",
+                )
+            hset_bytes(
+                r, files_key, fault_file_key, request.files[fault_file_key].read()
+            )
+
         output_key = generate_key()
         # dump the data to JSON because KarstNSimDataInput model and other models it contains are not serializable by Celery
         res = tasks.compute_karstnsim.delay(
