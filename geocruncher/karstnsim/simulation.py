@@ -47,6 +47,7 @@ def run_karstnsim(
         content.compute_resolution,
         content.voxels,
         content.voxels_units.root,
+        content.is_base,
         content.simulation_params.r_min_pervious,
         content.simulation_params.r_min_impervious,
     )

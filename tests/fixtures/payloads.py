@@ -66,6 +66,7 @@ KARSTNSIM_DATA = {
         }
     ],
     "gwbs": [{"gwb_id": 1, "spring_id": 1}],
+    "is_base": False,
 }
 
 KARSTNSIM_DEM_BYTES = np.array(

@@ -110,6 +110,7 @@ class KarstNSimDataInput(ApiInputModel):
     fault_ids: list[int]
     springs: list[SpringInput]
     gwbs: list[GroundwaterBodyInput]
+    is_base: bool
 
 
 @dataclass
@@ -128,3 +129,4 @@ class KarstNSimContent:
     gwbs: list[GroundwaterBodyInput]
     surface_resolution: Vec2Float
     resampled_dem_resolution: Vec2Int
+    is_base: bool

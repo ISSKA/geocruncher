@@ -45,7 +45,7 @@ def test_densities_reflect_permeability():
     voxels = np.array([[[[1, 0], [2, 0]]]], dtype=np.int32)
 
     result = load_project_box(
-        box, stratigraphy, {"x": 1, "y": 1, "z": 2}, voxels, [1, 2]
+        box, stratigraphy, {"x": 1, "y": 1, "z": 2}, voxels, [1, 2], False
     )
 
     base_density = 2 / 30.0
@@ -73,7 +73,9 @@ def test_potentials_gwb_cells_are_one():
     # z=0: rank 1, gwb 0 (not in gwb); z=1: rank 1, gwb 5 (in gwb)
     voxels = np.array([[[[1, 0], [1, 5]]]], dtype=np.int32)
 
-    result = load_project_box(box, stratigraphy, {"x": 1, "y": 1, "z": 2}, voxels, [1])
+    result = load_project_box(
+        box, stratigraphy, {"x": 1, "y": 1, "z": 2}, voxels, [1], False
+    )
 
     potentials = result.karstification_potential
     assert potentials[0] == pytest.approx(0.5)  # not in gwb
@@ -95,7 +97,93 @@ def test_raises_when_density_exceeds_one():
     voxels = np.array([[[[1, 0]] * 10]], dtype=np.int32).reshape(1, 1, 10, 2)
 
     with pytest.raises(ValueError, match="density"):
-        load_project_box(box, stratigraphy, {"x": 1, "y": 1, "z": 10}, voxels, [1])
+        load_project_box(
+            box, stratigraphy, {"x": 1, "y": 1, "z": 10}, voxels, [1], False
+        )
+
+
+def test_is_base_reverses_rank_mapping():
+    """Base models should reverse the mapping between voxel rank and geological unit."""
+    box = ProjectBoxInput.model_validate(
+        {
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 20.0,
+        }
+    )
+    stratigraphy = StratigraphyInput(
+        [
+            GeologicalUnitInput.model_validate(
+                {
+                    "name": "Karstified",
+                    "permeability": "Karstified",
+                    "strati_unit_id": 1,
+                }
+            ),
+            GeologicalUnitInput.model_validate(
+                {
+                    "name": "Impervious",
+                    "permeability": "NonKarstified",
+                    "strati_unit_id": 2,
+                }
+            ),
+        ]
+    )
+
+    # Rank 1 normally maps to the first unit.
+    voxels = np.array([[[[1, 0]]]], dtype=np.int32)
+
+    top = load_project_box(
+        box, stratigraphy, {"x": 1, "y": 1, "z": 1}, voxels, [1, 2], False
+    )
+    base = load_project_box(
+        box, stratigraphy, {"x": 1, "y": 1, "z": 1}, voxels, [1, 2], True
+    )
+
+    assert top.karstification_potential[0] == pytest.approx(0.5)  # karstified
+    assert base.karstification_potential[0] == pytest.approx(0.0)  # non-karstified
+
+
+def test_is_base_dummy_unit_uses_lowest_rank():
+    """When the base model has fewer voxel units than stratigraphic units, the dummy unit
+    should be assigned to rank 1."""
+    box = ProjectBoxInput.model_validate(
+        {
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 20.0,
+        }
+    )
+    stratigraphy = StratigraphyInput(
+        [
+            GeologicalUnitInput.model_validate(
+                {
+                    "name": "Karstified",
+                    "permeability": "Karstified",
+                    "strati_unit_id": 1,
+                }
+            ),
+            GeologicalUnitInput.model_validate(
+                {
+                    "name": "Impervious",
+                    "permeability": "NonKarstified",
+                    "strati_unit_id": 2,
+                }
+            ),
+        ]
+    )
+
+    # Only one geological unit
+    voxels = np.array([[[[1, 0]]]], dtype=np.int32)
+
+    result = load_project_box(
+        box, stratigraphy, {"x": 1, "y": 1, "z": 1}, voxels, [1], True
+    )
+
+    # Rank 1 should map to the dummy unit rather than the real unit.
+    assert result.karstification_potential[0] == pytest.approx(0.0)
 
 
 ######## load_sinks tests ########

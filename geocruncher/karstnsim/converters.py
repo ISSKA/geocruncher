@@ -46,6 +46,7 @@ def load_project_box(
     compute_resolution: Vec3Int,
     voxels: np.ndarray,
     voxels_units: list[int],
+    is_base: bool,
     r_min_pervious: Literal["auto"] | float = "auto",
     r_min_impervious: Literal["auto"] | float = "auto",
 ) -> ProjectBox:
@@ -71,13 +72,20 @@ def load_project_box(
         # Find the unit with the matching strati_unit_id
         unit = next(filter(lambda uN: uN.strati_unit_id == unit_id, units), None)
         if unit:
-            id = j + 1
-            rank_to_unit[id] = unit
+            if is_base:
+                rank_to_unit[rank_count - j] = unit
+            else:
+                rank_to_unit[j + 1] = unit
         else:
             LOGGER.warning(f"No geological unit found with strati_unit_id={unit_id}")
 
+    # If the number of units is less than the number of ranks, there must be a dummy unit to fill the remaining ranks
     if len(voxels_units) < rank_count:
-        rank_to_unit[rank_count] = DUMMY
+        if is_base:
+            rank_to_unit[1] = DUMMY
+        else:
+            rank_to_unit[rank_count] = DUMMY
+
     rank_to_unit[0] = SKY
 
     # Build rank -> permeability lookup

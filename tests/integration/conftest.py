@@ -86,6 +86,7 @@ class KarstSimProject(FixtureProject):
             "fault_ids": self.numbered_ids("fault_*.bin"),
             "springs": self.json_matching("poi_*.json"),
             "gwbs": self.json_matching("gwb_*.json"),
+            "is_base": False,
         }
 
 

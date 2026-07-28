@@ -117,4 +117,5 @@ def build_karstnsim_content(
         gwbs=data.gwbs,
         surface_resolution=surface_resolution,
         resampled_dem_resolution=resampled_dem_resolution,
+        is_base=data.is_base,
     )
