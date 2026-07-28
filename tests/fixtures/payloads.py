@@ -55,7 +55,7 @@ KARSTNSIM_DATA = {
         {"name": "Unit", "permeability": "Karstified", "strati_unit_id": 1}
     ],
     "voxels_units": [1, 1, 1, 1],
-    "fault_ids": [],
+    "fault_ids": [1, 2],
     "springs": [
         {
             "poi_id": 1,

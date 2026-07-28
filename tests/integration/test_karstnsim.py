@@ -13,40 +13,32 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def simulation_result(
-    karstnsim_data_dict,
-    karstnsim_dem_bytes,
-    karstnsim_voxels_str,
-    karstnsim_fault_bytes,
-):
+def simulation_result(karstnsim_project):
     from geocruncher.karstnsim.simulation import run_karstnsim
 
-    data = KarstNSimDataInput.model_validate(karstnsim_data_dict)
+    data = KarstNSimDataInput.model_validate(karstnsim_project.data_dict)
 
     return run_karstnsim(
         data,
-        karstnsim_dem_bytes,
-        karstnsim_voxels_str,
-        karstnsim_fault_bytes,
+        karstnsim_project.dem_bytes,
+        karstnsim_project.voxels_str,
+        karstnsim_project.fault_bytes,
     )
 
 
-def test_invalid_spring_raises_value_error(
-    karstnsim_data_dict,
-    karstnsim_dem_bytes,
-    karstnsim_voxels_str,
-    karstnsim_fault_bytes,
-):
+def test_invalid_spring_raises_value_error(karstnsim_project):
     from geocruncher.karstnsim.simulation import run_karstnsim
 
-    broken = KarstNSimDataInput.model_validate({**karstnsim_data_dict, "gwbs": []})
+    broken = KarstNSimDataInput.model_validate(
+        {**karstnsim_project.data_dict, "gwbs": []}
+    )
 
     with pytest.raises(ValueError, match="groundwater body"):
         run_karstnsim(
             broken,
-            karstnsim_dem_bytes,
-            karstnsim_voxels_str,
-            karstnsim_fault_bytes,
+            karstnsim_project.dem_bytes,
+            karstnsim_project.voxels_str,
+            karstnsim_project.fault_bytes,
         )
 
 
@@ -56,23 +48,20 @@ def test_simulation_result_is_valid_json(simulation_result):
     assert "segments" in parsed
 
 
-def test_raises_when_simulation_returns_none(
-    karstnsim_data_dict,
-    karstnsim_dem_bytes,
-    karstnsim_voxels_str,
-    karstnsim_fault_bytes,
-    monkeypatch,
-):
+def test_raises_when_simulation_returns_none(karstnsim_project, monkeypatch):
     from geocruncher.karstnsim import simulation as sim_module
     from geocruncher.karstnsim.simulation import run_karstnsim
 
     monkeypatch.setattr(sim_module, "run_simulation", lambda *args, **kwargs: None)
 
-    data = KarstNSimDataInput.model_validate(karstnsim_data_dict)
+    data = KarstNSimDataInput.model_validate(karstnsim_project.data_dict)
 
     with pytest.raises(ValueError, match="no result"):
         run_karstnsim(
-            data, karstnsim_dem_bytes, karstnsim_voxels_str, karstnsim_fault_bytes
+            data,
+            karstnsim_project.dem_bytes,
+            karstnsim_project.voxels_str,
+            karstnsim_project.fault_bytes,
         )
 
 

@@ -526,7 +526,10 @@ def test_post_karstnsim_without_faults_succeeds(client, fake_redis, monkeypatch)
     response = client.post(
         "/compute/karstnsim",
         data=multipart_with_files(
-            KARSTNSIM_DATA,
+            {
+                **KARSTNSIM_DATA,
+                "fault_ids": [],
+            },
             dem=KARSTNSIM_DEM_BYTES,
             voxels=KARSTNSIM_VOXELS_STR.encode(),
         ),
