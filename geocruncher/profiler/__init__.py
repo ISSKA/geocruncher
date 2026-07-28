@@ -8,7 +8,7 @@ from .profiler import (
 from .settings.faults import PROFILER_FAULTS_V5
 from .settings.gwb_meshes import PROFILER_GWB_MESHES_V3
 from .settings.intersections import PROFILER_INTERSECTIONS_V5
-from .settings.karstnsim import PROFILER_KARSTNSIM_V2
+from .settings.karstnsim import PROFILER_KARSTNSIM_V3
 from .settings.meshes import PROFILER_MESHES_V6
 from .settings.tunnel_meshes import PROFILER_TUNNEL_MESHES_V4
 from .settings.voxels import PROFILER_VOXELS_V3
@@ -21,7 +21,7 @@ PROFILES = {
     "faults": PROFILER_FAULTS_V5,
     "voxels": PROFILER_VOXELS_V3,
     "gwb_meshes": PROFILER_GWB_MESHES_V3,
-    "karstnsim": PROFILER_KARSTNSIM_V2,
+    "karstnsim": PROFILER_KARSTNSIM_V3,
 }
 
 __all__ = [

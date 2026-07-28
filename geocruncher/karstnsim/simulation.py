@@ -34,11 +34,33 @@ def run_karstnsim(
     metadata: ProfilerMetadata | None = None,
 ) -> bytes:
     """Run the karstnsim simulation and return the result as bytes."""
-    profiler = set_profiler(PROFILES["karstnsim"]).update_metadata(metadata)
+    profiler = set_profiler(PROFILES["karstnsim"])
 
     start_step("build_content")
     content = build_karstnsim_content(data, dem_bytes, voxels_str, fault_bytes)
     profile_step("build_content")
+
+    profiler.set_metadata(
+        "voxel_count",
+        content.compute_resolution["x"]
+        * content.compute_resolution["y"]
+        * content.compute_resolution["z"],
+    )
+    profiler.set_metadata("num_springs", len(content.springs))
+    profiler.set_metadata("num_gwbs", len(content.gwbs))
+    profiler.set_metadata(
+        "fault_triangle_count",
+        sum(len(f.triangles) for f in content.faults),
+    )
+    profiler.set_metadata("num_sinks", content.simulation_params.n_sinks)
+    profiler.set_metadata("sampling_radius", content.simulation_params.r_min_pervious)
+    profiler.set_metadata("k_pts", content.simulation_params.k_pts)
+    profiler.set_metadata("search_radius", content.simulation_params.search_radius)
+    profiler.set_metadata("r_min_pervious", content.simulation_params.r_min_pervious)
+    profiler.set_metadata(
+        "r_min_impervious", content.simulation_params.r_min_impervious
+    )
+    profiler.update_metadata(metadata)
 
     start_step("load_project_box")
     project_box = load_project_box(
@@ -53,13 +75,11 @@ def run_karstnsim(
     )
     profile_step("load_project_box")
 
-    start_step("load_surface")
     dem = Surface.from_dem_grid(
         content.surface_data,
         content.project_box.width,
         content.project_box.height,
     )
-    profile_step("load_surface")
 
     start_step("load_springs")
     # Create pykarstnsim Spring objects from the input springs
@@ -81,7 +101,6 @@ def run_karstnsim(
     )
     profile_step("load_water_tables")
 
-    start_step("associate_springs_water_tables")
     ordered_gwb_ids = sorted(water_tables.keys())
 
     ordered_water_tables = [water_tables[gwb_id] for gwb_id in ordered_gwb_ids]
@@ -106,8 +125,6 @@ def run_karstnsim(
             )
 
         spring.water_table_index = spring_to_wt_index[input_spring.poi_id]
-
-    profile_step("associate_springs_water_tables")
 
     start_step("load_faults")
     faults = [
