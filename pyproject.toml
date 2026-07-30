@@ -55,7 +55,12 @@ source-exclude = [
 ]
 
 [tool.uv.sources]
-pykarstnsim = { git = "https://github.com/ISSKA/pykarstnsim.git" }
+pykarstnsim = { index = "testpypi" }
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+explicit = true
 
 [tool.ruff]
 exclude = ["third_party"]

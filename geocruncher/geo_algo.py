@@ -56,7 +56,7 @@ class GeoAlgo:
         profile_step("compute")
 
         start_step("generate_mesh")
-        metadata = []
+        metadata: list[GwbMeshesResult] = []
         meshes = []
         for aquifer in aquifers:
             metadata.append(

@@ -9,7 +9,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # - The matching runtime libs (libgmp10, libmpfr6) come in as deps of *-dev,
 #   so PyGeoAlgo.so loads at runtime without further installs.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential cmake wget ca-certificates xz-utils git \
+        build-essential cmake wget ca-certificates xz-utils \
         libgmp-dev libmpfr-dev libeigen3-dev \
  && rm -rf /var/lib/apt/lists/*
 
