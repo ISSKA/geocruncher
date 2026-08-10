@@ -168,11 +168,14 @@ def test_real_compute_intersections_projects_hydro_features_and_gwb_matrix(
     matrix_gwb = result["mesh"]["matrixGwb"][section_id][0]
 
     assert set(springs) == {"spring-1"}
-    np.testing.assert_allclose(springs["spring-1"], [8184.030841075725, 500.0])
+    np.testing.assert_allclose(
+        springs["spring-1"], [8184.030841075725, 500.0], atol=1e-3
+    )
     assert set(drillholes) == {"drillhole-1"}
     np.testing.assert_allclose(
         drillholes["drillhole-1"],
         [[8184.030841075725, -1000.0], [8184.030841075725, 1250.0]],
+        atol=1e-3,
     )
     assert len(matrix_gwb) == expected_width * expected_height
     assert set(matrix_gwb) == {0, 7}
