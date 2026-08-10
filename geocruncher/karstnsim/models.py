@@ -83,7 +83,6 @@ class GroundwaterBodyInput(ApiInputModel):
 
 
 class SimulationParametersInput(ApiInputModel):
-    name: str = "Karst Network"
     seed: int = Field(default=-1, ge=-1)
     k_pts: int = Field(default=20, gt=0)
     cohesion_factor: float = Field(default=0.9, ge=0.0, le=1.0)

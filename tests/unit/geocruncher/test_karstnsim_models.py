@@ -33,7 +33,6 @@ def test_camel_case_aliases():
 def test_simulation_parameters_defaults():
     params = SimulationParametersInput.model_validate({})
 
-    assert params.name == "Karst Network"
     assert params.seed == -1
     assert params.k_pts == 20
     assert params.cohesion_factor == 0.9

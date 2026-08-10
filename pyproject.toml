@@ -55,11 +55,11 @@ source-exclude = [
 ]
 
 [tool.uv.sources]
-pykarstnsim = { index = "testpypi" }
+pykarstnsim = { index = "pypi" }
 
 [[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
+name = "pypi"
+url = "https://pypi.org/simple/"
 explicit = true
 
 [tool.ruff]

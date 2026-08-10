@@ -77,7 +77,9 @@ class Voxels:
             )
         )
 
-        data = "".join([(str(r_t[0]) + " " + str(r_t[1]) + "\n") for r_t in ranks_tags])
+        data = "".join(
+            [(str(int(r_t[0])) + " " + str(r_t[1]) + "\n") for r_t in ranks_tags]
+        )
         vox = f"\
 XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} ZMAX={box.zmax} \
 NUMBERX={shape[0]} NUMBERY={shape[1]} NUMBERZ={shape[2]} NOVALUE=0\n\

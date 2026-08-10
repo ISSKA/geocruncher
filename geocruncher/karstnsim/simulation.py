@@ -157,7 +157,6 @@ def run_karstnsim(
     )
 
     config = KarstConfig()
-    config.karstic_network_name = content.simulation_params.name
     config.selected_seed = content.simulation_params.seed
     config.k_pts = content.simulation_params.k_pts
     config.fraction_karst_perm = content.simulation_params.cohesion_factor
