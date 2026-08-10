@@ -10,6 +10,7 @@ dependencies = [
     "forgeo",
     "forgeo-gmlib",
     "forgeo-rigs",
+    "isskasiska-geocruncherbuf-bufbuild-py>=0.3.0.1.20260810093123",
     "lxml",
     "meshio",
     "numpy",
@@ -42,6 +43,14 @@ server = [
 [build-system]
 requires = ["uv_build>=0.11.16,<0.12"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+isskasiska-geocruncherbuf-bufbuild-py = { index = "buf" }
+
+[[tool.uv.index]]
+name = "buf"
+url = "https://buf.build/gen/python"
+explicit = true
 
 [tool.uv.build-backend]
 module-root = ""
