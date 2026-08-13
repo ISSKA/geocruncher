@@ -83,10 +83,10 @@ def build_karstnsim_content(
         raise ValueError("Surface data grid must have at least 2 rows and 2 columns")
 
     # Resample the surface data to match the compute resolution
-    surface_data = surface_data[
-        :: data.dem_resolution["y"] // compute_resolution["y"],
-        :: data.dem_resolution["x"] // compute_resolution["x"],
-    ]
+    y_step = max(1, data.dem_resolution["y"] // compute_resolution["y"])
+    x_step = max(1, data.dem_resolution["x"] // compute_resolution["x"])
+
+    surface_data = surface_data[::y_step, ::x_step]
     # Flip the surface data vertically to match
     surface_data = np.flipud(surface_data).copy()
 
