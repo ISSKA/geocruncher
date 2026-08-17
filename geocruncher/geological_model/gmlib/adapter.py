@@ -6,22 +6,23 @@ import math
 from collections.abc import Iterable, Mapping
 from typing import TypedDict, cast
 
+from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 from forgeo.gmlib.geomodeller_project import Formation
 from forgeo.gmlib.topography_reader import ImplicitDTM
 from isska.geocruncher.v1 import project_pb as project_proto
 
-from .contracts import (
+from ...contracts import (
     EvaluationExtent,
     validate_evaluation_extent,
 )
-from .geological_model_input import validate_geological_model
-from .gmlib_compatibility import (
+from ..input import deserialize_geological_model, validate_geological_model
+from .compatibility import (
     GmlibCompatibilityFactory,
     GmlibFaultData,
     GmlibPile,
     GmlibSeriesData,
 )
-from .topography_reader import ascii_grid_to_implicit_dtm
+from .topography import ascii_grid_to_implicit_dtm
 
 
 class LegacyGmlibBox(TypedDict):
@@ -93,6 +94,22 @@ def build_gmlib_project_data(
         "topography": ascii_grid_to_implicit_dtm(dem),
         "formations": formations,
     }
+
+
+def load_trusted_gmlib_model(
+    model_data: bytes,
+    extent: EvaluationExtent,
+    dem: str,
+) -> GeologicalModel:
+    """Construct a GMLib model from protobuf input validated at API ingress."""
+    message = deserialize_geological_model(model_data)
+    project_data = build_gmlib_project_data(
+        message,
+        extent,
+        dem,
+        validate_input=False,
+    )
+    return GeologicalModel(project_data, use_cache=False)
 
 
 def _make_box(extent: EvaluationExtent) -> LegacyGmlibBox:

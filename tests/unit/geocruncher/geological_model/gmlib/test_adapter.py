@@ -6,12 +6,13 @@ from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 from isska.geocruncher.v1 import project_pb as project_proto
 
 from geocruncher.contracts import EvaluationExtent, EvaluationExtentValidationError
-from geocruncher.geological_model_input import GeologicalModelValidationError
-from geocruncher.gmlib_adapter import build_gmlib_project_data
-from geocruncher.gmlib_compatibility import (
+from geocruncher.geological_model.gmlib import adapter as adapter_module
+from geocruncher.geological_model.gmlib.adapter import build_gmlib_project_data
+from geocruncher.geological_model.gmlib.compatibility import (
     DEFAULT_FORMATION_COLOR,
     DUMMY_FORMATION_NAME,
 )
+from geocruncher.geological_model.input import GeologicalModelValidationError
 
 SERIES_MODELED = "00000000-0000-0000-0000-000000000001"
 SERIES_CONTACTS_ONLY = "00000000-0000-0000-0000-000000000002"
@@ -290,3 +291,34 @@ def test_rejects_invalid_evaluation_extent(field, value, match):
 
     with pytest.raises(EvaluationExtentValidationError, match=match):
         build_gmlib_project_data(model_message(), extent, DEM)
+
+
+def test_loads_trusted_gmlib_model_without_revalidating(monkeypatch):
+    message = object()
+    project_data = object()
+    calls = []
+
+    monkeypatch.setattr(
+        adapter_module,
+        "deserialize_geological_model",
+        lambda model_data: message,
+    )
+
+    def fake_build(model, extent, dem, *, validate_input):
+        calls.append((model, extent, dem, validate_input))
+        return project_data
+
+    monkeypatch.setattr(adapter_module, "build_gmlib_project_data", fake_build)
+
+    constructed = []
+
+    class FakeGeologicalModel:
+        def __init__(self, data, *, use_cache):
+            constructed.append((self, data, use_cache))
+
+    monkeypatch.setattr(adapter_module, "GeologicalModel", FakeGeologicalModel)
+
+    loaded = adapter_module.load_trusted_gmlib_model(b"model", EXTENT, DEM)
+
+    assert calls == [(message, EXTENT, DEM, False)]
+    assert constructed == [(loaded, project_data, False)]

@@ -15,7 +15,7 @@ from geocruncher.contracts import (
     TunnelMeshesData,
     validate_evaluation_extent,
 )
-from geocruncher.geological_model_input import (
+from geocruncher.geological_model.input import (
     GeologicalModelValidationError,
     parse_geological_model,
 )

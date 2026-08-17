@@ -3,7 +3,7 @@ from uuid import uuid4
 import pytest
 from isska.geocruncher.v1 import project_pb as project_proto
 
-from geocruncher.geological_model_input import (
+from geocruncher.geological_model.input import (
     GeologicalModelValidationError,
     deserialize_geological_model,
     parse_geological_model,

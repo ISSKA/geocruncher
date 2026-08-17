@@ -7,7 +7,7 @@ import math
 from typing import cast
 
 import numpy as np
-from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
 
 from geocruncher.profiler.profiler import start_step
 
@@ -19,7 +19,6 @@ from .compute_intersections import (
     project_hydro_features_on_slice,
 )
 from .contracts import (
-    EvaluationExtent,
     FaultIntersectionsResult,
     GeoAlgoOutput,
     IntersectionsData,
@@ -33,8 +32,7 @@ from .contracts import (
 )
 from .fault_intersections import compute_fault_intersections
 from .geo_algo import GeoAlgo
-from .geological_model_input import deserialize_geological_model
-from .gmlib_adapter import build_gmlib_project_data
+from .geological_model.gmlib.adapter import load_trusted_gmlib_model
 from .mesh_generation import generate_faults_files, generate_volumes
 from .profiler import (
     PROFILES,
@@ -50,20 +48,6 @@ from .tunnel_shape_generation import (
     tunnel_to_meshes,
 )
 from .voxel_computation import Voxels
-
-
-def _load_model(
-    model_data: bytes, extent: EvaluationExtent, dem: str
-) -> GeologicalModel:
-    """Deserialize trusted protobuf input and construct the current gmlib model."""
-    message = deserialize_geological_model(model_data)
-    project_data = build_gmlib_project_data(
-        message,
-        extent,
-        dem,
-        validate_input=False,
-    )
-    return GeologicalModel(project_data, use_cache=False)
 
 
 def compute_tunnel_meshes(
@@ -145,7 +129,7 @@ def compute_meshes(
     """
     profiler = set_profiler(PROFILES["meshes"])
     start_step("load_model")
-    model = _load_model(model_data, data["box"], dem)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -207,7 +191,7 @@ def compute_intersections(
     """
     profiler = set_profiler(PROFILES["intersections"])
     start_step("load_model")
-    model = _load_model(model_data, data["box"], dem)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
     box = model.getbox()
     max_dist_proj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
     mesh_output: MeshIntersectionsResult = {
@@ -341,7 +325,7 @@ def compute_faults(
     """
     profiler = set_profiler(PROFILES["faults"])
     start_step("load_model")
-    model = _load_model(model_data, data["box"], dem)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -397,7 +381,7 @@ def compute_voxels(
     """
     profiler = set_profiler(PROFILES["voxels"])
     start_step("load_model")
-    model = _load_model(model_data, data["box"], dem)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 

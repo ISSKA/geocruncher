@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from geocruncher.topography_reader import ascii_grid_to_implicit_dtm
+from geocruncher.geological_model.gmlib.topography import ascii_grid_to_implicit_dtm
 
 
 def test_ascii_grid_to_implicit_dtm_reads_valid_grid_with_nodata_header():

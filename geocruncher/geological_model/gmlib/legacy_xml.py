@@ -17,7 +17,7 @@ from forgeo.gmlib.geomodeller_project import (
     read_pile,
 )
 
-from .topography_reader import ascii_grid_to_implicit_dtm
+from .topography import ascii_grid_to_implicit_dtm
 
 type XmlInput = bytes | str
 

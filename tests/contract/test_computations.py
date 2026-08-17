@@ -65,10 +65,9 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
     )
 
     assert result == {"mesh": {"unit-1": b"unit"}, "fault": {"fault-a": b"fault"}}
-    assert computation_fakes.parsed == [b"model"]
-    assert computation_fakes.adapted == [
+    assert computation_fakes.loaded == [
         (
-            {"parsed": b"model"},
+            b"model",
             {
                 "xmin": 1,
                 "ymin": 2,
@@ -78,22 +77,8 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
                 "zmax": 6,
             },
             "dem",
-            False,
         )
     ]
-    assert computation_fakes.models[0].project_data == {
-        "message": {"parsed": b"model"},
-        "extent": {
-            "xmin": 1,
-            "ymin": 2,
-            "zmin": 3,
-            "xmax": 4,
-            "ymax": 5,
-            "zmax": 6,
-        },
-        "dem": "dem",
-    }
-    assert computation_fakes.models[0].use_cache is False
     assert generated["model"] == computation_fakes.models[0]
     assert generated["shape"] == (2, 3, 4)
     assert generated["box"].as_tuple() == (1, 2, 3, 4, 5, 6)

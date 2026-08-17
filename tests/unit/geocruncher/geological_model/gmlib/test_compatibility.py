@@ -9,7 +9,7 @@ from forgeo.gmlib.GeologicalModel3D import (
 from forgeo.gmlib.geomodeller_data import FaultData, Pile, PotentialData, SeriesData
 from forgeo.gmlib.geomodeller_project import Formation
 
-from geocruncher.gmlib_compatibility import (
+from geocruncher.geological_model.gmlib.compatibility import (
     GmlibCompatibilityFactory,
 )
 
