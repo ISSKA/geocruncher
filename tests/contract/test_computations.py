@@ -4,13 +4,24 @@ import numpy as np
 import pytest
 
 import geocruncher.computations as computations
+from geocruncher.contracts import (
+    EvaluationExtent,
+    IntersectionsData,
+    MeshesData,
+    Spring,
+    Tunnel,
+    TunnelFunction,
+    TunnelMeshesData,
+    TunnelShape,
+    Vec3Float,
+)
 from tests.support import computations as computation_support
 
 MODEL_METADATA = computation_support.MODEL_METADATA
 assert_metadata_contains = computation_support.assert_metadata_contains
 computation_fakes = computation_support.computation_fakes
 
-BOX = computations.BoxDict(
+BOX = EvaluationExtent(
     xmin=0,
     ymin=10,
     zmin=20,
@@ -182,7 +193,7 @@ def test_compute_faults_uses_custom_box(monkeypatch, computation_fakes):
     )
 
     result = computations.compute_faults(
-        computations.MeshesData(
+        MeshesData(
             resolution={"x": 2, "y": 3, "z": 4},
             box={
                 "xmin": 11,
@@ -264,7 +275,7 @@ def test_compute_voxels_uses_custom_box(monkeypatch, computation_fakes):
 
     gwb_meshes = {"10": [b"mesh"]}
     result = computations.compute_voxels(
-        computations.MeshesData(
+        MeshesData(
             resolution={"x": 3, "y": 4, "z": 5},
             box={
                 "xmin": 21,
@@ -306,11 +317,7 @@ def test_compute_gwb_meshes_delegates_to_geo_algo_and_profiles_metadata(
     monkeypatch.setattr(computations, "GeoAlgo", FakeGeoAlgo)
 
     unit_meshes = {"7": b"unit"}
-    springs = [
-        computations.Spring(
-            id=9, location=computations.Vec3Float(x=1, y=2, z=3), unit_id=7
-        )
-    ]
+    springs = [Spring(id=9, location=Vec3Float(x=1, y=2, z=3), unit_id=7)]
 
     result = computations.compute_gwb_meshes(
         unit_meshes, springs, metadata={"env": "test"}
@@ -375,13 +382,13 @@ def test_compute_tunnel_meshes_profiles_each_tunnel_and_applies_sub_tunnel_scale
             "tunnels": [
                 {
                     "name": "main",
-                    "shape": computations.TunnelShape.CIRCLE,
+                    "shape": TunnelShape.CIRCLE,
                     "functions": [{"x": "t", "y": "0", "z": "0"}],
                     "radius": 2.0,
                 },
                 {
                     "name": "service",
-                    "shape": computations.TunnelShape.RECTANGLE,
+                    "shape": TunnelShape.RECTANGLE,
                     "functions": [
                         {"x": "t", "y": "0", "z": "0"},
                         {"x": "t", "y": "1", "z": "0"},
@@ -435,8 +442,8 @@ def test_compute_tunnel_meshes_profiles_each_tunnel_and_applies_sub_tunnel_scale
     ]
 
     assert [profiler.metadata["shape"] for profiler in computation_fakes.profilers] == [
-        computations.TunnelShape.CIRCLE,
-        computations.TunnelShape.RECTANGLE,
+        TunnelShape.CIRCLE,
+        TunnelShape.RECTANGLE,
     ]
 
     assert [
@@ -483,12 +490,12 @@ def test_compute_tunnel_meshes_elliptic_tunnel_without_sub_tunnel_scale_when_sta
 
     monkeypatch.setattr(computations, "tunnel_to_meshes", fake_tunnel_to_meshes)
 
-    functions = [computations.TunnelFunction(x="t", y="t + 1", z="0")]
-    data = computations.TunnelMeshesData(
+    functions = [TunnelFunction(x="t", y="t + 1", z="0")]
+    data = TunnelMeshesData(
         tunnels=[
-            computations.Tunnel(
+            Tunnel(
                 name="bypass",
-                shape=computations.TunnelShape.ELLIPTIC,
+                shape=TunnelShape.ELLIPTIC,
                 functions=functions,
                 width=4.0,
                 height=6.0,
@@ -519,9 +526,7 @@ def test_compute_tunnel_meshes_elliptic_tunnel_without_sub_tunnel_scale_when_sta
             "t_end": 2.0,
         }
     ]
-    assert computation_fakes.profilers[0].metadata["shape"] == (
-        computations.TunnelShape.ELLIPTIC
-    )
+    assert computation_fakes.profilers[0].metadata["shape"] == (TunnelShape.ELLIPTIC)
     assert computation_fakes.profilers[0].metadata["num_waypoints"] == 2
     assert computation_fakes.profilers[0].metadata["env"] == "test"
     assert computation_fakes.profilers[0].saved is True
@@ -790,14 +795,14 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     )
     monkeypatch.setattr(computations, "compute_map_points", fake_compute_map_points)
 
-    springs = {"spring": computations.Vec3Float(x=2, y=3, z=4)}
+    springs = {"spring": Vec3Float(x=2, y=3, z=4)}
     drillholes = {
-        "dh": computations.BoxDict(xmin=1, ymin=2, zmin=3, xmax=4, ymax=5, zmax=6)
+        "dh": EvaluationExtent(xmin=1, ymin=2, zmin=3, xmax=4, ymax=5, zmax=6)
     }
     gwb_meshes = {"9": [b"mesh"]}
 
     result = computations.compute_intersections(
-        computations.IntersectionsData(
+        IntersectionsData(
             resolution=10,
             box=BOX,
             springs=springs,

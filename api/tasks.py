@@ -4,6 +4,12 @@ from collections import defaultdict
 from celery import Task
 
 from geocruncher import computations
+from geocruncher.contracts import (
+    IntersectionsData,
+    MeshesData,
+    Spring,
+    TunnelMeshesData,
+)
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
 
@@ -15,7 +21,7 @@ from .utils import get_and_delete, get_hash_bytes, hset_bytes
 @app.task(bind=True)
 def compute_tunnel_meshes(
     self: Task,
-    data: computations.TunnelMeshesData,
+    data: TunnelMeshesData,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
@@ -29,7 +35,7 @@ def compute_tunnel_meshes(
 @app.task(bind=True)
 def compute_meshes(
     self: Task,
-    data: computations.MeshesData,
+    data: MeshesData,
     model_key: str,
     dem_key: str,
     output_key: str,
@@ -56,7 +62,7 @@ def compute_meshes(
 @app.task(bind=True)
 def compute_intersections(
     self: Task,
-    data: computations.IntersectionsData,
+    data: IntersectionsData,
     model_key: str,
     dem_key: str,
     gwb_meshes_key: str,
@@ -87,7 +93,7 @@ def compute_intersections(
 @app.task(bind=True)
 def compute_faults(
     self: Task,
-    data: computations.MeshesData,
+    data: MeshesData,
     model_key: str,
     dem_key: str,
     output_key: str,
@@ -109,7 +115,7 @@ def compute_faults(
 @app.task(bind=True)
 def compute_voxels(
     self: Task,
-    data: computations.MeshesData,
+    data: MeshesData,
     model_key: str,
     dem_key: str,
     gwb_meshes_key: str,
@@ -136,7 +142,7 @@ def compute_voxels(
 @app.task(bind=True)
 def compute_gwb_meshes(
     self: Task,
-    data: list[computations.Spring],
+    data: list[Spring],
     meshes_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,

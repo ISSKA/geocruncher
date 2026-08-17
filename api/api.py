@@ -6,20 +6,18 @@ from celery.result import AsyncResult, states
 from flask import Flask, Response, request, send_file
 from pydantic import TypeAdapter, ValidationError
 
-from geocruncher.computations import (
-    BoxDict,
+from geocruncher.contracts import (
+    EvaluationExtent,
+    EvaluationExtentValidationError,
     IntersectionsData,
     MeshesData,
     Spring,
     TunnelMeshesData,
+    validate_evaluation_extent,
 )
 from geocruncher.geological_model_input import (
     GeologicalModelValidationError,
     parse_geological_model,
-)
-from geocruncher.gmlib_adapter import (
-    EvaluationExtentValidationError,
-    validate_evaluation_extent,
 )
 
 from . import tasks
@@ -65,7 +63,7 @@ def non_success_response(res: AsyncResult) -> Response | None:
 
 
 def read_geological_inputs(
-    extent: BoxDict,
+    extent: EvaluationExtent,
 ) -> tuple[bytes, bytes] | Response:
     """Read and validate the protobuf model and DEM uploads."""
     model_file = request.files.get("model")

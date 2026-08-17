@@ -5,12 +5,9 @@ import pytest
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 from isska.geocruncher.v1 import project_pb as project_proto
 
+from geocruncher.contracts import EvaluationExtent, EvaluationExtentValidationError
 from geocruncher.geological_model_input import GeologicalModelValidationError
-from geocruncher.gmlib_adapter import (
-    EvaluationExtent,
-    EvaluationExtentValidationError,
-    build_gmlib_project_data,
-)
+from geocruncher.gmlib_adapter import build_gmlib_project_data
 from geocruncher.gmlib_compatibility import (
     DEFAULT_FORMATION_COLOR,
     DUMMY_FORMATION_NAME,

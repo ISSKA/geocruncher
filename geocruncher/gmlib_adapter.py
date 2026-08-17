@@ -10,6 +10,10 @@ from forgeo.gmlib.geomodeller_project import Formation
 from forgeo.gmlib.topography_reader import ImplicitDTM
 from isska.geocruncher.v1 import project_pb as project_proto
 
+from .contracts import (
+    EvaluationExtent,
+    validate_evaluation_extent,
+)
 from .geological_model_input import validate_geological_model
 from .gmlib_compatibility import (
     GmlibCompatibilityFactory,
@@ -18,18 +22,6 @@ from .gmlib_compatibility import (
     GmlibSeriesData,
 )
 from .topography_reader import ascii_grid_to_implicit_dtm
-
-
-# TODO: Generalize with BoxDict in computations.py
-class EvaluationExtent(TypedDict):
-    """Project-space computation extent supplied outside the protobuf."""
-
-    xmin: float
-    ymin: float
-    zmin: float
-    xmax: float
-    ymax: float
-    zmax: float
 
 
 class LegacyGmlibBox(TypedDict):
@@ -52,28 +44,6 @@ class GmlibProjectData(TypedDict):
     faults_data: dict[str, GmlibFaultData]
     topography: ImplicitDTM
     formations: list[Formation]
-
-
-class EvaluationExtentValidationError(ValueError):
-    """Raised when a computation extent cannot define a valid 3D box."""
-
-
-def validate_evaluation_extent(extent: EvaluationExtent) -> None:
-    """Validate the separately supplied model-wide computation extent."""
-    bounds = (
-        ("x", extent["xmin"], extent["xmax"]),
-        ("y", extent["ymin"], extent["ymax"]),
-        ("z", extent["zmin"], extent["zmax"]),
-    )
-    for axis, lower, upper in bounds:
-        if not math.isfinite(lower) or not math.isfinite(upper):
-            raise EvaluationExtentValidationError(
-                f"box.{axis}min and box.{axis}max must be finite"
-            )
-        if lower >= upper:
-            raise EvaluationExtentValidationError(
-                f"box.{axis}min must be less than box.{axis}max"
-            )
 
 
 def build_gmlib_project_data(

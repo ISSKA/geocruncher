@@ -11,8 +11,9 @@ import numpy as np
 import pytest
 from isska.geocruncher.v1 import project_pb as project_proto
 
+from geocruncher.contracts import EvaluationExtent
 from geocruncher.geomodeller_import import extract_project_data
-from geocruncher.gmlib_adapter import EvaluationExtent, build_gmlib_project_data
+from geocruncher.gmlib_adapter import build_gmlib_project_data
 
 pytestmark = pytest.mark.integration
 
