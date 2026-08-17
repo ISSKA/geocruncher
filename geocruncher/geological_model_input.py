@@ -13,18 +13,27 @@ class GeologicalModelValidationError(ValueError):
     """Raised when a protobuf geological model violates the contract."""
 
 
+NORMAL_LENGTH_TOLERANCE = 1.0e-3
+"""Allowed absolute error in exported orientation-normal length."""
+
+
 def parse_geological_model(data: bytes) -> project_proto.GeologicalModel:
     """Deserialize and validate a binary v1 geological model payload."""
+    message = deserialize_geological_model(data)
+    validate_geological_model(message)
+    return message
+
+
+def deserialize_geological_model(data: bytes) -> project_proto.GeologicalModel:
+    """Deserialize a binary v1 payload without semantic validation."""
     if not isinstance(data, bytes):
         raise TypeError("data must be bytes")
     try:
-        message = project_proto.GeologicalModel.from_binary(data)
+        return project_proto.GeologicalModel.from_binary(data)
     except Exception as error:
         raise GeologicalModelValidationError(
             f"invalid GeologicalModel protobuf: {error}"
         ) from error
-    validate_geological_model(message)
-    return message
 
 
 def validate_geological_model(message: project_proto.GeologicalModel) -> None:
@@ -144,8 +153,12 @@ def _validate_orientation(orientation: project_proto.Orientation, path: str) -> 
     _finite(normal.x, f"{path}.normal.x")
     _finite(normal.y, f"{path}.normal.y")
     _finite(normal.z, f"{path}.normal.z")
-    if normal.x == 0.0 and normal.y == 0.0 and normal.z == 0.0:
-        _invalid(f"{path}.normal", "must not be zero-length")
+    length = math.sqrt(normal.x**2 + normal.y**2 + normal.z**2)
+    if not math.isclose(length, 1.0, rel_tol=0.0, abs_tol=NORMAL_LENGTH_TOLERANCE):
+        _invalid(
+            f"{path}.normal",
+            f"must have unit length within {NORMAL_LENGTH_TOLERANCE:g} tolerance",
+        )
 
 
 def _validate_finite_fault(finite: project_proto.FiniteFault, path: str) -> None:

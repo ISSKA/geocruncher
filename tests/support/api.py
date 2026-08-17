@@ -4,6 +4,8 @@ from io import BytesIO
 from types import SimpleNamespace
 from typing import Any
 
+from isska.geocruncher.v1 import project_pb as project_proto
+
 
 class FakeRedis:
     def __init__(self):
@@ -86,6 +88,33 @@ def multipart_with_files(payload, metadata=None, **files):
     for field, content in files.items():
         data[field] = (BytesIO(content), f"{field}.dat")
     return data
+
+
+def geological_model_bytes():
+    """Return a minimal valid binary geological-model fixture."""
+    orientation = project_proto.Orientation(
+        position=project_proto.Point3(x=1.0, y=2.0, z=3.0),
+        normal=project_proto.Vector3(x=0.0, y=0.0, z=1.0),
+    )
+    model = project_proto.GeologicalModel(
+        stratigraphy=project_proto.StratigraphicColumn(
+            reference=project_proto.StratigraphicReference.BASE,
+            series=[
+                project_proto.Series(
+                    uuid="00000000-0000-0000-0000-000000000001",
+                    relation=project_proto.SeriesRelation.ONLAP,
+                    units=[
+                        project_proto.Unit(
+                            uuid="00000000-0000-0000-0000-000000000002",
+                            contact_points=[project_proto.Point3(x=1.0, y=2.0, z=3.0)],
+                            orientations=[orientation],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    return model.to_binary()
 
 
 def tar_entries(response):

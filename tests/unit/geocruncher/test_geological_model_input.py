@@ -5,6 +5,7 @@ from isska.geocruncher.v1 import project_pb as project_proto
 
 from geocruncher.geological_model_input import (
     GeologicalModelValidationError,
+    deserialize_geological_model,
     parse_geological_model,
     validate_geological_model,
 )
@@ -83,6 +84,22 @@ def test_parse_applies_semantic_validation():
         parse_geological_model(message.to_binary())
 
 
+def test_deserialize_does_not_apply_semantic_validation():
+    message = valid_model()
+    message.clear_field("stratigraphy")
+
+    deserialized = deserialize_geological_model(message.to_binary())
+
+    assert not deserialized.has_field("stratigraphy")
+
+
+def test_deserialize_still_rejects_malformed_wire_data():
+    with pytest.raises(
+        GeologicalModelValidationError, match="invalid GeologicalModel protobuf"
+    ):
+        deserialize_geological_model(b"not a protobuf model")
+
+
 @pytest.mark.parametrize(
     ("mutate", "match"),
     [
@@ -138,7 +155,15 @@ def test_parse_applies_semantic_validation():
                 "normal",
                 project_proto.Vector3(),
             ),
-            "normal: must not be zero-length",
+            "normal: must have unit length",
+        ),
+        (
+            lambda model: setattr(
+                model.stratigraphy.series[0].units[0].orientations[0],
+                "normal",
+                project_proto.Vector3(x=0.0, y=0.0, z=1.01),
+            ),
+            "normal: must have unit length",
         ),
         (
             lambda model: setattr(model.faults[0].finite, "vertical_extent", 0.0),
@@ -179,3 +204,12 @@ def test_rejects_fault_stop_cycles():
 
     with pytest.raises(GeologicalModelValidationError, match="contains a cycle"):
         validate_geological_model(model)
+
+
+def test_accepts_small_orientation_normal_rounding_error():
+    model = valid_model()
+    model.stratigraphy.series[0].units[0].orientations[
+        0
+    ].normal = project_proto.Vector3(x=0.0, y=0.0, z=1.0009)
+
+    assert validate_geological_model(model) is None

@@ -41,7 +41,8 @@ class FakeProfiler:
 @pytest.fixture
 def computation_fakes(monkeypatch):
     records = SimpleNamespace(
-        extracted=[],
+        parsed=[],
+        adapted=[],
         models=[],
         profilers=[],
         profile_steps=[],
@@ -57,9 +58,13 @@ def computation_fakes(monkeypatch):
         def getbox(self):
             return self.box
 
-    def fake_extract_project_data(xml, dem):
-        records.extracted.append((xml, dem))
-        return {"xml": xml, "dem": dem}
+    def fake_deserialize_geological_model(model_data):
+        records.parsed.append(model_data)
+        return {"parsed": model_data}
+
+    def fake_build_gmlib_project_data(message, extent, dem, *, validate_input):
+        records.adapted.append((message, extent, dem, validate_input))
+        return {"message": message, "extent": extent, "dem": dem}
 
     def fake_set_profiler(settings):
         profiler = FakeProfiler(settings)
@@ -68,7 +73,14 @@ def computation_fakes(monkeypatch):
 
     monkeypatch.setattr(computations, "Box", FakeBox)
     monkeypatch.setattr(computations, "GeologicalModel", FakeGeologicalModel)
-    monkeypatch.setattr(computations, "extract_project_data", fake_extract_project_data)
+    monkeypatch.setattr(
+        computations,
+        "deserialize_geological_model",
+        fake_deserialize_geological_model,
+    )
+    monkeypatch.setattr(
+        computations, "build_gmlib_project_data", fake_build_gmlib_project_data
+    )
     monkeypatch.setattr(computations, "set_profiler", fake_set_profiler)
     monkeypatch.setattr(
         computations, "profile_step", lambda step: records.profile_steps.append(step)

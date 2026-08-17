@@ -30,16 +30,16 @@ def compute_tunnel_meshes(
 def compute_meshes(
     self: Task,
     data: computations.MeshesData,
-    xml_key: str,
+    model_key: str,
     dem_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
     set_current_task(self)
-    xml = get_and_delete(r, xml_key)
+    model_data = get_and_delete(r, model_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
-    generated_meshes = computations.compute_meshes(data, xml, dem, metadata)
+    generated_meshes = computations.compute_meshes(data, model_data, dem, metadata)
 
     # write unit files
     for rank, mesh in generated_meshes["mesh"].items():
@@ -57,14 +57,14 @@ def compute_meshes(
 def compute_intersections(
     self: Task,
     data: computations.IntersectionsData,
-    xml_key: str,
+    model_key: str,
     dem_key: str,
     gwb_meshes_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
     set_current_task(self)
-    xml = get_and_delete(r, xml_key)
+    model_data = get_and_delete(r, model_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
     gwb_meshes = defaultdict(list)
@@ -76,7 +76,9 @@ def compute_intersections(
             gwb_meshes[gwb_id].append(mesh)
         r.delete(gwb_meshes_key)
 
-    outputs = computations.compute_intersections(data, xml, dem, gwb_meshes, metadata)
+    outputs = computations.compute_intersections(
+        data, model_data, dem, gwb_meshes, metadata
+    )
 
     r.set(output_key, json.dumps(outputs, separators=(",", ":")))
     return output_key
@@ -86,16 +88,16 @@ def compute_intersections(
 def compute_faults(
     self: Task,
     data: computations.MeshesData,
-    xml_key: str,
+    model_key: str,
     dem_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
     set_current_task(self)
-    xml = get_and_delete(r, xml_key)
+    model_data = get_and_delete(r, model_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
-    generated_meshes = computations.compute_faults(data, xml, dem, metadata)
+    generated_meshes = computations.compute_faults(data, model_data, dem, metadata)
 
     # write fault files
     for name, mesh in generated_meshes["fault"].items():
@@ -108,14 +110,14 @@ def compute_faults(
 def compute_voxels(
     self: Task,
     data: computations.MeshesData,
-    xml_key: str,
+    model_key: str,
     dem_key: str,
     gwb_meshes_key: str,
     output_key: str,
     metadata: ProfilerMetadata | None = None,
 ) -> str:
     set_current_task(self)
-    xml = get_and_delete(r, xml_key)
+    model_data = get_and_delete(r, model_key)
     dem = get_and_delete(r, dem_key).decode("utf-8")
 
     gwb_meshes = defaultdict(list)
@@ -125,7 +127,7 @@ def compute_voxels(
         gwb_meshes[gwb_id].append(mesh)
     r.delete(gwb_meshes_key)
 
-    voxels = computations.compute_voxels(data, xml, dem, gwb_meshes, metadata)
+    voxels = computations.compute_voxels(data, model_data, dem, gwb_meshes, metadata)
 
     r.set(output_key, voxels)
     return output_key

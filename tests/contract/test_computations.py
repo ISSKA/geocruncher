@@ -10,6 +10,15 @@ MODEL_METADATA = computation_support.MODEL_METADATA
 assert_metadata_contains = computation_support.assert_metadata_contains
 computation_fakes = computation_support.computation_fakes
 
+BOX = computations.BoxDict(
+    xmin=0,
+    ymin=10,
+    zmin=20,
+    xmax=100,
+    ymax=210,
+    zmax=320,
+)
+
 
 ######## Tests ########
 
@@ -39,14 +48,40 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
                 "zmax": 6,
             },
         },
-        xml="<xml />",
+        model_data=b"model",
         dem="dem",
         metadata={"env": "test"},
     )
 
     assert result == {"mesh": {"unit-1": b"unit"}, "fault": {"fault-a": b"fault"}}
-    assert computation_fakes.extracted == [("<xml />", "dem")]
-    assert computation_fakes.models[0].project_data == {"xml": "<xml />", "dem": "dem"}
+    assert computation_fakes.parsed == [b"model"]
+    assert computation_fakes.adapted == [
+        (
+            {"parsed": b"model"},
+            {
+                "xmin": 1,
+                "ymin": 2,
+                "zmin": 3,
+                "xmax": 4,
+                "ymax": 5,
+                "zmax": 6,
+            },
+            "dem",
+            False,
+        )
+    ]
+    assert computation_fakes.models[0].project_data == {
+        "message": {"parsed": b"model"},
+        "extent": {
+            "xmin": 1,
+            "ymin": 2,
+            "zmin": 3,
+            "xmax": 4,
+            "ymax": 5,
+            "zmax": 6,
+        },
+        "dem": "dem",
+    }
     assert computation_fakes.models[0].use_cache is False
     assert generated["model"] == computation_fakes.models[0]
     assert generated["shape"] == (2, 3, 4)
@@ -61,9 +96,7 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
     assert computation_fakes.profilers[0].saved is True
 
 
-def test_compute_meshes_uses_model_box_when_box_is_absent(
-    monkeypatch, computation_fakes
-):
+def test_compute_meshes_uses_required_computation_box(monkeypatch, computation_fakes):
     generated = {}
 
     def fake_generate_volumes(model, shape, box):
@@ -75,15 +108,15 @@ def test_compute_meshes_uses_model_box_when_box_is_absent(
     monkeypatch.setattr(computations, "generate_volumes", fake_generate_volumes)
 
     result = computations.compute_meshes(
-        {"resolution": {"x": 1, "y": 2, "z": 3}},
-        xml="xml",
+        {"resolution": {"x": 1, "y": 2, "z": 3}, "box": BOX},
+        model_data=b"model",
         dem="dem",
     )
 
     assert result == {"mesh": {}, "fault": {}}
     assert generated["model"] is computation_fakes.models[0]
     assert generated["shape"] == (1, 2, 3)
-    assert generated["box"] is computation_fakes.models[0].box
+    assert generated["box"].as_tuple() == (0, 10, 20, 100, 210, 320)
     assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["resolution"] == 6
     assert_metadata_contains(
@@ -93,7 +126,7 @@ def test_compute_meshes_uses_model_box_when_box_is_absent(
     assert computation_fakes.profilers[0].saved is True
 
 
-def test_compute_faults_uses_model_box_and_wraps_fault_output(
+def test_compute_faults_uses_required_box_and_wraps_fault_output(
     monkeypatch, computation_fakes
 ):
     generated = {}
@@ -109,8 +142,8 @@ def test_compute_faults_uses_model_box_and_wraps_fault_output(
     )
 
     result = computations.compute_faults(
-        {"resolution": {"x": 5, "y": 6, "z": 7}},
-        xml="xml",
+        {"resolution": {"x": 5, "y": 6, "z": 7}, "box": BOX},
+        model_data=b"model",
         dem="dem",
         metadata={"env": "test"},
     )
@@ -118,7 +151,7 @@ def test_compute_faults_uses_model_box_and_wraps_fault_output(
     assert result == {"mesh": {}, "fault": {"fault-a": b"fault"}}
     assert generated["model"] is computation_fakes.models[0]
     assert generated["shape"] == (5, 6, 7)
-    assert generated["box"] is computation_fakes.models[0].box
+    assert generated["box"].as_tuple() == (0, 10, 20, 100, 210, 320)
     assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["resolution"] == 210
     assert computation_fakes.profilers[0].metadata["env"] == "test"
@@ -160,7 +193,7 @@ def test_compute_faults_uses_custom_box(monkeypatch, computation_fakes):
                 "zmax": 16,
             },
         ),
-        xml="xml",
+        model_data=b"model",
         dem="dem",
     )
 
@@ -189,8 +222,8 @@ def test_compute_voxels_passes_shape_box_gwbs_and_metadata(
 
     gwb_meshes = {"10": [b"a"], "11": [b"b", b"c"]}
     result = computations.compute_voxels(
-        {"resolution": {"x": 2, "y": 4, "z": 6}},
-        xml="xml",
+        {"resolution": {"x": 2, "y": 4, "z": 6}, "box": BOX},
+        model_data=b"model",
         dem="dem",
         gwb_meshes=gwb_meshes,
         metadata={"env": "test"},
@@ -199,7 +232,7 @@ def test_compute_voxels_passes_shape_box_gwbs_and_metadata(
     assert result == "vox-output"
     assert voxel_call["model"] is computation_fakes.models[0]
     assert voxel_call["shape"] == (2, 4, 6)
-    assert voxel_call["box"] is computation_fakes.models[0].box
+    assert voxel_call["box"].as_tuple() == (0, 10, 20, 100, 210, 320)
     assert voxel_call["gwb_meshes"] is gwb_meshes
     assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 2
@@ -242,7 +275,7 @@ def test_compute_voxels_uses_custom_box(monkeypatch, computation_fakes):
                 "zmax": 26,
             },
         ),
-        xml="xml",
+        model_data=b"model",
         dem="dem",
         gwb_meshes=gwb_meshes,
     )
@@ -547,6 +580,7 @@ def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
     result = computations.compute_intersections(
         {
             "resolution": 50,
+            "box": BOX,
             "toCompute": {
                 "section-a": [
                     {
@@ -561,7 +595,7 @@ def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
             },
             "computeMap": False,
         },
-        xml="xml",
+        model_data=b"model",
         dem="dem",
         gwb_meshes={},
         metadata={"env": "test"},
@@ -653,6 +687,7 @@ def test_compute_intersections_with_only_gwb_meshes_runs_hydro_projection(
     result = computations.compute_intersections(
         {
             "resolution": 20,
+            "box": BOX,
             "toCompute": {
                 "section-a": [
                     {
@@ -667,7 +702,7 @@ def test_compute_intersections_with_only_gwb_meshes_runs_hydro_projection(
             },
             "computeMap": False,
         },
-        xml="xml",
+        model_data=b"model",
         dem="dem",
         gwb_meshes=gwb_meshes,
     )
@@ -764,6 +799,7 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     result = computations.compute_intersections(
         computations.IntersectionsData(
             resolution=10,
+            box=BOX,
             springs=springs,
             drillholes=drillholes,
             toCompute={
@@ -780,7 +816,7 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
             },
             computeMap=True,
         ),
-        xml="xml",
+        model_data=b"model",
         dem="dem",
         gwb_meshes=gwb_meshes,
     )

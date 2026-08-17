@@ -45,6 +45,11 @@ def dummy_project(dummy_project_dir):
     )
 
 
+@pytest.fixture(scope="module")
+def protobuf_model(dummy_project_dir):
+    return dummy_project_dir.joinpath("geocruncher_project.pb").read_bytes()
+
+
 @pytest.fixture
 def fixture_json(dummy_project_dir):
     def load(name):

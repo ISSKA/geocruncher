@@ -1,10 +1,16 @@
+from typing import cast
+
 import numpy as np
 import pytest
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 from isska.geocruncher.v1 import project_pb as project_proto
 
 from geocruncher.geological_model_input import GeologicalModelValidationError
-from geocruncher.gmlib_adapter import EvaluationExtent, build_gmlib_project_data
+from geocruncher.gmlib_adapter import (
+    EvaluationExtent,
+    EvaluationExtentValidationError,
+    build_gmlib_project_data,
+)
 from geocruncher.gmlib_compatibility import (
     DEFAULT_FORMATION_COLOR,
     DUMMY_FORMATION_NAME,
@@ -240,3 +246,50 @@ def test_validates_model_before_adapting_it():
 
     with pytest.raises(GeologicalModelValidationError, match="valid UUID"):
         build_gmlib_project_data(model, EXTENT, DEM)
+
+
+def test_can_skip_validation_for_input_validated_at_http_ingress():
+    model = model_message()
+    model.stratigraphy.series[0].units[0].orientations[
+        0
+    ].normal = project_proto.Vector3(x=0.0, y=0.0, z=1.01)
+    extent = cast(EvaluationExtent, {**EXTENT, "xmax": EXTENT["xmin"]})
+
+    project_data = build_gmlib_project_data(
+        model,
+        extent,
+        DEM,
+        validate_input=False,
+    )
+
+    potential = project_data["pile"].all_series[0].potential_data
+    assert potential is not None
+    np.testing.assert_allclose(potential.gradients.values[0], [0.0, 0.0, 1.0])
+
+
+def test_normalizes_accepted_orientation_rounding_error():
+    model = model_message()
+    model.stratigraphy.series[0].units[0].orientations[
+        0
+    ].normal = project_proto.Vector3(x=0.0, y=0.0, z=1.0009)
+
+    project_data = build_gmlib_project_data(model, EXTENT, DEM)
+    potential = project_data["pile"].all_series[0].potential_data
+
+    assert potential is not None
+    np.testing.assert_allclose(potential.gradients.values[0], [0.0, 0.0, 1.0])
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("xmax", 0.0, "box.xmin must be less than box.xmax"),
+        ("ymin", float("inf"), "box.ymin and box.ymax must be finite"),
+    ],
+)
+def test_rejects_invalid_evaluation_extent(field, value, match):
+    extent = cast(EvaluationExtent, dict(EXTENT))
+    extent[field] = value
+
+    with pytest.raises(EvaluationExtentValidationError, match=match):
+        build_gmlib_project_data(model_message(), extent, DEM)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping
 from typing import TypedDict, cast
 
@@ -53,15 +54,44 @@ class GmlibProjectData(TypedDict):
     formations: list[Formation]
 
 
+class EvaluationExtentValidationError(ValueError):
+    """Raised when a computation extent cannot define a valid 3D box."""
+
+
+def validate_evaluation_extent(extent: EvaluationExtent) -> None:
+    """Validate the separately supplied model-wide computation extent."""
+    bounds = (
+        ("x", extent["xmin"], extent["xmax"]),
+        ("y", extent["ymin"], extent["ymax"]),
+        ("z", extent["zmin"], extent["zmax"]),
+    )
+    for axis, lower, upper in bounds:
+        if not math.isfinite(lower) or not math.isfinite(upper):
+            raise EvaluationExtentValidationError(
+                f"box.{axis}min and box.{axis}max must be finite"
+            )
+        if lower >= upper:
+            raise EvaluationExtentValidationError(
+                f"box.{axis}min must be less than box.{axis}max"
+            )
+
+
 def build_gmlib_project_data(
     model: project_proto.GeologicalModel,
     extent: EvaluationExtent,
     dem: str,
     *,
     factory: GmlibCompatibilityFactory | None = None,
+    validate_input: bool = True,
 ) -> GmlibProjectData:
-    """Validate and adapt a v1 model to the dictionary expected by gmlib."""
-    validate_geological_model(model)
+    """Adapt a v1 model to the dictionary expected by gmlib.
+
+    Validation is enabled by default for standalone callers. The worker disables
+    it for payloads already validated at HTTP ingress.
+    """
+    if validate_input:
+        validate_geological_model(model)
+        validate_evaluation_extent(extent)
     if factory is None:
         factory = GmlibCompatibilityFactory()
 
@@ -181,7 +211,8 @@ def _orientation_arrays(
         assert position is not None
         assert normal is not None
         locations.append(_point_tuple(position))
-        values.append((normal.x, normal.y, normal.z))
+        length = math.sqrt(normal.x**2 + normal.y**2 + normal.z**2)
+        values.append((normal.x / length, normal.y / length, normal.z / length))
     return locations, values
 
 

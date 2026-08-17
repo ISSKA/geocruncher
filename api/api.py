@@ -7,10 +7,19 @@ from flask import Flask, Response, request, send_file
 from pydantic import TypeAdapter, ValidationError
 
 from geocruncher.computations import (
+    BoxDict,
     IntersectionsData,
     MeshesData,
     Spring,
     TunnelMeshesData,
+)
+from geocruncher.geological_model_input import (
+    GeologicalModelValidationError,
+    parse_geological_model,
+)
+from geocruncher.gmlib_adapter import (
+    EvaluationExtentValidationError,
+    validate_evaluation_extent,
 )
 
 from . import tasks
@@ -55,6 +64,24 @@ def non_success_response(res: AsyncResult) -> Response | None:
     return Response(state, mimetype="text/plain")
 
 
+def read_geological_inputs(
+    extent: BoxDict,
+) -> tuple[bytes, bytes] | Response:
+    """Read and validate the protobuf model and DEM uploads."""
+    model_file = request.files.get("model")
+    dem_file = request.files.get("dem")
+    if model_file is None or dem_file is None:
+        return Response("Missing model or dem file", 400, mimetype="text/plain")
+
+    model_data = model_file.read()
+    try:
+        parse_geological_model(model_data)
+        validate_evaluation_extent(extent)
+    except (GeologicalModelValidationError, EvaluationExtentValidationError) as error:
+        return Response(str(error), 400, mimetype="text/plain")
+    return model_data, dem_file.read()
+
+
 def compute_meshes_or_faults(is_meshes: bool):
     if request.method == "POST":
         # when files are uploaded, we receive a multipart/form-data. The JSON data is encoded in the data form field
@@ -64,19 +91,17 @@ def compute_meshes_or_faults(is_meshes: bool):
             return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        xml_file = request.files.get("xml")
-        dem_file = request.files.get("dem")
-        if xml_file is None or dem_file is None:
-            return Response("Missing xml or dem file", 400, mimetype="text/plain")
-        xml = xml_file.read()
-        dem = dem_file.read()
-        xml_key = generate_key()
+        inputs = read_geological_inputs(data["box"])
+        if isinstance(inputs, Response):
+            return inputs
+        model_data, dem = inputs
+        model_key = generate_key()
         dem_key = generate_key()
-        r.set(xml_key, xml)
+        r.set(model_key, model_data)
         r.set(dem_key, dem)
         output_key = generate_key()
         res = (tasks.compute_meshes if is_meshes else tasks.compute_faults).delay(
-            data, xml_key, dem_key, output_key, metadata
+            data, model_key, dem_key, output_key, metadata
         )
         return Response(res.id, 202, mimetype="text/plain")
 
@@ -160,27 +185,25 @@ def compute_intersections():
             return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        xml_file = request.files.get("xml")
-        dem_file = request.files.get("dem")
-        if xml_file is None or dem_file is None:
-            return Response("Missing xml or dem file", 400, mimetype="text/plain")
-        xml = xml_file.read()
-        dem = dem_file.read()
-        xml_key = generate_key()
+        inputs = read_geological_inputs(data["box"])
+        if isinstance(inputs, Response):
+            return inputs
+        model_data, dem = inputs
+        model_key = generate_key()
         dem_key = generate_key()
-        r.set(xml_key, xml)
+        r.set(model_key, model_data)
         r.set(dem_key, dem)
 
         gwb_meshes_key = generate_key()
         for key, value in request.files.items():
             # consider every other uploaded file as a groundwater body mesh
-            if key in ["xml", "dem"]:
+            if key in ["model", "dem"]:
                 continue
             hset_bytes(r, gwb_meshes_key, key, value.read())
         output_key = generate_key()
 
         res = tasks.compute_intersections.delay(
-            data, xml_key, dem_key, gwb_meshes_key, output_key, metadata
+            data, model_key, dem_key, gwb_meshes_key, output_key, metadata
         )
         return Response(res.id, 202, mimetype="text/plain")
 
@@ -217,25 +240,23 @@ def compute_voxels():
             return Response(e.json(), 400, mimetype="application/json")
         metadata = parse_metadata_from_request()
 
-        xml_file = request.files.get("xml")
-        dem_file = request.files.get("dem")
-        if xml_file is None or dem_file is None:
-            return Response("Missing xml or dem file", 400, mimetype="text/plain")
-        xml = xml_file.read()
-        dem = dem_file.read()
-        xml_key = generate_key()
+        inputs = read_geological_inputs(data["box"])
+        if isinstance(inputs, Response):
+            return inputs
+        model_data, dem = inputs
+        model_key = generate_key()
         dem_key = generate_key()
-        r.set(xml_key, xml)
+        r.set(model_key, model_data)
         r.set(dem_key, dem)
         gwb_meshes_key = generate_key()
         for key, value in request.files.items():
             # consider every other uploaded file as a groundwater body mesh
-            if key in ["xml", "dem"]:
+            if key in ["model", "dem"]:
                 continue
             hset_bytes(r, gwb_meshes_key, key, value.read())
         output_key = generate_key()
         res = tasks.compute_voxels.delay(
-            data, xml_key, dem_key, gwb_meshes_key, output_key, metadata
+            data, model_key, dem_key, gwb_meshes_key, output_key, metadata
         )
         return Response(res.id, 202, mimetype="text/plain")
 
