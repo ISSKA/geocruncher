@@ -1,3 +1,10 @@
+"""Regression test for parity between the legacy XML importer and the gmlib adapter.
+
+The protobuf message is deliberately constructed from the legacy importer output
+instead of loaded from ``geocruncher_project.pb``. This isolates the adapter and
+verifies that equivalent geological input produces the same gmlib structures and
+defaults. Remove this test once legacy XML parity is no longer a migration concern."""
+
 from uuid import NAMESPACE_URL, uuid5
 
 import numpy as np

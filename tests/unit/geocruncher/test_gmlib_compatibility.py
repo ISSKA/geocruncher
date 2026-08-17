@@ -10,12 +10,6 @@ from forgeo.gmlib.geomodeller_data import FaultData, Pile, PotentialData, Series
 from forgeo.gmlib.geomodeller_project import Formation
 
 from geocruncher.gmlib_compatibility import (
-    DEFAULT_COVARIANCE_MODEL,
-    DEFAULT_DRIFT_ORDER,
-    DEFAULT_FORMATION_COLOR,
-    DEFAULT_POTENTIAL_NUGGET,
-    DEFAULT_RANGE,
-    DUMMY_FORMATION_NAME,
     GmlibCompatibilityFactory,
 )
 
@@ -32,14 +26,14 @@ BOX = {
 def test_builds_rescaled_covariance_defaults_without_xml():
     covariance = GmlibCompatibilityFactory().make_covariance_model(BOX)
 
-    assert covariance.covariance_model == DEFAULT_COVARIANCE_MODEL
-    assert covariance.drift_order == DEFAULT_DRIFT_ORDER
-    assert covariance.range == DEFAULT_RANGE
+    assert covariance.covariance_model == "cubique"
+    assert covariance.drift_order == 1
+    assert covariance.range == 19_000.0
     assert covariance.gradient_variance == pytest.approx(
         ((19_000.0 / 200.0) ** 2) / 42.0
     )
     assert covariance.gradient_nugget == pytest.approx(0.01 * (1.0 / 200.0) ** 2)
-    assert covariance.potential_nugget == DEFAULT_POTENTIAL_NUGGET
+    assert covariance.potential_nugget == 1.0e-6
 
 
 def test_rejects_box_without_a_positive_dimension():
@@ -170,5 +164,5 @@ def test_builds_formation_defaults():
     dummy = factory.make_dummy_formation()
 
     assert isinstance(formation, Formation)
-    assert formation == Formation("unit-1", DEFAULT_FORMATION_COLOR, False)
-    assert dummy == Formation(DUMMY_FORMATION_NAME, DEFAULT_FORMATION_COLOR, True)
+    assert formation == Formation("unit-1", (0.0, 100.0 / 255.0, 0.0), False)
+    assert dummy == Formation("dummyFormation", (0.0, 100.0 / 255.0, 0.0), True)
