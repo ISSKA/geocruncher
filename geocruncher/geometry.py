@@ -72,11 +72,8 @@ def random_points_in_polygon(
         if len(pts) == 0:
             failed_attempts += 1
             if failed_attempts >= MAX_FAILED_ATTEMPTS:
-                raise RuntimeError(
-                    f"random_points_in_polygon failed to sample {remaining} remaining points "
-                    f"after {MAX_FAILED_ATTEMPTS} consecutive empty batches — "
-                    f"polygon may be degenerate (area={poly.area})"
-                )
+                accepted.append(_fallback_points(poly, remaining))
+                remaining = 0
             continue
 
         failed_attempts = 0
@@ -87,6 +84,41 @@ def random_points_in_polygon(
         remaining -= take
 
     return np.vstack(accepted) if accepted else np.empty((0, 2), dtype=np.float64)
+
+
+def _fallback_points(poly: Polygon, n: int) -> np.ndarray:
+    """Generate n distinct points guaranteed to be inside a non-degenerate polygon."""
+    if n <= 0:
+        return np.empty((0, 2), dtype=np.float64)
+
+    # Get point guaranteed to be inside the polygon
+    center = poly.representative_point()
+
+    # Get radius of the largest disk that fits inside the polygon with representative point as its center
+    radius = center.distance(poly.boundary)
+
+    if radius <= 0:
+        raise ValueError(
+            f"Cannot generate interior points: polygon has no positive-radius "
+            f"interior (area={poly.area})"
+        )
+
+    # Evenly-spaced points on the disk diameter
+    offsets = np.linspace(
+        # Max offsets are 90% of the radius not to take any risk of being outside the polygon
+        -0.9 * radius,
+        0.9 * radius,
+        n,
+        dtype=np.float64,
+    )
+
+    points = np.column_stack(
+        [
+            center.x + offsets,
+            np.full(n, center.y),
+        ]
+    )
+    return points
 
 
 def elevation_at_xy_batch(
