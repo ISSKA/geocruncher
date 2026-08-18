@@ -1,12 +1,12 @@
 {
   "seed": 42,
-  "kPts": 20,
-  "cohesionFactor": 0.993,
-  "nSinks": 658,
-  "searchRadius": 300,
-  "inceptionSurfaceConstraintWeight": 1,
-  "maxInceptionSurfaceDistance": 300,
-  "densitySamplingModifier": 2,
-  "rMinPervious": 0.01,
-  "rMinImpervious": 0.02
+  "k_pts": 20,
+  "cohesion_factor": 0.993,
+  "n_sinks": 658,
+  "search_radius": 300,
+  "inception_surface_constraint_weight": 1,
+  "max_inception_surface_distance": 300,
+  "density_sampling_modifier": 2,
+  "r_min_pervious": 0.01,
+  "r_min_impervious": 0.02
 }

@@ -7,26 +7,6 @@ from geocruncher.karstnsim.models import (
     SimulationParametersInput,
 )
 
-######## ApiInputModel tests ########
-
-
-def test_camel_case_aliases():
-    """Meant to test ApiInputModel alias behaviour, which is inherited by SimulationParametersInput"""
-    params = SimulationParametersInput.model_validate(
-        {
-            "kPts": 15,
-            "cohesionFactor": 0.8,
-            "nSinks": 200,
-            "seed": 99,
-        }
-    )
-
-    assert params.k_pts == 15
-    assert params.cohesion_factor == 0.8
-    assert params.n_sinks == 200
-    assert params.seed == 99
-
-
 ######## SimulationParametersInput tests ########
 
 
