@@ -59,6 +59,7 @@ pipeline {
         withEnv([
           "HOME=${env.WORKSPACE}",
           "UV_CACHE_DIR=/tmp/uv-cache",
+          "UV_PROJECT_ENVIRONMENT=${env.WORKSPACE}/.venv",
           "PYTHONPATH=${env.WORKSPACE}/geo-algo/VK-Aquifers",
         ]) {
           sh 'uv run --frozen --group dev pytest'
