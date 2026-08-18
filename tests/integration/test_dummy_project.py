@@ -195,7 +195,7 @@ def test_real_compute_gwb_meshes_returns_decodable_aquifer(
     assert result["metadata"][0]["volume"] > 0
     assert len(result["meshes"]) == 1
 
-    polydata = mesh_io.read_mesh_to_polydata(result["meshes"][0])
+    polydata = mesh_io.triangle_mesh_to_polydata(mesh_io.read_mesh(result["meshes"][0]))
     assert polydata.n_points > 0
     assert polydata.n_cells > 0
     assert np.isfinite(polydata.bounds).all()

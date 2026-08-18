@@ -10,7 +10,7 @@ from forgeo.gmlib.architecture import (
 )
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
-from .mesh_io.mesh_io import read_mesh_to_polydata
+from .mesh_io.mesh_io import read_mesh, triangle_mesh_to_polydata
 from .profiler import profile_step, start_step
 
 
@@ -292,7 +292,7 @@ def project_hydro_features_on_slice(
     for gwb_id, meshes in gwb_meshes.items():
         gwb_id_int = int(gwb_id)
         for data in meshes:
-            mesh = read_mesh_to_polydata(data)
+            mesh = triangle_mesh_to_polydata(read_mesh(data))
             inside_points = points_polydata.select_enclosed_points(
                 mesh, tolerance=0.00001
             )

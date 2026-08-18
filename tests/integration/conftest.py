@@ -149,7 +149,7 @@ def decode_meshes(mesh_io):
         for name, data in meshes.items():
             assert isinstance(data, bytes)
 
-            polydata = mesh_io.read_mesh_to_polydata(data)
+            polydata = mesh_io.triangle_mesh_to_polydata(mesh_io.read_mesh(data))
 
             assert polydata.n_points > 0
             assert polydata.n_cells > 0

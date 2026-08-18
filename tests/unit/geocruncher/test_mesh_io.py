@@ -109,9 +109,9 @@ def test_read_mesh_reads_off_bytes(monkeypatch):
     assert mesh_io.read_mesh(b"OFF\n0 0 0\n") is sentinel_mesh
 
 
-def test_read_mesh_to_polydata_wraps_off_errors():
+def test_read_mesh_wraps_off_errors():
     with pytest.raises(ValueError, match="Invalid OFF file") as exc_info:
-        mesh_io.read_mesh_to_polydata(b"OFF\nnot valid")
+        mesh_io.read_mesh(b"OFF\nnot valid")
 
     assert exc_info.value.__cause__ is not None
 
