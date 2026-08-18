@@ -72,6 +72,7 @@ exclude = ["third_party/"]
 extra-paths = ["typings"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
     "integration: tests that exercise real cross-module behavior",
     "slow: tests that are slower than the ordinary unit and contract suite",
