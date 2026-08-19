@@ -66,11 +66,13 @@ def load_project_box(
     NO_VALUE = -99999.0
     rank_count = len(units)
 
+    # Unit lookup
+    units_by_id = {unit.strati_unit_id: unit for unit in units}
     # Build rank -> unit lookup
     rank_to_unit: dict[int, GeologicalUnitInput] = {}
     for j, unit_id in enumerate(voxels_units):
-        # Find the unit with the matching strati_unit_id
-        unit = next(filter(lambda uN: uN.strati_unit_id == unit_id, units), None)
+        # Get the unit with the matching strati_unit_id
+        unit = units_by_id.get(unit_id)
         if unit:
             if is_base:
                 rank_to_unit[rank_count - j] = unit
