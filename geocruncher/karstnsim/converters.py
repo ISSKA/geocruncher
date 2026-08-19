@@ -206,13 +206,15 @@ def load_sinks(
     counts = np.bincount(assignments, minlength=len(catchment_polygons))
 
     sinks: list[Sink] = []
-    connectivity_matrix_data: list[list[ConnectivityType]] = []
-    sink_index = 1
+    connectivity = np.full(
+        (n_sinks, num_springs),
+        ConnectivityType.NOT_CONNECTED,
+        dtype=object,
+    )
+    sink_offset = 0
 
-    # Pre-build connectivity row with all springs marked as NOT_CONNECTED
-    not_connected_row = np.full(num_springs, ConnectivityType.NOT_CONNECTED)
-
-    # For each catchment polygon, generate the assigned number of random sink points and build the connectivity matrix
+    # Generate each catchment's assigned sinks and mark their spring connection
+    # in one bulk assignment.
     for idx, polygon in enumerate(catchment_polygons):
         count = int(counts[idx])
         if count == 0:
@@ -223,22 +225,21 @@ def load_sinks(
             pts[:, 0], pts[:, 1], surface_data, surface_resolution, dem_resolution
         )
 
-        # Build sinks and connectivity matrix rows for each generated sink point
-        for (x, y), z in zip(pts, elevations):
-            sinks.append(
-                Sink(
-                    origin=(float(x), float(y), float(z)),
-                    index=sink_index,
-                    order=1,
-                    radius=0.0,
-                )
-            )
-            row = not_connected_row.copy()
-            row[idx] = ConnectivityType.CONNECTED
-            connectivity_matrix_data.append(row.tolist())
-            sink_index += 1
+        next_offset = sink_offset + count
+        connectivity[sink_offset:next_offset, idx] = ConnectivityType.CONNECTED
 
-    return sinks, ConnectivityMatrix(connectivity_matrix_data)
+        sinks.extend(
+            Sink(
+                origin=(float(x), float(y), float(z)),
+                index=sink_offset + local_index + 1,
+                order=1,
+                radius=0.0,
+            )
+            for local_index, ((x, y), z) in enumerate(zip(pts, elevations))
+        )
+        sink_offset = next_offset
+
+    return sinks, ConnectivityMatrix(connectivity.tolist())
 
 
 def load_water_tables(
@@ -313,18 +314,10 @@ def load_water_tables(
 
         vertices = np.column_stack([global_x_coords, global_y_coords, z_coords])
 
-        local_y = np.arange(height - 1)
-        local_x = np.arange(width - 1)
-        # Get all combinations of local (y, x) coordinates (top-left corners of quads)
-        ly, lx = np.meshgrid(local_y, local_x, indexing="ij")
-        ly = ly.ravel()
-        lx = lx.ravel()
-
-        # Get the vertex indices for the four corners of each quad
-        v1 = vertex_indices[ly, lx]
-        v2 = vertex_indices[ly, lx + 1]
-        v3 = vertex_indices[ly + 1, lx]
-        v4 = vertex_indices[ly + 1, lx + 1]
+       v1 = vertex_indices[:-1, :-1]
+       v2 = vertex_indices[:-1, 1:]
+       v3 = vertex_indices[1:, :-1]
+       v4 = vertex_indices[1:, 1:]
 
         # Discard quads where corners are invalid (vertex index -1)
         valid_quads = (v1 >= 0) & (v2 >= 0) & (v3 >= 0) & (v4 >= 0)
