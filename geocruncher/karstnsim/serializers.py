@@ -3,10 +3,10 @@ def serialize_result_point(point) -> dict:
         "x": point.p.x,
         "y": point.p.y,
         "z": point.p.z,
-        "branch_id": point.branch_id,
+        "branchId": point.branch_id,
         "cost": point.cost,
-        "equivalent_radius": point.equivalent_radius,
-        "vadose_flag": point.vadose_flag,
+        "equivalentRadius": point.equivalent_radius,
+        "vadoseFlag": point.vadose_flag,
     }
 
 
@@ -17,7 +17,5 @@ def serialize_result_segment(segment) -> dict:
     }
 
 
-def serialize_karstnsim_result(result) -> dict:
-    return {
-        "segments": [serialize_result_segment(segment) for segment in result.segments]
-    }
+def serialize_karstnsim_result(result) -> list[dict]:
+    return [serialize_result_segment(segment) for segment in result.segments]
