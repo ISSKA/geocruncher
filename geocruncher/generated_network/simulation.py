@@ -36,9 +36,7 @@ def run_karstnsim(
     """Run the karstnsim simulation and return the result as bytes."""
     profiler = set_profiler(PROFILES["karstnsim"])
 
-    start_step("build_content")
     content = build_karstnsim_content(data, dem_bytes, voxels_str, fault_bytes)
-    profile_step("build_content")
 
     profiler.set_metadata(
         "voxel_count",
@@ -62,7 +60,6 @@ def run_karstnsim(
     )
     profiler.update_metadata(metadata)
 
-    start_step("load_project_box")
     project_box = load_project_box(
         content.project_box,
         content.stratigraphy,
@@ -73,7 +70,6 @@ def run_karstnsim(
         content.simulation_params.r_min_pervious,
         content.simulation_params.r_min_impervious,
     )
-    profile_step("load_project_box")
 
     dem = Surface.from_dem_grid(
         content.surface_data,
@@ -81,7 +77,6 @@ def run_karstnsim(
         content.project_box.height,
     )
 
-    start_step("load_springs")
     # Create pykarstnsim Spring objects from the input springs
     springs = [
         Spring(
@@ -92,14 +87,11 @@ def run_karstnsim(
         )
         for i, s in enumerate(content.springs)
     ]
-    profile_step("load_springs")
 
-    start_step("load_water_tables")
     water_tables = load_water_tables(
         content.voxels,
         content.project_box,
     )
-    profile_step("load_water_tables")
 
     ordered_gwb_ids = sorted(water_tables.keys())
 
@@ -126,7 +118,6 @@ def run_karstnsim(
 
         spring.water_table_index = spring_to_wt_index[input_spring.poi_id]
 
-    start_step("load_faults")
     faults = [
         Surface.from_vertices_and_triangles(
             f.vertices,
@@ -134,9 +125,7 @@ def run_karstnsim(
         )
         for f in content.faults
     ]
-    profile_step("load_faults")
 
-    start_step("load_sinks")
     rng = np.random.default_rng(content.simulation_params.seed)
 
     sinks, connectivity_matrix = load_sinks(
@@ -148,7 +137,6 @@ def run_karstnsim(
         rng,
         len(springs),
     )
-    profile_step("load_sinks")
 
     max_dim = max(
         content.project_box.width / content.compute_resolution["x"],
@@ -180,7 +168,7 @@ def run_karstnsim(
     config.nb_deadend_points = 0
     config.create_vset_sampling = False
 
-    start_step("run_karstnsim")
+    start_step("run_simulation")
     result = run_simulation(
         config,
         project_box=project_box,
@@ -195,14 +183,12 @@ def run_karstnsim(
     if result is None:
         raise ValueError("Simulation returned no result")
 
-    profile_step("run_karstnsim")
+    profile_step("run_simulation")
 
-    start_step("serialize_result")
     result_bytes = json.dumps(
         serialize_karstnsim_result(result),
         separators=(",", ":"),
     ).encode("utf-8")
-    profile_step("serialize_result")
     profiler.save_results()
 
     return result_bytes
