@@ -60,7 +60,7 @@ class DummyProject(FixtureProject):
         return self.text("geocruncher_dem.asc")
 
 
-class KarstSimProject(FixtureProject):
+class GeneratedNetworkProject(FixtureProject):
     @property
     def dem_bytes(self) -> bytes:
         return self.bytes("dem_values.bin")
@@ -91,11 +91,11 @@ class KarstSimProject(FixtureProject):
 
 
 @pytest.fixture(scope="session")
-def karstnsim_project():
-    return KarstSimProject(
+def generated_network_project():
+    return GeneratedNetworkProject(
         Path(
             os.environ.get(
-                "KARSTNSIM_DATA_DIR",
+                "GENERATED_NETWORK_DATA_DIR",
                 FIXTURES / "control_project",
             )
         )

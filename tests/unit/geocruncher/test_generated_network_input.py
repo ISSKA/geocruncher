@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from geocruncher.karstnsim.input import build_karstnsim_content, load_voxels
-from geocruncher.karstnsim.models import KarstNSimDataInput
+from geocruncher.generated_network.input import build_karstnsim_content, load_voxels
+from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
-    KARSTNSIM_DATA,
-    KARSTNSIM_DEM_BYTES,
-    KARSTNSIM_FAULT_BYTES,
-    KARSTNSIM_VOXELS_STR,
+    GENERATED_NETWORK_DATA,
+    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_FAULT_BYTES,
+    GENERATED_NETWORK_VOXELS_STR,
 )
 
 ######## Fixtures/Fakes ########
@@ -19,18 +19,18 @@ def fake_read_mesh(data):
 
 @pytest.fixture
 def synthetic_karstnsim_content(monkeypatch):
-    data = KarstNSimDataInput.model_validate(KARSTNSIM_DATA)
+    data = GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA)
 
     monkeypatch.setattr(
-        "geocruncher.karstnsim.input.read_mesh",
+        "geocruncher.generated_network.input.read_mesh",
         fake_read_mesh,
     )
 
     return build_karstnsim_content(
         data,
-        KARSTNSIM_DEM_BYTES,
-        KARSTNSIM_VOXELS_STR,
-        KARSTNSIM_FAULT_BYTES,
+        GENERATED_NETWORK_DEM_BYTES,
+        GENERATED_NETWORK_VOXELS_STR,
+        GENERATED_NETWORK_FAULT_BYTES,
     )
 
 
@@ -38,7 +38,7 @@ def synthetic_karstnsim_content(monkeypatch):
 
 
 def test_parses_header_and_voxels():
-    voxels_lines = KARSTNSIM_VOXELS_STR.splitlines()
+    voxels_lines = GENERATED_NETWORK_VOXELS_STR.splitlines()
 
     voxels = load_voxels(list(voxels_lines))
 
@@ -167,9 +167,9 @@ def test_transforms_surface(synthetic_karstnsim_content):
 
 
 def test_rejects_single_cell_dem():
-    data = KarstNSimDataInput.model_validate(
+    data = GeneratedNetworkData.model_validate(
         {
-            **KARSTNSIM_DATA,
+            **GENERATED_NETWORK_DATA,
             "dem_resolution": {
                 "x": 1,
                 "y": 1,
@@ -184,22 +184,22 @@ def test_rejects_single_cell_dem():
         build_karstnsim_content(
             data,
             np.array([[1]], dtype=np.float32).tobytes(),
-            KARSTNSIM_VOXELS_STR,
+            GENERATED_NETWORK_VOXELS_STR,
             {},
         )
 
 
 def test_loads_all_faults(monkeypatch):
     monkeypatch.setattr(
-        "geocruncher.karstnsim.input.read_mesh",
+        "geocruncher.generated_network.input.read_mesh",
         fake_read_mesh,
     )
 
     content = build_karstnsim_content(
-        KarstNSimDataInput.model_validate(KARSTNSIM_DATA),
-        KARSTNSIM_DEM_BYTES,
-        KARSTNSIM_VOXELS_STR,
-        KARSTNSIM_FAULT_BYTES,
+        GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA),
+        GENERATED_NETWORK_DEM_BYTES,
+        GENERATED_NETWORK_VOXELS_STR,
+        GENERATED_NETWORK_FAULT_BYTES,
     )
 
     assert content.faults == ["fault 1 data", "fault 2 data"]

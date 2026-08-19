@@ -9,14 +9,14 @@ from pykarstnsim.karstnsim import run_simulation
 from pykarstnsim.models.spring import Spring
 from pykarstnsim.models.surface import Surface
 
-from geocruncher.karstnsim.converters import (
+from geocruncher.generated_network.converters import (
     load_project_box,
     load_sinks,
     load_water_tables,
 )
-from geocruncher.karstnsim.input import build_karstnsim_content
-from geocruncher.karstnsim.models import KarstNSimDataInput
-from geocruncher.karstnsim.serializers import serialize_karstnsim_result
+from geocruncher.generated_network.input import build_karstnsim_content
+from geocruncher.generated_network.models import GeneratedNetworkData
+from geocruncher.generated_network.serializers import serialize_karstnsim_result
 from geocruncher.profiler import (
     PROFILES,
     ProfilerMetadata,
@@ -27,7 +27,7 @@ from geocruncher.profiler import (
 
 
 def run_karstnsim(
-    data: KarstNSimDataInput,
+    data: GeneratedNetworkData,
     dem_bytes: bytes,
     voxels_str: str,
     fault_bytes: dict[int, bytes],

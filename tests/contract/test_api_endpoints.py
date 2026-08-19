@@ -4,14 +4,14 @@ import tarfile
 import pytest
 
 import api.api as api_module
-from geocruncher.karstnsim.models import KarstNSimDataInput
+from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
+    GENERATED_NETWORK_DATA,
+    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_FAULT_BYTES,
+    GENERATED_NETWORK_VOXELS_STR,
     GWB_MESHES_DATA,
     INTERSECTIONS_DATA,
-    KARSTNSIM_DATA,
-    KARSTNSIM_DEM_BYTES,
-    KARSTNSIM_FAULT_BYTES,
-    KARSTNSIM_VOXELS_STR,
     MESHES_DATA,
     TUNNEL_MESHES_DATA,
 )
@@ -44,13 +44,13 @@ def fake_redis(monkeypatch):
 @pytest.fixture
 def form_data():
     return multipart_with_files(
-        KARSTNSIM_DATA,
-        metadata={"request_id": "req-karst"},
-        dem=KARSTNSIM_DEM_BYTES,
-        voxels=KARSTNSIM_VOXELS_STR.encode(),
+        GENERATED_NETWORK_DATA,
+        metadata={"request_id": "req-generated-network"},
+        dem=GENERATED_NETWORK_DEM_BYTES,
+        voxels=GENERATED_NETWORK_VOXELS_STR.encode(),
         **{
             f"fault_{fault_id}": data
-            for fault_id, data in KARSTNSIM_FAULT_BYTES.items()
+            for fault_id, data in GENERATED_NETWORK_FAULT_BYTES.items()
         },
     )
 
@@ -101,7 +101,7 @@ def test_post_tunnel_meshes_valid_data_queues_task(client, monkeypatch):
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
-        "/compute/karstnsim",
+        "/compute/generated_network",
     ],
 )
 def test_post_endpoints_invalid_json_returns_400(client, path):
@@ -262,7 +262,7 @@ def test_post_gwb_meshes_stores_unit_meshes_and_queues_task(
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
-        "/compute/karstnsim",
+        "/compute/generated_network",
     ],
 )
 def test_get_compute_endpoints_require_id(client, path):
@@ -281,7 +281,7 @@ def test_get_compute_endpoints_require_id(client, path):
         "/compute/intersections",
         "/compute/voxels",
         "/compute/gwb_meshes",
-        "/compute/karstnsim",
+        "/compute/generated_network",
     ],
 )
 def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, path):
@@ -304,7 +304,7 @@ def test_get_compute_endpoints_return_non_success_state(client, monkeypatch, pat
         ("/compute/intersections", "value"),
         ("/compute/voxels", "value"),
         ("/compute/gwb_meshes", "hash"),
-        ("/compute/karstnsim", "value"),
+        ("/compute/generated_network", "value"),
     ],
 )
 def test_get_compute_endpoints_return_204_for_empty_success_output(
@@ -453,26 +453,26 @@ def test_revoke_returns_500_when_task_cannot_be_revoked(client, monkeypatch):
     assert response.text == "Task task-id could not be revoked"
 
 
-def test_post_karstnsim_stores_inputs_and_queues_task(
+def test_post_generated_network_stores_inputs_and_queues_task(
     client, fake_redis, form_data, monkeypatch
 ):
-    task = FakeTask("karstnsim-id")
-    metadata = {"request_id": "req-karst"}
+    task = FakeTask("generated-network-id")
+    metadata = {"request_id": "req-generated-network"}
     set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
-    monkeypatch.setattr(api_module.tasks, "compute_karstnsim", task)
+    monkeypatch.setattr(api_module.tasks, "compute_generated_network", task)
 
     response = client.post(
-        "/compute/karstnsim",
+        "/compute/generated_network",
         data=form_data,
         content_type="multipart/form-data",
     )
 
     assert response.status_code == 202
-    assert response.text == "karstnsim-id"
+    assert response.text == "generated-network-id"
     stored = fake_redis.hashes["files-key"]
     assert b"dem" in stored
     assert b"voxels" in stored
-    for fault_id in KARSTNSIM_FAULT_BYTES:
+    for fault_id in GENERATED_NETWORK_FAULT_BYTES:
         assert f"fault_{fault_id}".encode() in stored
 
     assert len(task.calls) == 1
@@ -480,29 +480,33 @@ def test_post_karstnsim_stores_inputs_and_queues_task(
     assert call_files_key == "files-key"
     assert call_output_key == "output-key"
     assert call_metadata == metadata
-    assert KarstNSimDataInput.model_validate_json(
+    assert GeneratedNetworkData.model_validate_json(
         call_data
-    ) == KarstNSimDataInput.model_validate(KARSTNSIM_DATA)
+    ) == GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA)
 
 
 @pytest.mark.parametrize(
     "payload",
     [
-        multipart_with_files(KARSTNSIM_DATA, dem=KARSTNSIM_DEM_BYTES),
-        multipart_with_files(KARSTNSIM_DATA, voxels=KARSTNSIM_VOXELS_STR.encode()),
+        multipart_with_files(GENERATED_NETWORK_DATA, dem=GENERATED_NETWORK_DEM_BYTES),
+        multipart_with_files(
+            GENERATED_NETWORK_DATA, voxels=GENERATED_NETWORK_VOXELS_STR.encode()
+        ),
     ],
     ids=["missing-voxels", "missing-dem"],
 )
-def test_post_karstnsim_missing_required_files_returns_400(client, payload):
+def test_post_generated_network_missing_required_files_returns_400(client, payload):
     response = client.post(
-        "/compute/karstnsim",
+        "/compute/generated_network",
         data=payload,
         content_type="multipart/form-data",
     )
     assert response.status_code == 400
 
 
-def test_get_karstnsim_returns_json_and_deletes_output(client, fake_redis, monkeypatch):
+def test_get_generated_network_returns_json_and_deletes_output(
+    client, fake_redis, monkeypatch
+):
     fake_redis.values["output-key"] = b'{"segments":[]}'
     set_async_result(
         monkeypatch,
@@ -510,7 +514,7 @@ def test_get_karstnsim_returns_json_and_deletes_output(client, fake_redis, monke
         lambda task_id: FakeAsyncResult(state="SUCCESS", result="output-key"),
     )
 
-    response = client.get("/compute/karstnsim", query_string={"id": "task-id"})
+    response = client.get("/compute/generated_network", query_string={"id": "task-id"})
 
     assert response.status_code == 200
     assert response.mimetype == "application/json"
@@ -518,20 +522,22 @@ def test_get_karstnsim_returns_json_and_deletes_output(client, fake_redis, monke
     assert fake_redis.deleted == ["output-key"]
 
 
-def test_post_karstnsim_without_faults_succeeds(client, fake_redis, monkeypatch):
-    task = FakeTask("karstnsim-id")
+def test_post_generated_network_without_faults_succeeds(
+    client, fake_redis, monkeypatch
+):
+    task = FakeTask("generated-network-id")
     set_generated_keys(monkeypatch, api_module, "files-key", "output-key")
-    monkeypatch.setattr(api_module.tasks, "compute_karstnsim", task)
+    monkeypatch.setattr(api_module.tasks, "compute_generated_network", task)
 
     response = client.post(
-        "/compute/karstnsim",
+        "/compute/generated_network",
         data=multipart_with_files(
             {
-                **KARSTNSIM_DATA,
+                **GENERATED_NETWORK_DATA,
                 "fault_ids": [],
             },
-            dem=KARSTNSIM_DEM_BYTES,
-            voxels=KARSTNSIM_VOXELS_STR.encode(),
+            dem=GENERATED_NETWORK_DEM_BYTES,
+            voxels=GENERATED_NETWORK_VOXELS_STR.encode(),
         ),
         content_type="multipart/form-data",
     )

@@ -39,7 +39,7 @@ TUNNEL_MESHES_DATA = {
 
 GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
 
-KARSTNSIM_DATA = {
+GENERATED_NETWORK_DATA = {
     "simulation_params": {"seed": 7, "n_sinks": 1},
     "project_box": {
         "width": 10.0,
@@ -69,7 +69,7 @@ KARSTNSIM_DATA = {
     "is_base": False,
 }
 
-KARSTNSIM_DEM_BYTES = np.array(
+GENERATED_NETWORK_DEM_BYTES = np.array(
     [
         [1, 2, 3, 4],
         [5, 6, 7, 8],
@@ -79,7 +79,7 @@ KARSTNSIM_DEM_BYTES = np.array(
     dtype=np.float32,
 ).tobytes()
 
-KARSTNSIM_VOXELS_STR = """
+GENERATED_NETWORK_VOXELS_STR = """
 XMIN=0 XMAX=10 YMIN=0 YMAX=10 ZMIN=0 ZMAX=10 NUMBERX=2 NUMBERY=2 NUMBERZ=1 NOVALUE=0
 rank gwb_id
 1 10
@@ -88,4 +88,4 @@ rank gwb_id
 4 40
 """.strip()
 
-KARSTNSIM_FAULT_BYTES = {1: b"fault 1 data", 2: b"fault 2 data"}
+GENERATED_NETWORK_FAULT_BYTES = {1: b"fault 1 data", 2: b"fault 2 data"}

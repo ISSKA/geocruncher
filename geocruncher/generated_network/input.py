@@ -3,13 +3,13 @@
 
 import numpy as np
 
-from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
-from geocruncher.karstnsim.models import (
+from geocruncher.generated_network.models import (
+    GeneratedNetworkData,
     KarstNSimContent,
-    KarstNSimDataInput,
     StratigraphyInput,
     VoxelsUnitsInput,
 )
+from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.mesh_io.mesh_io import read_mesh
 
 
@@ -59,7 +59,7 @@ def load_voxels(voxels_lines: list[str]) -> np.ndarray:
 
 
 def build_karstnsim_content(
-    data: KarstNSimDataInput,
+    data: GeneratedNetworkData,
     dem_bytes: bytes,
     voxels_str: str,
     fault_bytes: dict[int, bytes],

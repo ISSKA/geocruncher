@@ -12,7 +12,7 @@ from geocruncher.computations import (
     Spring,
     TunnelMeshesData,
 )
-from geocruncher.karstnsim.models import KarstNSimDataInput
+from geocruncher.generated_network.models import GeneratedNetworkData
 
 from . import tasks
 from .redis import redis_client as r
@@ -301,11 +301,11 @@ def compute_gwb_meshes():
         )
 
 
-@app.route("/compute/karstnsim", methods=["POST", "GET"])
-def compute_karstnsim():
+@app.route("/compute/generated_network", methods=["POST", "GET"])
+def compute_generated_network():
     if request.method == "POST":
         try:
-            data: KarstNSimDataInput = KarstNSimDataInput.model_validate_json(
+            data: GeneratedNetworkData = GeneratedNetworkData.model_validate_json(
                 request.form["data"]
             )
         except ValidationError as e:
@@ -331,9 +331,9 @@ def compute_karstnsim():
             )
 
         output_key = generate_key()
-        # dump the data to JSON because KarstNSimDataInput model and other models it contains are not serializable by Celery
-        res = tasks.compute_karstnsim.delay(
-            KarstNSimDataInput.model_dump_json(data),
+        # dump the data to JSON because GeneratedNetworkData model and other models it contains are not serializable by Celery
+        res = tasks.compute_generated_network.delay(
+            GeneratedNetworkData.model_dump_json(data),
             files_key,
             output_key,
             metadata,

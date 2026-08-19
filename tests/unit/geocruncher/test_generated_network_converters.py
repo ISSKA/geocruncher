@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 from pykarstnsim.models import ConnectivityType
 
-from geocruncher.karstnsim.converters import (
+from geocruncher.generated_network.converters import (
     load_project_box,
     load_sinks,
     load_water_tables,
 )
-from geocruncher.karstnsim.models import (
+from geocruncher.generated_network.models import (
     GeologicalUnitInput,
     ProjectBoxInput,
     SpringInput,

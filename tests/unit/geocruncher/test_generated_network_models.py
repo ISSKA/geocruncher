@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from geocruncher.karstnsim.models import (
+from geocruncher.generated_network.models import (
     GeologicalUnitInput,
     ProjectBoxInput,
     SimulationParametersInput,

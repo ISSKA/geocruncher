@@ -14,20 +14,20 @@ from pykarstnsim.models import (
 )
 from shapely import Polygon, make_valid
 
-from geocruncher.geometry import (
-    Vec2Float,
-    Vec2Int,
-    Vec3Int,
-    elevation_at_xy_batch,
-    random_points_in_polygon,
-)
-from geocruncher.karstnsim.models import (
+from geocruncher.generated_network.models import (
     PERMEABILITY_MAP,
     GeologicalUnitInput,
     Permeability,
     ProjectBoxInput,
     SpringInput,
     StratigraphyInput,
+)
+from geocruncher.geometry import (
+    Vec2Float,
+    Vec2Int,
+    Vec3Int,
+    elevation_at_xy_batch,
+    random_points_in_polygon,
 )
 
 LOGGER = logging.getLogger(__name__)
@@ -314,10 +314,10 @@ def load_water_tables(
 
         vertices = np.column_stack([global_x_coords, global_y_coords, z_coords])
 
-       v1 = vertex_indices[:-1, :-1]
-       v2 = vertex_indices[:-1, 1:]
-       v3 = vertex_indices[1:, :-1]
-       v4 = vertex_indices[1:, 1:]
+        v1 = vertex_indices[:-1, :-1]
+        v2 = vertex_indices[:-1, 1:]
+        v3 = vertex_indices[1:, :-1]
+        v4 = vertex_indices[1:, 1:]
 
         # Discard quads where corners are invalid (vertex index -1)
         valid_quads = (v1 >= 0) & (v2 >= 0) & (v3 >= 0) & (v4 >= 0)

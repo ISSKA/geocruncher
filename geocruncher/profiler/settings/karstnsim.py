@@ -3,7 +3,7 @@
 from ..util import VkProfilerSettings
 
 PROFILER_KARSTNSIM_V3 = VkProfilerSettings(
-    version=1,
+    version=3,
     computation="karstnsim",
     steps=[
         "build_content",

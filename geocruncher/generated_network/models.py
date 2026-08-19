@@ -88,8 +88,8 @@ class SimulationParametersInput(BaseModel):
     r_min_impervious: Literal["auto"] | Annotated[float, Field(ge=0.0, le=1.0)] = "auto"
 
 
-class KarstNSimDataInput(BaseModel):
-    """Data given to the KarstNSim computation.
+class GeneratedNetworkData(BaseModel):
+    """Data given to the GeneratedNetwork computation.
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 
     simulation_params: SimulationParametersInput
@@ -105,7 +105,7 @@ class KarstNSimDataInput(BaseModel):
 
 @dataclass
 class KarstNSimContent:
-    """Prepared content for the KarstNSim computation, after loading and processing the input data."""
+    """Prepared content for KarstNSim, after loading and processing the input data."""
 
     simulation_params: SimulationParametersInput
     project_box: ProjectBoxInput
