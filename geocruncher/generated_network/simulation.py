@@ -34,7 +34,7 @@ def run_karstnsim(
     metadata: ProfilerMetadata | None = None,
 ) -> bytes:
     """Run the karstnsim simulation and return the result as bytes."""
-    profiler = set_profiler(PROFILES["karstnsim"])
+    profiler = set_profiler(PROFILES["generated_network"])
 
     content = build_karstnsim_content(data, dem_bytes, voxels_str, fault_bytes)
 
