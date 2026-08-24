@@ -101,6 +101,19 @@ uv run pre-commit install
 
 To run the hooks against the whole repository: `uv run pre-commit run --all-files`.
 
+### Protobuf
+
+We use [Buf](https://buf.build/docs/cli/installation/) to format, lint and validate the Protobuf schema in `proto/`. The published module and generated SDKs are available in the [Buf Schema Registry](https://buf.build/isskasiska/geocruncherbuf).
+
+Run the checks from the module directory:
+
+```bash
+cd proto
+buf format --diff
+buf lint
+buf build
+```
+
 ## Monitoring
 
 Geocruncher includes an optional monitoring stack for observing Celery worker metrics, computation performance and logs. The monitoring setup uses:

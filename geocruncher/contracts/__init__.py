@@ -1,0 +1,43 @@
+"""Public data contracts shared by GeoCruncher entry points."""
+
+from .computations import (
+    EvaluationExtent,
+    EvaluationExtentValidationError,
+    FaultIntersectionsResult,
+    GeoAlgoOutput,
+    GwbMeshesResult,
+    IntersectionsData,
+    IntersectionsResult,
+    MeshesData,
+    MeshesResult,
+    MeshIntersectionsResult,
+    Spring,
+    Tunnel,
+    TunnelFunction,
+    TunnelMeshesData,
+    TunnelShape,
+    Vec3Float,
+    Vec3Int,
+    validate_evaluation_extent,
+)
+
+__all__ = [
+    "EvaluationExtent",
+    "EvaluationExtentValidationError",
+    "FaultIntersectionsResult",
+    "GeoAlgoOutput",
+    "GwbMeshesResult",
+    "IntersectionsData",
+    "IntersectionsResult",
+    "MeshesData",
+    "MeshesResult",
+    "MeshIntersectionsResult",
+    "Spring",
+    "Tunnel",
+    "TunnelFunction",
+    "TunnelMeshesData",
+    "TunnelShape",
+    "Vec3Float",
+    "Vec3Int",
+    "validate_evaluation_extent",
+]

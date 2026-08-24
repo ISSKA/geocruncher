@@ -8,6 +8,7 @@ from tests.support.api import (
     FakeAsyncResult,
     FakeRedis,
     FakeTask,
+    geological_model_bytes,
     multipart_with_files,
     set_async_result,
     set_generated_keys,
@@ -15,8 +16,6 @@ from tests.support.api import (
 )
 
 ######## Fixtures/Fakes ########
-
-MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}}
 
 BOX = {
     "xmin": 0,
@@ -27,8 +26,11 @@ BOX = {
     "zmax": 12,
 }
 
+MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}, "box": BOX}
+
 INTERSECTIONS_DATA = {
     "resolution": 25,
+    "box": BOX,
     "toCompute": {"section-a": [BOX]},
     "computeMap": False,
 }
@@ -130,11 +132,66 @@ def test_post_endpoints_invalid_json_returns_400(client, path):
         ("/compute/voxels", MESHES_DATA),
     ],
 )
-def test_post_project_file_endpoints_require_xml_and_dem(client, path, payload):
+def test_post_project_file_endpoints_require_model_and_dem(client, path, payload):
     response = client.post(path, data={"data": json.dumps(payload)})
 
     assert response.status_code == 400
-    assert response.text == "Missing xml or dem file"
+    assert response.text == "Missing model or dem file"
+
+
+@pytest.mark.parametrize(
+    ("path", "payload"),
+    [
+        ("/compute/meshes", {"resolution": MESHES_DATA["resolution"]}),
+        ("/compute/faults", {"resolution": MESHES_DATA["resolution"]}),
+        (
+            "/compute/intersections",
+            {key: value for key, value in INTERSECTIONS_DATA.items() if key != "box"},
+        ),
+        ("/compute/voxels", {"resolution": MESHES_DATA["resolution"]}),
+    ],
+)
+def test_post_project_file_endpoints_require_data_box(client, path, payload):
+    response = client.post(path, data={"data": json.dumps(payload)})
+
+    assert response.status_code == 400
+    assert response.mimetype == "application/json"
+    assert '"box"' in response.text
+
+
+def test_post_project_file_endpoint_rejects_invalid_protobuf(client):
+    response = client.post(
+        "/compute/meshes",
+        data=multipart_with_files(
+            MESHES_DATA,
+            model=b"not a protobuf model",
+            dem=b"dem",
+        ),
+    )
+
+    assert response.status_code == 400
+    assert response.mimetype == "text/plain"
+    assert "invalid GeologicalModel protobuf" in response.text
+
+
+def test_post_project_file_endpoint_rejects_invalid_data_box(client):
+    payload = {
+        **MESHES_DATA,
+        "box": {**BOX, "xmax": BOX["xmin"]},
+    }
+
+    response = client.post(
+        "/compute/meshes",
+        data=multipart_with_files(
+            payload,
+            model=geological_model_bytes(),
+            dem=b"dem",
+        ),
+    )
+
+    assert response.status_code == 400
+    assert response.mimetype == "text/plain"
+    assert response.text == "box.xmin must be less than box.xmax"
 
 
 @pytest.mark.parametrize(
@@ -149,10 +206,10 @@ def test_post_project_file_endpoints_require_xml_and_dem(client, path, payload):
 @pytest.mark.parametrize(
     "files",
     [
-        {"xml": b"<xml />"},
+        {"model": geological_model_bytes()},
         {"dem": b"dem"},
     ],
-    ids=["missing-dem", "missing-xml"],
+    ids=["missing-dem", "missing-model"],
 )
 def test_post_project_file_endpoints_reject_partial_uploads(
     client, path, payload, files
@@ -160,7 +217,7 @@ def test_post_project_file_endpoints_reject_partial_uploads(
     response = client.post(path, data=multipart_with_files(payload, **files))
 
     assert response.status_code == 400
-    assert response.text == "Missing xml or dem file"
+    assert response.text == "Missing model or dem file"
 
 
 @pytest.mark.parametrize(
@@ -175,7 +232,7 @@ def test_post_meshes_and_faults_store_inputs_and_queue_task(
 ):
     task = FakeTask(f"{task_name}-id")
     metadata = {"request_id": "req-1"}
-    set_generated_keys(monkeypatch, api_module, "xml-key", "dem-key", "output-key")
+    set_generated_keys(monkeypatch, api_module, "model-key", "dem-key", "output-key")
     monkeypatch.setattr(api_module.tasks, task_name, task)
 
     response = client.post(
@@ -183,7 +240,7 @@ def test_post_meshes_and_faults_store_inputs_and_queue_task(
         data=multipart_with_files(
             MESHES_DATA,
             metadata=metadata,
-            xml=b"<xml />",
+            model=geological_model_bytes(),
             dem=b"ncols 1\n",
         ),
     )
@@ -191,10 +248,10 @@ def test_post_meshes_and_faults_store_inputs_and_queue_task(
     assert response.status_code == 202
     assert response.text == f"{task_name}-id"
     assert fake_redis.values == {
-        "xml-key": b"<xml />",
+        "model-key": geological_model_bytes(),
         "dem-key": b"ncols 1\n",
     }
-    assert task.calls == [(MESHES_DATA, "xml-key", "dem-key", "output-key", metadata)]
+    assert task.calls == [(MESHES_DATA, "model-key", "dem-key", "output-key", metadata)]
 
 
 @pytest.mark.parametrize(
@@ -210,7 +267,7 @@ def test_post_hydro_aware_endpoints_store_gwb_meshes_and_queue_task(
     task = FakeTask(f"{task_name}-id")
     metadata = {"project_id": "project-b"}
     set_generated_keys(
-        monkeypatch, api_module, "xml-key", "dem-key", "gwb-key", "output-key"
+        monkeypatch, api_module, "model-key", "dem-key", "gwb-key", "output-key"
     )
     monkeypatch.setattr(api_module.tasks, task_name, task)
 
@@ -219,7 +276,7 @@ def test_post_hydro_aware_endpoints_store_gwb_meshes_and_queue_task(
         data=multipart_with_files(
             payload,
             metadata=metadata,
-            xml=b"<xml />",
+            model=geological_model_bytes(),
             dem=b"dem",
             **{"7_0": b"gwb-a", "7_1": b"gwb-b"},
         ),
@@ -227,13 +284,16 @@ def test_post_hydro_aware_endpoints_store_gwb_meshes_and_queue_task(
 
     assert response.status_code == 202
     assert response.text == f"{task_name}-id"
-    assert fake_redis.values == {"xml-key": b"<xml />", "dem-key": b"dem"}
+    assert fake_redis.values == {
+        "model-key": geological_model_bytes(),
+        "dem-key": b"dem",
+    }
     assert fake_redis.hashes["gwb-key"] == {
         b"7_0": b"gwb-a",
         b"7_1": b"gwb-b",
     }
     assert task.calls == [
-        (payload, "xml-key", "dem-key", "gwb-key", "output-key", metadata)
+        (payload, "model-key", "dem-key", "gwb-key", "output-key", metadata)
     ]
 
 

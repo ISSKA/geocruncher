@@ -1,14 +1,13 @@
-"""
-Geocruncher computation entry points and related type definitions
-These functions take data as input and return data as output, with no Disk interaction
+"""Geocruncher computation entry points.
+
+These functions take data as input and return data as output, with no disk interaction.
 """
 
 import math
-from enum import Enum
-from typing import NotRequired, TypedDict, cast
+from typing import cast
 
 import numpy as np
-from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
+from forgeo.gmlib.GeologicalModel3D import Box
 
 from geocruncher.profiler.profiler import start_step
 
@@ -19,9 +18,21 @@ from .compute_intersections import (
     compute_vertical_slice_points,
     project_hydro_features_on_slice,
 )
+from .contracts import (
+    FaultIntersectionsResult,
+    GeoAlgoOutput,
+    IntersectionsData,
+    IntersectionsResult,
+    MeshesData,
+    MeshesResult,
+    MeshIntersectionsResult,
+    Spring,
+    TunnelMeshesData,
+    TunnelShape,
+)
 from .fault_intersections import compute_fault_intersections
-from .geo_algo import GeoAlgo, GeoAlgoOutput
-from .geomodeller_import import XmlInput, extract_project_data
+from .geo_algo import GeoAlgo
+from .geological_model.gmlib.adapter import load_trusted_gmlib_model
 from .mesh_generation import generate_faults_files, generate_volumes
 from .profiler import (
     PROFILES,
@@ -37,45 +48,6 @@ from .tunnel_shape_generation import (
     tunnel_to_meshes,
 )
 from .voxel_computation import Voxels
-
-
-class TunnelShape(str, Enum):
-    """Possible shapes for tunnels"""
-
-    CIRCLE = "Circle"
-    RECTANGLE = "Rectangle"
-    ELLIPTIC = "Elliptic"
-
-
-class TunnelFunction(TypedDict):
-    """Tunnel functions in all three dimensions"""
-
-    x: str
-    y: str
-    z: str
-
-
-class Tunnel(TypedDict):
-    """Data defining a tunnel"""
-
-    name: str
-    shape: TunnelShape
-    functions: list[TunnelFunction]
-    radius: NotRequired[float | None]
-    width: NotRequired[float | None]
-    height: NotRequired[float | None]
-
-
-class TunnelMeshesData(TypedDict):
-    """Data given to the tunnel meshes computation"""
-
-    tunnels: list[Tunnel]
-    nb_vertices: int
-    step: float
-    idxStart: int
-    idxEnd: int
-    tStart: float
-    tEnd: float
 
 
 def compute_tunnel_meshes(
@@ -131,42 +103,9 @@ def compute_tunnel_meshes(
     return output
 
 
-class BoxDict(TypedDict):
-    """3D Box"""
-
-    xmin: float
-    ymin: float
-    zmin: float
-    xmax: float
-    ymax: float
-    zmax: float
-
-
-class Vec3Int(TypedDict):
-    """3D Integer vector"""
-
-    x: int
-    y: int
-    z: int
-
-
-class MeshesData(TypedDict):
-    """Data given to the meshes computation"""
-
-    resolution: Vec3Int
-    box: NotRequired[BoxDict | None]
-
-
-class MeshesResult(TypedDict):
-    """Data returned by the meshes computation"""
-
-    mesh: dict[str, bytes]
-    fault: dict[str, bytes]
-
-
 def compute_meshes(
     data: MeshesData,
-    xml: XmlInput,
+    model_data: bytes,
     dem: str,
     metadata: ProfilerMetadata | None = None,
 ) -> MeshesResult:
@@ -176,8 +115,8 @@ def compute_meshes(
     ----------
     data : MeshesData
         The configuration data.
-    xml : bytes | str
-        Project definition as Geomodeller XML.
+    model_data : bytes
+        Binary GeologicalModel protobuf.
     dem : str
         DEM datapoints as ASCIIGrid.
     metadata : dict, optional
@@ -190,7 +129,7 @@ def compute_meshes(
     """
     profiler = set_profiler(PROFILES["meshes"])
     start_step("load_model")
-    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -213,74 +152,10 @@ def compute_meshes(
 
     profile_step("load_model")
 
-    if "box" in data and data["box"]:
-        box = Box(**data["box"])
-    else:
-        box = model.getbox()
+    box = Box(**data["box"])
     output = cast(MeshesResult, generate_volumes(model, shape, box))
     profiler.save_results()
     return output
-
-
-class Vec3Float(TypedDict):
-    """3D Float vector"""
-
-    x: float
-    y: float
-    z: float
-
-
-class Rectangle3D(TypedDict):
-    """Rectangle defined by it's bounds. Could be replaced with Box"""
-
-    lowerLeft: Vec3Float
-    upperRight: Vec3Float
-
-
-class Line3D(TypedDict):
-    """Line defined by it's start and end"""
-
-    start: Vec3Float
-    end: Vec3Float
-
-
-class IntersectionsData(TypedDict):
-    """Data given to the intersections computation"""
-
-    # ID as string to 3D point
-    springs: NotRequired[dict[str, Vec3Float] | None]
-    # ID as string to box
-    drillholes: NotRequired[dict[str, BoxDict] | None]
-    resolution: int
-    # cross sections, ID as string to box for each segment
-    toCompute: dict[str, list[BoxDict]]
-    computeMap: bool
-
-
-class MeshIntersectionsResult(TypedDict):
-    """Data returned by the mesh intersections computation"""
-
-    forCrossSections: dict[str, list[list[list[int]]]]
-    drillholes: dict[str, list[dict[str, list[list[float]]]]]
-    springs: dict[str, list[dict[str, list[float]]]]
-    matrixGwb: dict[str, list[list[int]]]
-    forMaps: NotRequired[list[list[int]]]
-
-
-class FaultIntersectionsResult(TypedDict):
-    """Data returned by the fault intersections computation"""
-
-    # For Fault intersections, we return floats and not ints, as we return the distance from the fault in the potential field, whereas we returned the unit ID for the Meshes intersections
-    forCrossSections: dict[str, list[dict[str, list[list[float]]]]]
-    # Optional
-    forMaps: dict[str, list[list[float]]]
-
-
-class IntersectionsResult(TypedDict):
-    """Combined result of mesh and fault intersections computation"""
-
-    mesh: MeshIntersectionsResult
-    fault: FaultIntersectionsResult
 
 
 RATIO_MAX_DIST_PROJ = 0.2
@@ -288,7 +163,7 @@ RATIO_MAX_DIST_PROJ = 0.2
 
 def compute_intersections(
     data: IntersectionsData,
-    xml: XmlInput,
+    model_data: bytes,
     dem: str,
     gwb_meshes: dict[str, list[bytes]],
     metadata: ProfilerMetadata | None = None,
@@ -299,8 +174,8 @@ def compute_intersections(
     ----------
     data : IntersectionsData
         The configuration data.
-    xml : bytes | str
-        Project definition as Geomodeller XML.
+    model_data : bytes
+        Binary GeologicalModel protobuf.
     dem : str
         DEM datapoints as ASCIIGrid.
     gwb_meshes : dict[str, list[bytes]]
@@ -316,7 +191,7 @@ def compute_intersections(
     """
     profiler = set_profiler(PROFILES["intersections"])
     start_step("load_model")
-    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
     box = model.getbox()
     max_dist_proj = max(box.xmax - box.xmin, box.ymax - box.ymin) * RATIO_MAX_DIST_PROJ
     mesh_output: MeshIntersectionsResult = {
@@ -365,7 +240,8 @@ def compute_intersections(
         for b in intersection:
             start_step("cross_section_grid")
             b = Box(**b)
-            # FIXME: if we remove rounding, it breaks virtual drillhole slices. But it feels wrong to round, since we are rounding to arbitrary units of EPSG, usually meters, and the effect is not going to be the same on small and large projects
+            # FIXME: if we remove rounding, it breaks virtual drillhole slices. But it feels wrong to round, since we are rounding
+            # to arbitrary units of EPSG, usually meters, and the effect is not going to be the same on small and large projects
             x_coord = (round(b.xmin), round(b.xmax))
             y_coord = (round(b.ymin), round(b.ymax))
             z_coord = (round(b.zmin), round(b.zmax))
@@ -425,7 +301,7 @@ def compute_intersections(
 
 def compute_faults(
     data: MeshesData,
-    xml: XmlInput,
+    model_data: bytes,
     dem: str,
     metadata: ProfilerMetadata | None = None,
 ) -> MeshesResult:
@@ -435,8 +311,8 @@ def compute_faults(
     ----------
     data : MeshesData
         The configuration data.
-    xml : bytes | str
-        Project definition as Geomodeller XML.
+    model_data : bytes
+        Binary GeologicalModel protobuf.
     dem : str
         DEM datapoints as ASCIIGrid.
     metadata : dict, optional
@@ -449,7 +325,7 @@ def compute_faults(
     """
     profiler = set_profiler(PROFILES["faults"])
     start_step("load_model")
-    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -468,10 +344,7 @@ def compute_faults(
 
     profile_step("load_model")
 
-    if "box" in data and data["box"]:
-        box = Box(**data["box"])
-    else:
-        box = model.getbox()
+    box = Box(**data["box"])
 
     output: MeshesResult = {
         "mesh": {},
@@ -483,7 +356,7 @@ def compute_faults(
 
 def compute_voxels(
     data: MeshesData,
-    xml: XmlInput,
+    model_data: bytes,
     dem: str,
     gwb_meshes: dict[str, list[bytes]],
     metadata: ProfilerMetadata | None = None,
@@ -494,8 +367,8 @@ def compute_voxels(
     ----------
     data : MeshesData
         The configuration data.
-    xml : bytes | str
-        Project definition as Geomodeller XML.
+    model_data : bytes
+        Binary GeologicalModel protobuf.
     dem : str
         DEM datapoints as ASCIIGrid.
     metadata : dict, optional
@@ -508,7 +381,7 @@ def compute_voxels(
     """
     profiler = set_profiler(PROFILES["voxels"])
     start_step("load_model")
-    model = GeologicalModel(extract_project_data(xml, dem), use_cache=False)
+    model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
 
@@ -523,29 +396,11 @@ def compute_voxels(
 
     profile_step("load_model")
 
-    if "box" in data and data["box"]:
-        box = Box(**data["box"])
-    else:
-        box = model.getbox()
+    box = Box(**data["box"])
 
     output = Voxels.output(model, shape, box, gwb_meshes)
     profiler.save_results()
     return output
-
-
-class Spring(TypedDict):
-    """Spring data needed for the gwb meshes computation"""
-
-    id: int
-    location: Vec3Float
-    unit_id: int
-
-
-class UnitMesh(TypedDict):
-    """UnitMesh"""
-
-    unit_id: int
-    mesh: str
 
 
 def compute_gwb_meshes(

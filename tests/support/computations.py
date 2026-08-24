@@ -41,25 +41,23 @@ class FakeProfiler:
 @pytest.fixture
 def computation_fakes(monkeypatch):
     records = SimpleNamespace(
-        extracted=[],
+        loaded=[],
         models=[],
         profilers=[],
         profile_steps=[],
     )
 
     class FakeGeologicalModel:
-        def __init__(self, project_data, use_cache):
-            self.project_data = project_data
-            self.use_cache = use_cache
+        def __init__(self):
             self.box = FakeBox(0, 10, 20, 100, 210, 320)
             records.models.append(self)
 
         def getbox(self):
             return self.box
 
-    def fake_extract_project_data(xml, dem):
-        records.extracted.append((xml, dem))
-        return {"xml": xml, "dem": dem}
+    def fake_load_trusted_gmlib_model(model_data, extent, dem):
+        records.loaded.append((model_data, extent, dem))
+        return FakeGeologicalModel()
 
     def fake_set_profiler(settings):
         profiler = FakeProfiler(settings)
@@ -67,8 +65,11 @@ def computation_fakes(monkeypatch):
         return profiler
 
     monkeypatch.setattr(computations, "Box", FakeBox)
-    monkeypatch.setattr(computations, "GeologicalModel", FakeGeologicalModel)
-    monkeypatch.setattr(computations, "extract_project_data", fake_extract_project_data)
+    monkeypatch.setattr(
+        computations,
+        "load_trusted_gmlib_model",
+        fake_load_trusted_gmlib_model,
+    )
     monkeypatch.setattr(computations, "set_profiler", fake_set_profiler)
     monkeypatch.setattr(
         computations, "profile_step", lambda step: records.profile_steps.append(step)
