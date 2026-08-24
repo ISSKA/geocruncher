@@ -14,15 +14,15 @@ from geocruncher.geological_model.gmlib.compatibility import (
 )
 from geocruncher.geological_model.input import GeologicalModelValidationError
 
-SERIES_MODELED = "00000000-0000-0000-0000-000000000001"
-SERIES_CONTACTS_ONLY = "00000000-0000-0000-0000-000000000002"
-SERIES_ORIENTATIONS_ONLY = "00000000-0000-0000-0000-000000000003"
-UNIT_FIRST = "00000000-0000-0000-0000-000000000011"
-UNIT_EMPTY = "00000000-0000-0000-0000-000000000012"
-UNIT_CONTACTS_ONLY = "00000000-0000-0000-0000-000000000013"
-UNIT_ORIENTATIONS_ONLY = "00000000-0000-0000-0000-000000000014"
-FAULT_INFINITE = "00000000-0000-0000-0000-000000000021"
-FAULT_FINITE = "00000000-0000-0000-0000-000000000022"
+SERIES_MODELED = "modeled series"
+SERIES_CONTACTS_ONLY = "contacts-only series"
+SERIES_ORIENTATIONS_ONLY = "orientations-only series"
+UNIT_FIRST = "first unit"
+UNIT_EMPTY = "empty unit"
+UNIT_CONTACTS_ONLY = "contacts-only unit"
+UNIT_ORIENTATIONS_ONLY = "orientations-only unit"
+FAULT_INFINITE = "infinite fault"
+FAULT_FINITE = "finite fault"
 
 EXTENT: EvaluationExtent = {
     "xmin": 0.0,
@@ -240,9 +240,9 @@ def test_uses_evaluation_extent_for_covariance_rescaling():
 
 def test_validates_model_before_adapting_it():
     model = model_message()
-    model.stratigraphy.series[0].uuid = "not-a-uuid"
+    model.stratigraphy.series[0].uuid = ""
 
-    with pytest.raises(GeologicalModelValidationError, match="valid UUID"):
+    with pytest.raises(GeologicalModelValidationError, match="must not be empty"):
         build_gmlib_project_data(model, EXTENT, DEM)
 
 

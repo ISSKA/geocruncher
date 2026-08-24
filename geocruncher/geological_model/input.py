@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import uuid as uuid_module
 from typing import Never
 
 from isska.geocruncher.v1 import project_pb as project_proto
@@ -45,26 +44,26 @@ def validate_geological_model(message: project_proto.GeologicalModel) -> None:
     assert stratigraphy is not None
     _validate_reference(stratigraphy.reference)
 
-    entity_uuids: set[str] = set()
+    entity_identifiers: set[str] = set()
     for series_index, series in enumerate(stratigraphy.series):
-        _validate_series(series, series_index, entity_uuids)
+        _validate_series(series, series_index, entity_identifiers)
     for fault_index, fault in enumerate(message.faults):
-        _validate_fault(fault, fault_index, entity_uuids)
+        _validate_fault(fault, fault_index, entity_identifiers)
 
-    fault_uuids = {fault.uuid for fault in message.faults}
+    fault_identifiers = {fault.uuid for fault in message.faults}
     for series_index, series in enumerate(stratigraphy.series):
-        for reference_index, fault_uuid in enumerate(series.influenced_by_faults):
+        for reference_index, fault_identifier in enumerate(series.influenced_by_faults):
             _validate_fault_reference(
-                fault_uuid,
-                fault_uuids,
+                fault_identifier,
+                fault_identifiers,
                 f"stratigraphy.series[{series_index}].influenced_by_faults[{reference_index}]",
             )
 
     for fault_index, fault in enumerate(message.faults):
-        for reference_index, stopped_on_uuid in enumerate(fault.stops_on):
+        for reference_index, stopped_on_identifier in enumerate(fault.stops_on):
             path = f"faults[{fault_index}].stops_on[{reference_index}]"
-            _validate_fault_reference(stopped_on_uuid, fault_uuids, path)
-            if stopped_on_uuid == fault.uuid:
+            _validate_fault_reference(stopped_on_identifier, fault_identifiers, path)
+            if stopped_on_identifier == fault.uuid:
                 _invalid(path, "must not reference the owning fault")
 
     _validate_stops_on_acyclic(message.faults)
@@ -81,13 +80,13 @@ def _validate_reference(reference: project_proto.StratigraphicReference) -> None
 def _validate_series(
     series: project_proto.Series,
     index: int,
-    entity_uuids: set[str],
+    entity_identifiers: set[str],
 ) -> None:
     path = f"stratigraphy.series[{index}]"
-    _validate_entity_uuid(series.uuid, f"{path}.uuid", entity_uuids)
+    _validate_entity_identifier(series.uuid, f"{path}.uuid", entity_identifiers)
     _validate_relation(series.relation, f"{path}.relation")
     for unit_index, unit in enumerate(series.units):
-        _validate_unit(unit, unit_index, path, entity_uuids)
+        _validate_unit(unit, unit_index, path, entity_identifiers)
 
 
 def _validate_relation(relation: project_proto.SeriesRelation, path: str) -> None:
@@ -102,10 +101,10 @@ def _validate_unit(
     unit: project_proto.Unit,
     index: int,
     series_path: str,
-    entity_uuids: set[str],
+    entity_identifiers: set[str],
 ) -> None:
     path = f"{series_path}.units[{index}]"
-    _validate_entity_uuid(unit.uuid, f"{path}.uuid", entity_uuids)
+    _validate_entity_identifier(unit.uuid, f"{path}.uuid", entity_identifiers)
     for point_index, point in enumerate(unit.contact_points):
         _validate_point(point, f"{path}.contact_points[{point_index}]")
     for orientation_index, orientation in enumerate(unit.orientations):
@@ -115,10 +114,10 @@ def _validate_unit(
 def _validate_fault(
     fault: project_proto.Fault,
     index: int,
-    entity_uuids: set[str],
+    entity_identifiers: set[str],
 ) -> None:
     path = f"faults[{index}]"
-    _validate_entity_uuid(fault.uuid, f"{path}.uuid", entity_uuids)
+    _validate_entity_identifier(fault.uuid, f"{path}.uuid", entity_identifiers)
     if not fault.contact_points:
         _invalid(f"{path}.contact_points", "must contain at least one point")
     if not fault.orientations:
@@ -153,12 +152,6 @@ def _validate_orientation(orientation: project_proto.Orientation, path: str) -> 
     _finite(normal.x, f"{path}.normal.x")
     _finite(normal.y, f"{path}.normal.y")
     _finite(normal.z, f"{path}.normal.z")
-    length = math.sqrt(normal.x**2 + normal.y**2 + normal.z**2)
-    if not math.isclose(length, 1.0, rel_tol=0.0, abs_tol=NORMAL_LENGTH_TOLERANCE):
-        _invalid(
-            f"{path}.normal",
-            f"must have unit length within {NORMAL_LENGTH_TOLERANCE:g} tolerance",
-        )
 
 
 def _validate_finite_fault(finite: project_proto.FiniteFault, path: str) -> None:
@@ -178,27 +171,21 @@ def _positive_finite(value: float, path: str) -> None:
         _invalid(path, "must be positive")
 
 
-def _validate_entity_uuid(value: str, path: str, seen: set[str]) -> None:
+def _validate_entity_identifier(value: str, path: str, seen: set[str]) -> None:
     if not value:
         _invalid(path, "must not be empty")
-    try:
-        uuid_module.UUID(value)
-    except (ValueError, AttributeError) as error:
-        raise GeologicalModelValidationError(f"{path}: must be a valid UUID") from error
     if value in seen:
-        _invalid(path, f"duplicate entity UUID {value!r}")
+        _invalid(path, f"duplicate entity identifier {value!r}")
     seen.add(value)
 
 
-def _validate_fault_reference(value: str, fault_uuids: set[str], path: str) -> None:
+def _validate_fault_reference(
+    value: str, fault_identifiers: set[str], path: str
+) -> None:
     if not value:
         _invalid(path, "must not be empty")
-    try:
-        uuid_module.UUID(value)
-    except (ValueError, AttributeError) as error:
-        raise GeologicalModelValidationError(f"{path}: must be a valid UUID") from error
-    if value not in fault_uuids:
-        _invalid(path, f"references unknown fault UUID {value!r}")
+    if value not in fault_identifiers:
+        _invalid(path, f"references unknown fault identifier {value!r}")
 
 
 def _validate_stops_on_acyclic(faults: list[project_proto.Fault]) -> None:
@@ -206,19 +193,21 @@ def _validate_stops_on_acyclic(faults: list[project_proto.Fault]) -> None:
     visiting: set[str] = set()
     visited: set[str] = set()
 
-    def visit(fault_uuid: str) -> None:
-        if fault_uuid in visiting:
-            _invalid("faults.stops_on", f"contains a cycle through {fault_uuid!r}")
-        if fault_uuid in visited:
+    def visit(fault_identifier: str) -> None:
+        if fault_identifier in visiting:
+            _invalid(
+                "faults.stops_on", f"contains a cycle through {fault_identifier!r}"
+            )
+        if fault_identifier in visited:
             return
-        visiting.add(fault_uuid)
-        for dependency_uuid in dependencies[fault_uuid]:
-            visit(dependency_uuid)
-        visiting.remove(fault_uuid)
-        visited.add(fault_uuid)
+        visiting.add(fault_identifier)
+        for dependency_identifier in dependencies[fault_identifier]:
+            visit(dependency_identifier)
+        visiting.remove(fault_identifier)
+        visited.add(fault_identifier)
 
-    for fault_uuid in dependencies:
-        visit(fault_uuid)
+    for fault_identifier in dependencies:
+        visit(fault_identifier)
 
 
 def _invalid(path: str, reason: str) -> Never:

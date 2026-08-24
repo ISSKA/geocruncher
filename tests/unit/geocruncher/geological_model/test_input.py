@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 import pytest
 from isska.geocruncher.v1 import project_pb as project_proto
 
@@ -22,28 +20,28 @@ def orientation():
 
 
 def valid_model():
-    fault_uuid = str(uuid4())
+    fault_identifier = "main fault"
     return project_proto.GeologicalModel(
         stratigraphy=project_proto.StratigraphicColumn(
             reference=project_proto.StratigraphicReference.BASE,
             series=[
                 project_proto.Series(
-                    uuid=str(uuid4()),
+                    uuid="modeled series",
                     relation=project_proto.SeriesRelation.ONLAP,
                     units=[
                         project_proto.Unit(
-                            uuid=str(uuid4()),
+                            uuid="sandstone",
                             contact_points=[point()],
                             orientations=[orientation()],
                         )
                     ],
-                    influenced_by_faults=[fault_uuid],
+                    influenced_by_faults=[fault_identifier],
                 )
             ],
         ),
         faults=[
             project_proto.Fault(
-                uuid=fault_uuid,
+                uuid=fault_identifier,
                 contact_points=[point()],
                 orientations=[orientation()],
                 finite=project_proto.FiniteFault(
@@ -121,8 +119,8 @@ def test_deserialize_still_rejects_malformed_wire_data():
             r"series\[0\].relation",
         ),
         (
-            lambda model: setattr(model.stratigraphy.series[0], "uuid", "not-a-uuid"),
-            "must be a valid UUID",
+            lambda model: setattr(model.stratigraphy.series[0], "uuid", ""),
+            "must not be empty",
         ),
         (
             lambda model: setattr(
@@ -130,7 +128,7 @@ def test_deserialize_still_rejects_malformed_wire_data():
                 "uuid",
                 model.stratigraphy.series[0].uuid,
             ),
-            "duplicate entity UUID",
+            "duplicate entity identifier",
         ),
         (
             lambda model: setattr(
@@ -150,30 +148,14 @@ def test_deserialize_still_rejects_malformed_wire_data():
             "position: is required",
         ),
         (
-            lambda model: setattr(
-                model.stratigraphy.series[0].units[0].orientations[0],
-                "normal",
-                project_proto.Vector3(),
-            ),
-            "normal: must have unit length",
-        ),
-        (
-            lambda model: setattr(
-                model.stratigraphy.series[0].units[0].orientations[0],
-                "normal",
-                project_proto.Vector3(x=0.0, y=0.0, z=1.01),
-            ),
-            "normal: must have unit length",
-        ),
-        (
             lambda model: setattr(model.faults[0].finite, "vertical_extent", 0.0),
             "vertical_extent: must be positive",
         ),
         (lambda model: model.faults[0].contact_points.clear(), "contact_points"),
         (lambda model: model.faults[0].orientations.clear(), "orientations"),
         (
-            lambda model: model.faults[0].stops_on.append(str(uuid4())),
-            "references unknown fault UUID",
+            lambda model: model.faults[0].stops_on.append("unknown fault"),
+            "references unknown fault identifier",
         ),
         (
             lambda model: model.faults[0].stops_on.append(model.faults[0].uuid),
@@ -191,11 +173,11 @@ def test_rejects_invalid_models(mutate, match):
 
 def test_rejects_fault_stop_cycles():
     model = valid_model()
-    second_fault_uuid = str(uuid4())
-    model.faults[0].stops_on.append(second_fault_uuid)
+    second_fault_identifier = "secondary fault"
+    model.faults[0].stops_on.append(second_fault_identifier)
     model.faults.append(
         project_proto.Fault(
-            uuid=second_fault_uuid,
+            uuid=second_fault_identifier,
             contact_points=[point()],
             orientations=[orientation()],
             stops_on=[model.faults[0].uuid],
