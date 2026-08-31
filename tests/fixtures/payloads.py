@@ -40,7 +40,7 @@ TUNNEL_MESHES_DATA = {
 GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
 
 GENERATED_NETWORK_DATA = {
-    "simulation_params": {"seed": 7, "n_sinks": 1},
+    "generation_params": {"seed": 7, "n_sinks": 1},
     "project_box": {
         "width": 10.0,
         "height": 10.0,

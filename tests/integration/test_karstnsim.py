@@ -13,8 +13,8 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="module")
-def simulation_result(generated_network_project):
-    from geocruncher.generated_network.simulation import run_karstnsim
+def generation_result(generated_network_project):
+    from geocruncher.generated_network.generation import run_karstnsim
 
     data = GeneratedNetworkData.model_validate(generated_network_project.data_dict)
 
@@ -27,7 +27,7 @@ def simulation_result(generated_network_project):
 
 
 def test_invalid_spring_raises_value_error(generated_network_project):
-    from geocruncher.generated_network.simulation import run_karstnsim
+    from geocruncher.generated_network.generation import run_karstnsim
 
     broken = GeneratedNetworkData.model_validate(
         {**generated_network_project.data_dict, "gwbs": []}
@@ -42,11 +42,11 @@ def test_invalid_spring_raises_value_error(generated_network_project):
         )
 
 
-def test_raises_when_simulation_returns_none(generated_network_project, monkeypatch):
-    from geocruncher.generated_network import simulation as sim_module
-    from geocruncher.generated_network.simulation import run_karstnsim
+def test_raises_when_generation_returns_none(generated_network_project, monkeypatch):
+    from geocruncher.generated_network import generation as sim_module
+    from geocruncher.generated_network.generation import run_karstnsim
 
-    monkeypatch.setattr(sim_module, "run_simulation", lambda *args, **kwargs: None)
+    monkeypatch.setattr(sim_module, "run_generation", lambda *args, **kwargs: None)
 
     data = GeneratedNetworkData.model_validate(generated_network_project.data_dict)
 
@@ -59,8 +59,8 @@ def test_raises_when_simulation_returns_none(generated_network_project, monkeypa
         )
 
 
-def test_matches_control_output(simulation_result, control_output):
-    actual = json.loads(simulation_result)
+def test_matches_control_output(generation_result, control_output):
+    actual = json.loads(generation_result)
     expected = json.loads(control_output)
 
     assert len(actual) == len(expected)

@@ -2,16 +2,16 @@ import pytest
 from pydantic import ValidationError
 
 from geocruncher.generated_network.models import (
+    GenerationParametersInput,
     GeologicalUnitInput,
     ProjectBoxInput,
-    SimulationParametersInput,
 )
 
-######## SimulationParametersInput tests ########
+######## GenerationParametersInput tests ########
 
 
-def test_simulation_parameters_defaults():
-    params = SimulationParametersInput.model_validate({})
+def test_generation_parameters_defaults():
+    params = GenerationParametersInput.model_validate({})
 
     assert params.seed == -1
     assert params.k_pts == 20
@@ -29,9 +29,9 @@ def test_simulation_parameters_defaults():
         ("seed", -2),
     ],
 )
-def test_simulation_parameters_rejects_invalid_parameters(field, value):
+def test_generation_parameters_rejects_invalid_parameters(field, value):
     with pytest.raises(ValidationError):
-        SimulationParametersInput(**{field: value})
+        GenerationParametersInput(**{field: value})
 
 
 ######## ProjectBoxInput tests ########

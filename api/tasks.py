@@ -4,8 +4,8 @@ from collections import defaultdict
 from celery import Task
 
 from geocruncher import computation_models, computations
+from geocruncher.generated_network.generation import run_karstnsim
 from geocruncher.generated_network.models import GeneratedNetworkData
-from geocruncher.generated_network.simulation import run_karstnsim
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
 

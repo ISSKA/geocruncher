@@ -73,7 +73,7 @@ class GroundwaterBodyInput(BaseModel):
     spring_id: int
 
 
-class SimulationParametersInput(BaseModel):
+class GenerationParametersInput(BaseModel):
     seed: int = Field(default=-1, ge=-1)
     k_pts: int = Field(default=20, gt=0)
     cohesion_factor: float = Field(default=0.9, ge=0.0, le=1.0)
@@ -92,7 +92,7 @@ class GeneratedNetworkData(BaseModel):
     """Data given to the GeneratedNetwork computation.
     Binary inputs (dem_values, voxels, faults) are sent as separate files."""
 
-    simulation_params: SimulationParametersInput
+    generation_params: GenerationParametersInput
     project_box: ProjectBoxInput
     dem_resolution: Vec2Int
     stratigraphy: list[GeologicalUnitInput]
@@ -107,7 +107,7 @@ class GeneratedNetworkData(BaseModel):
 class KarstNSimContent:
     """Prepared content for KarstNSim, after loading and processing the input data."""
 
-    simulation_params: SimulationParametersInput
+    generation_params: GenerationParametersInput
     project_box: ProjectBoxInput
     surface_data: np.ndarray
     stratigraphy: StratigraphyInput

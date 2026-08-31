@@ -78,7 +78,7 @@ class GeneratedNetworkProject(FixtureProject):
     @property
     def data_dict(self) -> dict:
         return {
-            "simulation_params": self.json("config.json"),
+            "generation_params": self.json("config.json"),
             "project_box": self.json("project_box.json"),
             "dem_resolution": self.json("dem_resolution.json"),
             "stratigraphy": self.json("stratigraphy.json"),

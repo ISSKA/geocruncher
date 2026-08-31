@@ -105,7 +105,7 @@ def build_karstnsim_content(
     faults = [read_mesh(bytes) for bytes in fault_bytes.values()]
 
     return KarstNSimContent(
-        simulation_params=data.simulation_params,
+        generation_params=data.generation_params,
         project_box=data.project_box,
         surface_data=surface_data,
         stratigraphy=StratigraphyInput(data.stratigraphy),

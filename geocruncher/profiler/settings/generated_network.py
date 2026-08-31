@@ -6,6 +6,6 @@ PROFILER_GENERATED_NETWORK_V1 = VkProfilerSettings(
     version=1,
     computation="generated_network",
     steps=[
-        "run_simulation",
+        "run_generation",
     ],
 )

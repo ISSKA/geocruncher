@@ -50,13 +50,13 @@ def run_karstnsim(
         "fault_triangle_count",
         sum(len(f.triangles) for f in content.faults),
     )
-    profiler.set_metadata("num_sinks", content.simulation_params.n_sinks)
-    profiler.set_metadata("sampling_radius", content.simulation_params.r_min_pervious)
-    profiler.set_metadata("k_pts", content.simulation_params.k_pts)
-    profiler.set_metadata("search_radius", content.simulation_params.search_radius)
-    profiler.set_metadata("r_min_pervious", content.simulation_params.r_min_pervious)
+    profiler.set_metadata("num_sinks", content.generation_params.n_sinks)
+    profiler.set_metadata("sampling_radius", content.generation_params.r_min_pervious)
+    profiler.set_metadata("k_pts", content.generation_params.k_pts)
+    profiler.set_metadata("search_radius", content.generation_params.search_radius)
+    profiler.set_metadata("r_min_pervious", content.generation_params.r_min_pervious)
     profiler.set_metadata(
-        "r_min_impervious", content.simulation_params.r_min_impervious
+        "r_min_impervious", content.generation_params.r_min_impervious
     )
     profiler.update_metadata(metadata)
 
@@ -67,8 +67,8 @@ def run_karstnsim(
         content.voxels,
         content.voxels_units.root,
         content.is_base,
-        content.simulation_params.r_min_pervious,
-        content.simulation_params.r_min_impervious,
+        content.generation_params.r_min_pervious,
+        content.generation_params.r_min_impervious,
     )
 
     dem = Surface.from_dem_grid(
@@ -126,10 +126,10 @@ def run_karstnsim(
         for f in content.faults
     ]
 
-    rng = np.random.default_rng(content.simulation_params.seed)
+    rng = np.random.default_rng(content.generation_params.seed)
 
     sinks, connectivity_matrix = load_sinks(
-        content.simulation_params.n_sinks,
+        content.generation_params.n_sinks,
         content.springs,
         content.resampled_dem_resolution,
         content.surface_resolution,
@@ -145,21 +145,21 @@ def run_karstnsim(
     )
 
     config = KarstConfig()
-    config.selected_seed = content.simulation_params.seed
-    config.k_pts = content.simulation_params.k_pts
-    config.fraction_karst_perm = content.simulation_params.cohesion_factor
+    config.selected_seed = content.generation_params.seed
+    config.k_pts = content.generation_params.k_pts
+    config.fraction_karst_perm = content.generation_params.cohesion_factor
     config.nghb_radius = (
         max_dim * 3.0
-        if content.simulation_params.search_radius == "auto"
-        else content.simulation_params.search_radius
+        if content.generation_params.search_radius == "auto"
+        else content.generation_params.search_radius
     )
     config.inception_surface_constraint_weight = (
-        content.simulation_params.inception_surface_constraint_weight
+        content.generation_params.inception_surface_constraint_weight
     )
     config.max_inception_surface_distance = (
         max_dim * 3.0
-        if content.simulation_params.max_inception_surface_distance == "auto"
-        else content.simulation_params.max_inception_surface_distance
+        if content.generation_params.max_inception_surface_distance == "auto"
+        else content.generation_params.max_inception_surface_distance
     )
     config.use_max_nghb_radius = True
     config.refine_surface_sampling = 1
@@ -168,7 +168,7 @@ def run_karstnsim(
     config.nb_deadend_points = 0
     config.create_vset_sampling = False
 
-    start_step("run_simulation")
+    start_step("run_generation")
     result = run_simulation(
         config,
         project_box=project_box,
@@ -181,9 +181,9 @@ def run_karstnsim(
     )
 
     if result is None:
-        raise ValueError("Simulation returned no result")
+        raise ValueError("Generation returned no result")
 
-    profile_step("run_simulation")
+    profile_step("run_generation")
 
     result_bytes = json.dumps(
         serialize_karstnsim_result(result),
