@@ -23,7 +23,6 @@ dependencies = [
 ]
 
 [project.scripts]
-geocruncher = "geocruncher.main:main"
 api = "api.api:main"
 
 [dependency-groups]
