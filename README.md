@@ -148,3 +148,17 @@ Please adapt to your needs.
 The API exposes an HTTP server with no compression. We strongly recommand putting a proxy in front that handles HTTPS and GZIP compression to greatly improve security and performance.
 
 Depending on your needs, we also recommand implementing basic authentification to prevent unwanted users from starting computations on your instance, if it is exposed to the internet.
+
+### Citation
+
+Geocruncher uses the [KarstNSim](https://github.com/ring-team/KarstNSim_Public) library for karst network simulations, which can be cited as follows:
+
+```bibtex
+@article{Gouy2024,
+    author = {Gouy, Augustin and Collon, Pauline and Bailly-Comte, Vincent and Galin, Eric and Antoine, Christophe and Thebault, Benoît and Landrein, Philippe},
+    doi = {10.1016/j.jhydrol.2024.130878},
+    journal = {Journal of Hydrology},
+    title = {{KarstNSim: A graph-based method for 3D geologically-driven simulation of karst networks}},
+    year = {2024}
+}
+```

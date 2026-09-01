@@ -4,6 +4,8 @@ import math
 from enum import Enum
 from typing import NotRequired, TypedDict
 
+from geocruncher.geometry import Vec3Float, Vec3Int
+
 
 class EvaluationExtent(TypedDict):
     """Project-space bounds for a 3D computation."""
@@ -36,22 +38,6 @@ def validate_evaluation_extent(extent: EvaluationExtent) -> None:
             raise EvaluationExtentValidationError(
                 f"box.{axis}min must be less than box.{axis}max"
             )
-
-
-class Vec3Int(TypedDict):
-    """Three-dimensional integer vector."""
-
-    x: int
-    y: int
-    z: int
-
-
-class Vec3Float(TypedDict):
-    """Three-dimensional floating-point vector."""
-
-    x: float
-    y: float
-    z: float
 
 
 class TunnelShape(str, Enum):

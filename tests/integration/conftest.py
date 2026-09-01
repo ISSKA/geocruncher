@@ -1,21 +1,114 @@
 import json
-from dataclasses import dataclass
+import os
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
-@dataclass(frozen=True)
-class DummyProject:
-    """Direct computation inputs: XML bytes and decoded DEM text.
 
-    API smoke tests use ``fixture_bytes`` for multipart uploads; the API task
-    layer decodes DEM bytes before calling the computation functions.
-    """
+class FixtureProject:
+    """A fixture project stored as a directory."""
 
-    xml: bytes
-    dem: str
+    def __init__(self, root: Path):
+        self.root = root
+
+    def path(self, name: str) -> Path:
+        return self.root / name
+
+    def bytes(self, name: str) -> bytes:
+        return self.path(name).read_bytes()
+
+    def text(self, name: str) -> str:
+        return self.path(name).read_text()
+
+    def json(self, name: str):
+        return json.loads(self.text(name))
+
+    def glob(self, pattern: str):
+        return sorted(self.root.glob(pattern))
+
+    def names(self):
+        return [
+            path.relative_to(self.root).as_posix()
+            for path in self.glob("**/*")
+            if path.is_file()
+        ]
+
+    def json_matching(self, pattern: str):
+        return [json.loads(path.read_text()) for path in self.glob(pattern)]
+
+    def numbered_files(self, pattern: str, loader):
+        return {
+            int(path.stem.split("_")[-1]): loader(path) for path in self.glob(pattern)
+        }
+
+    def numbered_ids(self, pattern: str):
+        return [int(path.stem.split("_")[-1]) for path in self.glob(pattern)]
+
+
+class DummyProject(FixtureProject):
+    """Direct computation inputs."""
+
+    @property
+    def xml(self) -> bytes:
+        return self.bytes("geocruncher_project.xml")
+
+    @property
+    def dem(self) -> str:
+        return self.text("geocruncher_dem.asc")
+
+    @property
+    def protobuf(self) -> bytes:
+        return self.bytes("geocruncher_project.pb")
+
+
+class GeneratedNetworkProject(FixtureProject):
+    @property
+    def dem_bytes(self) -> bytes:
+        return self.bytes("dem_values.bin")
+
+    @property
+    def voxels_str(self) -> str:
+        return self.text("voxels.txt")
+
+    @property
+    def fault_bytes(self) -> dict[int, bytes]:
+        result = self.numbered_files("fault_*.bin", Path.read_bytes)
+        assert result, "No fault_*.bin files found"
+        return result
+
+    @property
+    def data_dict(self) -> dict:
+        return {
+            "generation_params": self.json("config.json"),
+            "project_box": self.json("project_box.json"),
+            "dem_resolution": self.json("dem_resolution.json"),
+            "stratigraphy": self.json("stratigraphy.json"),
+            "voxels_units": self.json("voxels_units.json"),
+            "fault_ids": self.numbered_ids("fault_*.bin"),
+            "springs": self.json_matching("poi_*.json"),
+            "gwbs": self.json_matching("gwb_*.json"),
+            "is_base": False,
+        }
+
+
+@pytest.fixture(scope="session")
+def generated_network_project():
+    return GeneratedNetworkProject(
+        Path(
+            os.environ.get(
+                "GENERATED_NETWORK_DATA_DIR",
+                FIXTURES / "control_project",
+            )
+        )
+    )
+
+
+@pytest.fixture(scope="session")
+def control_output():
+    return (FIXTURES / "control_output.json").read_text()
 
 
 @pytest.fixture(scope="module")
@@ -33,58 +126,44 @@ def mesh_io():
 
 
 @pytest.fixture(scope="module")
-def dummy_project_dir():
-    return Path(__file__).resolve().parents[1] / "fixtures" / "dummy_project"
+def dummy_project():
+    return DummyProject(FIXTURES / "dummy_project")
 
 
 @pytest.fixture(scope="module")
-def dummy_project(dummy_project_dir):
-    return DummyProject(
-        xml=dummy_project_dir.joinpath("geocruncher_project.xml").read_bytes(),
-        dem=dummy_project_dir.joinpath("geocruncher_dem.asc").read_text(),
-    )
+def fixture_json(dummy_project):
+    return dummy_project.json
 
 
 @pytest.fixture(scope="module")
-def protobuf_model(dummy_project_dir):
-    return dummy_project_dir.joinpath("geocruncher_project.pb").read_bytes()
+def fixture_bytes(dummy_project):
+    return dummy_project.bytes
 
 
-@pytest.fixture
-def fixture_json(dummy_project_dir):
-    def load(name):
-        return json.loads(dummy_project_dir.joinpath(name).read_text())
-
-    return load
+@pytest.fixture(scope="module")
+def fixture_text(dummy_project):
+    return dummy_project.text
 
 
-@pytest.fixture
-def fixture_bytes(dummy_project_dir):
-    def load(name):
-        return dummy_project_dir.joinpath(name).read_bytes()
-
-    return load
-
-
-@pytest.fixture
-def fixture_text(dummy_project_dir):
-    def load(name):
-        return dummy_project_dir.joinpath(name).read_text()
-
-    return load
-
-
-@pytest.fixture
+@pytest.fixture(scope="module")
 def decode_meshes(mesh_io):
     def decode(meshes):
         summaries = {}
+
         for name, data in meshes.items():
             assert isinstance(data, bytes)
-            polydata = mesh_io.read_mesh_to_polydata(data)
+
+            polydata = mesh_io.triangle_mesh_to_polydata(mesh_io.read_mesh(data))
+
             assert polydata.n_points > 0
             assert polydata.n_cells > 0
             assert np.isfinite(polydata.bounds).all()
-            summaries[name] = (polydata.n_points, polydata.n_cells)
+
+            summaries[name] = (
+                polydata.n_points,
+                polydata.n_cells,
+            )
+
         return summaries
 
     return decode

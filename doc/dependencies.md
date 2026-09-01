@@ -15,14 +15,15 @@ Here is the list of uses of each pip dependency
 | forgeo       | gmlib dependency                     |
 | gunicorn     | (production) http server             |
 | lxml         | gmlib dependency                     |
-| meshio       | types for legacy OFF importer        |
 | numpy        | efficient array manipulations        |
 | pybind11     | (build/local) build python bindings  |
-| pyvista      | extract geometry from meshio object (legacy OFF importer), create PolyData to evaluate GWB layer for intersections & voxels |
+| pykarstnsim  | wrapper for karstnsim                |
+| pyvista      | create PolyData to evaluate GWB layer for intersections & voxels |
 | pyyaml       | gmlib dependency                     | 
 | redis        | storage for worker/queue system      |
 | scikit-image | marching cubes                       |
 | scipy        | elliptic tunnel shape                |
+| shapely      | geometry manipulations               |
 | sympy        | parse tunnel functions               |
 | verstr       | gmlib dependency                     |
 | watchdog     | (local) hot reloading                |

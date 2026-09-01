@@ -86,7 +86,7 @@ def test_tunnel_meshes_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_meshes_endpoint_runs_eager_task_and_returns_tar(
-    api_harness, decode_meshes, fixture_bytes, fixture_json, protobuf_model, monkeypatch
+    api_harness, decode_meshes, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
@@ -101,7 +101,7 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
         "/compute/meshes",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            model=protobuf_model,
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -124,7 +124,7 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_faults_endpoint_runs_eager_task_and_returns_tar(
-    api_harness, decode_meshes, fixture_bytes, fixture_json, protobuf_model, monkeypatch
+    api_harness, decode_meshes, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
@@ -139,7 +139,7 @@ def test_faults_endpoint_runs_eager_task_and_returns_tar(
         "/compute/faults",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            model=protobuf_model,
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -161,7 +161,7 @@ def test_faults_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_intersections_endpoint_runs_eager_task_and_returns_json(
-    api_harness, fixture_bytes, fixture_json, protobuf_model, monkeypatch
+    api_harness, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
@@ -179,7 +179,7 @@ def test_intersections_endpoint_runs_eager_task_and_returns_json(
         "/compute/intersections",
         data=multipart_with_files(
             data,
-            model=protobuf_model,
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
             **{"7_0": fixture_bytes("gwb_meshes/7.off")},
         ),
@@ -205,7 +205,7 @@ def test_intersections_endpoint_runs_eager_task_and_returns_json(
 
 
 def test_voxels_endpoint_runs_eager_task_and_returns_text(
-    api_harness, fixture_bytes, fixture_json, protobuf_model, monkeypatch
+    api_harness, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
@@ -221,7 +221,7 @@ def test_voxels_endpoint_runs_eager_task_and_returns_text(
         "/compute/voxels",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            model=protobuf_model,
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -250,7 +250,7 @@ def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
     decode_meshes,
     fixture_json,
     fixture_text,
-    protobuf_model,
+    dummy_project,
     monkeypatch,
 ):
     eager_task = _install_eager_task(
@@ -263,7 +263,7 @@ def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
     springs = fixture_json("gwb_spring.json")
     unit_meshes = api_harness.computations.compute_meshes(
         fixture_json("mesh.json"),
-        protobuf_model,
+        dummy_project.protobuf,
         fixture_text("geocruncher_dem.asc"),
     )["mesh"]
 

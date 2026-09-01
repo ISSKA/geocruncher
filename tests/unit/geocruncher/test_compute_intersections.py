@@ -127,14 +127,18 @@ def test_project_hydro_features_on_slice_projects_near_features_and_combines_gwb
 
     read_calls = []
 
-    def fake_read_mesh_to_polydata(data):
+    def fake_read_mesh(data):
         read_calls.append(data)
         return data.decode("ascii")
 
+    def fake_triangle_mesh_to_polydata(mesh):
+        return mesh
+
     monkeypatch.setattr(intersections, "Box", FakeBox)
     monkeypatch.setattr(intersections.pv, "PolyData", FakePolyData)
+    monkeypatch.setattr(intersections, "read_mesh", fake_read_mesh)
     monkeypatch.setattr(
-        intersections, "read_mesh_to_polydata", fake_read_mesh_to_polydata
+        intersections, "triangle_mesh_to_polydata", fake_triangle_mesh_to_polydata
     )
 
     drillholes, springs, gwb_matrix = intersections.project_hydro_features_on_slice(

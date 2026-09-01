@@ -13,8 +13,8 @@ from geocruncher.contracts import (
     TunnelFunction,
     TunnelMeshesData,
     TunnelShape,
-    Vec3Float,
 )
+from geocruncher.geometry import Vec3Float
 from tests.support import computations as computation_support
 
 MODEL_METADATA = computation_support.MODEL_METADATA

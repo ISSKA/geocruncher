@@ -6,6 +6,7 @@ from .profiler import (
     start_step,
 )
 from .settings.faults import PROFILER_FAULTS_V5
+from .settings.generated_network import PROFILER_GENERATED_NETWORK_V1
 from .settings.gwb_meshes import PROFILER_GWB_MESHES_V3
 from .settings.intersections import PROFILER_INTERSECTIONS_V5
 from .settings.meshes import PROFILER_MESHES_V6
@@ -20,6 +21,7 @@ PROFILES = {
     "faults": PROFILER_FAULTS_V5,
     "voxels": PROFILER_VOXELS_V3,
     "gwb_meshes": PROFILER_GWB_MESHES_V3,
+    "generated_network": PROFILER_GENERATED_NETWORK_V1,
 }
 
 __all__ = [

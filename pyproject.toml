@@ -12,13 +12,14 @@ dependencies = [
     "forgeo-rigs",
     "isskasiska-geocruncherbuf-bufbuild-py>=0.3.0.1.20260810093123",
     "lxml",
-    "meshio",
     "numpy",
     "pydantic",
+    "pykarstnsim",
     "pyvista",
     "redis",
     "scikit-image",
     "scipy",
+    "shapely",
     "sympy",
 ]
 
@@ -46,6 +47,7 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 isskasiska-geocruncherbuf-bufbuild-py = { index = "buf" }
+pykarstnsim = { index = "pypi" }
 
 [[tool.uv.index]]
 name = "buf"
@@ -61,6 +63,11 @@ source-exclude = [
     "/build",
     "/dist",
 ]
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple/"
+explicit = true
 
 [tool.ruff]
 exclude = ["third_party"]

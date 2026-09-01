@@ -3,13 +3,15 @@ from collections import defaultdict
 
 from celery import Task
 
-from geocruncher import computations
+import geocruncher.computations as computations
 from geocruncher.contracts import (
     IntersectionsData,
     MeshesData,
     Spring,
     TunnelMeshesData,
 )
+from geocruncher.generated_network.generation import run_karstnsim
+from geocruncher.generated_network.models import GeneratedNetworkData
 from geocruncher.profiler import ProfilerMetadata
 from geocruncher.profiler.profiler import set_current_task
 
@@ -166,4 +168,32 @@ def compute_gwb_meshes(
     for id, mesh in enumerate(results["meshes"]):
         hset_bytes(r, output_key, f"mesh_{id}", mesh)
 
+    return output_key
+
+
+@app.task(bind=True)
+def compute_generated_network(
+    self: Task,
+    data: str,
+    files_key: str,
+    output_key: str,
+    metadata: ProfilerMetadata | None = None,
+) -> str:
+    set_current_task(self)
+    stored = get_hash_bytes(r, files_key)
+    r.delete(files_key)
+
+    dem_bytes = stored[b"dem"]
+    voxels_str = stored[b"voxels"].decode("utf-8")
+    fault_bytes = {
+        int(k.decode().split("_")[1]): v
+        for k, v in stored.items()
+        if k.startswith(b"fault_")
+    }
+    # Turn the serialized data back into a validated GeneratedNetworkData object
+    validated_data = GeneratedNetworkData.model_validate_json(data)
+    result_bytes = run_karstnsim(
+        validated_data, dem_bytes, voxels_str, fault_bytes, metadata
+    )
+    r.set(output_key, result_bytes)
     return output_key
