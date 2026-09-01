@@ -10,6 +10,7 @@ dependencies = [
     "forgeo",
     "forgeo-gmlib",
     "forgeo-rigs",
+    "isskasiska-geocruncherbuf-bufbuild-py>=0.3.0.1.20260810093123",
     "lxml",
     "numpy",
     "pydantic",
@@ -44,6 +45,15 @@ server = [
 requires = ["uv_build>=0.11.16,<0.12"]
 build-backend = "uv_build"
 
+[tool.uv.sources]
+isskasiska-geocruncherbuf-bufbuild-py = { index = "buf" }
+pykarstnsim = { index = "pypi" }
+
+[[tool.uv.index]]
+name = "buf"
+url = "https://buf.build/gen/python"
+explicit = true
+
 [tool.uv.build-backend]
 module-root = ""
 module-name = ["geocruncher", "api"]
@@ -53,9 +63,6 @@ source-exclude = [
     "/build",
     "/dist",
 ]
-
-[tool.uv.sources]
-pykarstnsim = { index = "pypi" }
 
 [[tool.uv.index]]
 name = "pypi"
@@ -72,6 +79,7 @@ exclude = ["third_party/"]
 extra-paths = ["typings"]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
     "integration: tests that exercise real cross-module behavior",
     "slow: tests that are slower than the ordinary unit and contract suite",

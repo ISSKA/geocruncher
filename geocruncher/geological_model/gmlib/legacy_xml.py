@@ -1,6 +1,9 @@
-"""
-Adapted from gmlib geomodeller_project.py and topography_reader.py
-to allow importing from strings instead of files
+"""Legacy GeoModeller XML importer adapted from gmlib.
+
+It accepts XML and DEM content directly instead of reading files. It is no longer
+used by GeoCruncher's production code paths and is retained only as a regression
+oracle for legacy XML parity. Remove it once that parity is no longer a migration
+concern.
 """
 
 import lxml.etree as etree
@@ -14,7 +17,7 @@ from forgeo.gmlib.geomodeller_project import (
     read_pile,
 )
 
-from .topography_reader import ascii_grid_to_implicit_dtm
+from .topography import ascii_grid_to_implicit_dtm
 
 type XmlInput = bytes | str
 

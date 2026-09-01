@@ -86,13 +86,13 @@ def test_tunnel_meshes_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_meshes_endpoint_runs_eager_task_and_returns_tar(
-    api_harness, decode_meshes, fixture_bytes, fixture_json, monkeypatch
+    api_harness, decode_meshes, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
         api_harness,
         "compute_meshes",
-        "xml-key",
+        "model-key",
         "dem-key",
         "output-key",
     )
@@ -101,7 +101,7 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
         "/compute/meshes",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            xml=fixture_bytes("geocruncher_project.xml"),
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -124,13 +124,13 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_faults_endpoint_runs_eager_task_and_returns_tar(
-    api_harness, decode_meshes, fixture_bytes, fixture_json, monkeypatch
+    api_harness, decode_meshes, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
         api_harness,
         "compute_faults",
-        "xml-key",
+        "model-key",
         "dem-key",
         "output-key",
     )
@@ -139,7 +139,7 @@ def test_faults_endpoint_runs_eager_task_and_returns_tar(
         "/compute/faults",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            xml=fixture_bytes("geocruncher_project.xml"),
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -161,13 +161,13 @@ def test_faults_endpoint_runs_eager_task_and_returns_tar(
 
 
 def test_intersections_endpoint_runs_eager_task_and_returns_json(
-    api_harness, fixture_bytes, fixture_json, monkeypatch
+    api_harness, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
         api_harness,
         "compute_intersections",
-        "xml-key",
+        "model-key",
         "dem-key",
         "gwb-key",
         "output-key",
@@ -179,7 +179,7 @@ def test_intersections_endpoint_runs_eager_task_and_returns_json(
         "/compute/intersections",
         data=multipart_with_files(
             data,
-            xml=fixture_bytes("geocruncher_project.xml"),
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
             **{"7_0": fixture_bytes("gwb_meshes/7.off")},
         ),
@@ -205,13 +205,13 @@ def test_intersections_endpoint_runs_eager_task_and_returns_json(
 
 
 def test_voxels_endpoint_runs_eager_task_and_returns_text(
-    api_harness, fixture_bytes, fixture_json, monkeypatch
+    api_harness, fixture_bytes, fixture_json, dummy_project, monkeypatch
 ):
     eager_task = _install_eager_task(
         monkeypatch,
         api_harness,
         "compute_voxels",
-        "xml-key",
+        "model-key",
         "dem-key",
         "gwb-key",
         "output-key",
@@ -221,7 +221,7 @@ def test_voxels_endpoint_runs_eager_task_and_returns_text(
         "/compute/voxels",
         data=multipart_with_files(
             fixture_json("mesh.json"),
-            xml=fixture_bytes("geocruncher_project.xml"),
+            model=dummy_project.protobuf,
             dem=fixture_bytes("geocruncher_dem.asc"),
         ),
     )
@@ -246,7 +246,12 @@ def test_voxels_endpoint_runs_eager_task_and_returns_text(
 
 
 def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
-    api_harness, decode_meshes, fixture_bytes, fixture_json, fixture_text, monkeypatch
+    api_harness,
+    decode_meshes,
+    fixture_json,
+    fixture_text,
+    dummy_project,
+    monkeypatch,
 ):
     eager_task = _install_eager_task(
         monkeypatch,
@@ -258,7 +263,7 @@ def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
     springs = fixture_json("gwb_spring.json")
     unit_meshes = api_harness.computations.compute_meshes(
         fixture_json("mesh.json"),
-        fixture_bytes("geocruncher_project.xml"),
+        dummy_project.protobuf,
         fixture_text("geocruncher_dem.asc"),
     )["mesh"]
 

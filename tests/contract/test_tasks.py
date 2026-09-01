@@ -5,6 +5,7 @@ import pytest
 import api.tasks as tasks
 from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
+    BOX,
     GENERATED_NETWORK_DATA,
     GENERATED_NETWORK_DEM_BYTES,
     GENERATED_NETWORK_FAULT_BYTES,
@@ -69,13 +70,13 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
     monkeypatch,
 ):
     redis = FakeRedis()
-    redis.values.update({"xml-key": b"<xml />", "dem-key": b"dem"})
+    redis.values.update({"model-key": b"model", "dem-key": b"dem"})
     call = {}
     monkeypatch.setattr(tasks, "r", redis)
 
-    def fake_compute_meshes(data, xml, dem, metadata):
+    def fake_compute_meshes(data, model_data, dem, metadata):
         call["data"] = data
-        call["xml"] = xml
+        call["model_data"] = model_data
         call["dem"] = dem
         call["metadata"] = metadata
         return {"mesh": {"1": b"unit-1"}, "fault": {"fault-a": b"fault-a"}}
@@ -84,7 +85,7 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
 
     result = tasks.compute_meshes.run(
         MESHES_DATA,
-        "xml-key",
+        "model-key",
         "dem-key",
         "output-key",
         {"project_id": "project-a"},
@@ -93,11 +94,11 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
     assert result == "output-key"
     assert call == {
         "data": MESHES_DATA,
-        "xml": b"<xml />",
+        "model_data": b"model",
         "dem": "dem",
         "metadata": {"project_id": "project-a"},
     }
-    assert redis.deleted == ["xml-key", "dem-key"]
+    assert redis.deleted == ["model-key", "dem-key"]
     assert redis.hashes["output-key"] == {
         b"rank_1": b"unit-1",
         b"fault_fault-a": b"fault-a",
@@ -106,13 +107,13 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
 
 def test_compute_faults_consumes_inputs_and_writes_fault_hashes(monkeypatch):
     redis = FakeRedis()
-    redis.values.update({"xml-key": b"<xml />", "dem-key": b"dem"})
+    redis.values.update({"model-key": b"model", "dem-key": b"dem"})
     call = {}
     monkeypatch.setattr(tasks, "r", redis)
 
-    def fake_compute_faults(data, xml, dem, metadata):
+    def fake_compute_faults(data, model_data, dem, metadata):
         call["data"] = data
-        call["xml"] = xml
+        call["model_data"] = model_data
         call["dem"] = dem
         call["metadata"] = metadata
         return {"mesh": {}, "fault": {"fault-a": b"fault-a"}}
@@ -121,7 +122,7 @@ def test_compute_faults_consumes_inputs_and_writes_fault_hashes(monkeypatch):
 
     result = tasks.compute_faults.run(
         MESHES_DATA,
-        "xml-key",
+        "model-key",
         "dem-key",
         "output-key",
         {"project_id": "project-b"},
@@ -130,17 +131,17 @@ def test_compute_faults_consumes_inputs_and_writes_fault_hashes(monkeypatch):
     assert result == "output-key"
     assert call == {
         "data": MESHES_DATA,
-        "xml": b"<xml />",
+        "model_data": b"model",
         "dem": "dem",
         "metadata": {"project_id": "project-b"},
     }
-    assert redis.deleted == ["xml-key", "dem-key"]
+    assert redis.deleted == ["model-key", "dem-key"]
     assert redis.hashes["output-key"] == {b"fault_fault-a": b"fault-a"}
 
 
 def test_compute_intersections_groups_gwb_meshes_and_serializes_json(monkeypatch):
     redis = FakeRedis()
-    redis.values.update({"xml-key": b"<xml />", "dem-key": b"dem"})
+    redis.values.update({"model-key": b"model", "dem-key": b"dem"})
     redis.hashes["gwb-key"] = {
         b"7_0": b"gwb-7-a",
         b"7_1": b"gwb-7-b",
@@ -150,9 +151,9 @@ def test_compute_intersections_groups_gwb_meshes_and_serializes_json(monkeypatch
     output = {"mesh": {"forCrossSections": {}}, "fault": {"forMaps": {}}}
     monkeypatch.setattr(tasks, "r", redis)
 
-    def fake_compute_intersections(data, xml, dem, gwb_meshes, metadata):
+    def fake_compute_intersections(data, model_data, dem, gwb_meshes, metadata):
         call["data"] = data
-        call["xml"] = xml
+        call["model_data"] = model_data
         call["dem"] = dem
         call["gwb_meshes"] = dict(gwb_meshes)
         call["metadata"] = metadata
@@ -164,7 +165,7 @@ def test_compute_intersections_groups_gwb_meshes_and_serializes_json(monkeypatch
 
     result = tasks.compute_intersections.run(
         INTERSECTIONS_DATA,
-        "xml-key",
+        "model-key",
         "dem-key",
         "gwb-key",
         "output-key",
@@ -174,12 +175,12 @@ def test_compute_intersections_groups_gwb_meshes_and_serializes_json(monkeypatch
     assert result == "output-key"
     assert call == {
         "data": INTERSECTIONS_DATA,
-        "xml": b"<xml />",
+        "model_data": b"model",
         "dem": "dem",
         "gwb_meshes": {"7": [b"gwb-7-a", b"gwb-7-b"], "8": [b"gwb-8-a"]},
         "metadata": {"request_id": "req-2"},
     }
-    assert redis.deleted == ["xml-key", "dem-key", "gwb-key"]
+    assert redis.deleted == ["model-key", "dem-key", "gwb-key"]
     assert json.loads(redis.values["output-key"]) == output
 
 
@@ -188,19 +189,20 @@ def test_compute_intersections_without_hydro_data_does_not_consume_gwb_meshes(
 ):
     data = {
         "resolution": 25,
+        "box": BOX,
         "toCompute": INTERSECTIONS_DATA["toCompute"],
         "computeMap": False,
     }
     redis = FakeRedis()
-    redis.values.update({"xml-key": b"<xml />", "dem-key": b"dem"})
+    redis.values.update({"model-key": b"model", "dem-key": b"dem"})
     redis.hashes["gwb-key"] = {b"7_0": b"unused-gwb"}
     call = {}
     output = {"mesh": {"forCrossSections": {}}, "fault": {"forMaps": {}}}
     monkeypatch.setattr(tasks, "r", redis)
 
-    def fake_compute_intersections(data, xml, dem, gwb_meshes, metadata):
+    def fake_compute_intersections(data, model_data, dem, gwb_meshes, metadata):
         call["data"] = data
-        call["xml"] = xml
+        call["model_data"] = model_data
         call["dem"] = dem
         call["gwb_meshes"] = dict(gwb_meshes)
         call["metadata"] = metadata
@@ -212,7 +214,7 @@ def test_compute_intersections_without_hydro_data_does_not_consume_gwb_meshes(
 
     result = tasks.compute_intersections.run(
         data,
-        "xml-key",
+        "model-key",
         "dem-key",
         "gwb-key",
         "output-key",
@@ -222,19 +224,19 @@ def test_compute_intersections_without_hydro_data_does_not_consume_gwb_meshes(
     assert result == "output-key"
     assert call == {
         "data": data,
-        "xml": b"<xml />",
+        "model_data": b"model",
         "dem": "dem",
         "gwb_meshes": {},
         "metadata": {"request_id": "req-no-hydro"},
     }
-    assert redis.deleted == ["xml-key", "dem-key"]
+    assert redis.deleted == ["model-key", "dem-key"]
     assert redis.hashes["gwb-key"] == {b"7_0": b"unused-gwb"}
     assert json.loads(redis.values["output-key"]) == output
 
 
 def test_compute_voxels_groups_gwb_meshes_and_serializes_output(monkeypatch):
     redis = FakeRedis()
-    redis.values.update({"xml-key": b"<xml />", "dem-key": b"dem"})
+    redis.values.update({"model-key": b"model", "dem-key": b"dem"})
     redis.hashes["gwb-key"] = {
         b"7_0": b"gwb-7-a",
         b"7_1": b"gwb-7-b",
@@ -243,9 +245,9 @@ def test_compute_voxels_groups_gwb_meshes_and_serializes_output(monkeypatch):
     call = {}
     monkeypatch.setattr(tasks, "r", redis)
 
-    def fake_compute_voxels(data, xml, dem, gwb_meshes, metadata):
+    def fake_compute_voxels(data, model_data, dem, gwb_meshes, metadata):
         call["data"] = data
-        call["xml"] = xml
+        call["model_data"] = model_data
         call["dem"] = dem
         call["gwb_meshes"] = dict(gwb_meshes)
         call["metadata"] = metadata
@@ -255,7 +257,7 @@ def test_compute_voxels_groups_gwb_meshes_and_serializes_output(monkeypatch):
 
     result = tasks.compute_voxels.run(
         MESHES_DATA,
-        "xml-key",
+        "model-key",
         "dem-key",
         "gwb-key",
         "output-key",
@@ -265,12 +267,12 @@ def test_compute_voxels_groups_gwb_meshes_and_serializes_output(monkeypatch):
     assert result == "output-key"
     assert call == {
         "data": MESHES_DATA,
-        "xml": b"<xml />",
+        "model_data": b"model",
         "dem": "dem",
         "gwb_meshes": {"7": [b"gwb-7-a", b"gwb-7-b"], "8": [b"gwb-8-a"]},
         "metadata": {"request_id": "req-3"},
     }
-    assert redis.deleted == ["xml-key", "dem-key", "gwb-key"]
+    assert redis.deleted == ["model-key", "dem-key", "gwb-key"]
     assert redis.values["output-key"] == b"vox-output"
 
 

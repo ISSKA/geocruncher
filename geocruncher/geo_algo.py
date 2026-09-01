@@ -2,34 +2,17 @@
 GeoAlgo is a set of C++ algorithms that enable the computation of ground water body meshes
 """
 
-from typing import TypedDict
-
 import PyGeoAlgo as ga
 
+from geocruncher.contracts.computations import GwbMeshesResult
+
+from .contracts import GeoAlgoOutput, Spring
 from .profiler import profile_step, start_step
-
-
-class GwbMeshesResult(TypedDict):
-    """Data returned by the gwb meshes computation"""
-
-    unit_id: int
-    """Geological Model Unit ID"""
-    spring_id: int
-    """Point of interest ID"""
-    volume: float
-    """Volume of the mesh"""
-
-
-class GeoAlgoOutput(TypedDict):
-    """Data returned by the GeoAlgo output"""
-
-    metadata: list[GwbMeshesResult]
-    meshes: list[bytes]
 
 
 class GeoAlgo:
     @staticmethod
-    def output(unit_meshes: dict[str, bytes], springs: list) -> GeoAlgoOutput:
+    def output(unit_meshes: dict[str, bytes], springs: list[Spring]) -> GeoAlgoOutput:
         start_step("load_mesh")
         s = [
             ga.Spring(

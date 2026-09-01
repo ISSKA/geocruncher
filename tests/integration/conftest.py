@@ -59,6 +59,10 @@ class DummyProject(FixtureProject):
     def dem(self) -> str:
         return self.text("geocruncher_dem.asc")
 
+    @property
+    def protobuf(self) -> bytes:
+        return self.bytes("geocruncher_project.pb")
+
 
 class GeneratedNetworkProject(FixtureProject):
     @property
@@ -126,22 +130,22 @@ def dummy_project():
     return DummyProject(FIXTURES / "dummy_project")
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def fixture_json(dummy_project):
     return dummy_project.json
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def fixture_bytes(dummy_project):
     return dummy_project.bytes
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def fixture_text(dummy_project):
     return dummy_project.text
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def decode_meshes(mesh_io):
     def decode(meshes):
         summaries = {}

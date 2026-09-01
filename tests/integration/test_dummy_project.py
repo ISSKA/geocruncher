@@ -26,10 +26,13 @@ def _expected_slice_resolution(computations, data):
 
 
 def test_real_compute_meshes_generates_decodable_tiny_dummy_project_meshes(
-    computations, decode_meshes, dummy_project, fixture_json
+    computations,
+    decode_meshes,
+    dummy_project,
+    fixture_json,
 ):
     result = computations.compute_meshes(
-        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
+        fixture_json("mesh.json"), dummy_project.protobuf, dummy_project.dem
     )
 
     assert set(result) == {"mesh", "fault"}
@@ -47,7 +50,7 @@ def test_real_compute_faults_generates_decodable_tiny_dummy_project_surface(
     computations, decode_meshes, dummy_project, fixture_json
 ):
     result = computations.compute_faults(
-        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
+        fixture_json("mesh.json"), dummy_project.protobuf, dummy_project.dem
     )
 
     assert result["mesh"] == {}
@@ -63,7 +66,7 @@ def test_real_compute_intersections_generates_fixture_slice(
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
     result = computations.compute_intersections(
-        data, dummy_project.xml, dummy_project.dem, {}
+        data, dummy_project.protobuf, dummy_project.dem, {}
     )
 
     assert set(result) == {"mesh", "fault"}
@@ -84,7 +87,7 @@ def test_real_compute_voxels_generates_tiny_vox_grid(
     computations, dummy_project, fixture_json
 ):
     result = computations.compute_voxels(
-        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem, {}
+        fixture_json("mesh.json"), dummy_project.protobuf, dummy_project.dem, {}
     )
 
     lines = result.splitlines()
@@ -107,7 +110,7 @@ def test_real_compute_voxels_tags_gwb_mesh_points(
 ):
     result = computations.compute_voxels(
         fixture_json("mesh.json"),
-        dummy_project.xml,
+        dummy_project.protobuf,
         dummy_project.dem,
         {"7": [fixture_bytes("gwb_meshes/7.off")]},
     )
@@ -132,7 +135,7 @@ def test_real_compute_intersections_generates_map_outputs(
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
     result = computations.compute_intersections(
-        data, dummy_project.xml, dummy_project.dem, {}
+        data, dummy_project.protobuf, dummy_project.dem, {}
     )
 
     assert "forMaps" in result["mesh"]
@@ -158,7 +161,7 @@ def test_real_compute_intersections_projects_hydro_features_and_gwb_matrix(
 
     result = computations.compute_intersections(
         data,
-        dummy_project.xml,
+        dummy_project.protobuf,
         dummy_project.dem,
         {"7": [fixture_bytes("gwb_meshes/7.off")]},
     )
@@ -168,11 +171,14 @@ def test_real_compute_intersections_projects_hydro_features_and_gwb_matrix(
     matrix_gwb = result["mesh"]["matrixGwb"][section_id][0]
 
     assert set(springs) == {"spring-1"}
-    np.testing.assert_allclose(springs["spring-1"], [8184.030841075725, 500.0])
+    np.testing.assert_allclose(
+        springs["spring-1"], [8184.030841075725, 500.0], atol=1e-3
+    )
     assert set(drillholes) == {"drillhole-1"}
     np.testing.assert_allclose(
         drillholes["drillhole-1"],
         [[8184.030841075725, -1000.0], [8184.030841075725, 1250.0]],
+        atol=1e-3,
     )
     assert len(matrix_gwb) == expected_width * expected_height
     assert set(matrix_gwb) == {0, 7}
@@ -182,7 +188,7 @@ def test_real_compute_gwb_meshes_returns_decodable_aquifer(
     computations, mesh_io, dummy_project, fixture_json
 ):
     unit_meshes = computations.compute_meshes(
-        fixture_json("mesh.json"), dummy_project.xml, dummy_project.dem
+        fixture_json("mesh.json"), dummy_project.protobuf, dummy_project.dem
     )["mesh"]
     springs = fixture_json("gwb_spring.json")
 

@@ -46,7 +46,7 @@ def test_raises_when_generation_returns_none(generated_network_project, monkeypa
     from geocruncher.generated_network import generation as sim_module
     from geocruncher.generated_network.generation import run_karstnsim
 
-    monkeypatch.setattr(sim_module, "run_generation", lambda *args, **kwargs: None)
+    monkeypatch.setattr(sim_module, "run_simulation", lambda *args, **kwargs: None)
 
     data = GeneratedNetworkData.model_validate(generated_network_project.data_dict)
 

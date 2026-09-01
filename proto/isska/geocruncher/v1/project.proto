@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package isska.geocruncher.v1;
+
+option java_multiple_files = true;
+option java_package = "ch.isska.geocruncher.v1";
+
+// Normalized geological input. Topography, the computation extent, and other
+// computation parameters are transported separately.
+message GeologicalModel {
+  StratigraphicColumn stratigraphy = 1;
+  repeated Fault faults = 2;
+}
+
+// All coordinates are project-space coordinates.
+message Point3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// A direction, not a location.
+message Vector3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// VISKAR has already converted dip/azimuth and polarity into `normal`.
+message Orientation {
+  Point3 position = 1;
+  Vector3 normal = 2;
+}
+
+enum StratigraphicReference {
+  STRATIGRAPHIC_REFERENCE_UNSPECIFIED = 0;
+  STRATIGRAPHIC_REFERENCE_BASE = 1;
+  STRATIGRAPHIC_REFERENCE_TOP = 2;
+}
+
+enum SeriesRelation {
+  SERIES_RELATION_UNSPECIFIED = 0;
+  SERIES_RELATION_ONLAP = 1;
+  SERIES_RELATION_ERODE = 2;
+}
+
+message StratigraphicColumn {
+  StratigraphicReference reference = 1;
+
+  // Canonical modelling order; see Ordering below.
+  repeated Series series = 2;
+}
+
+message Series {
+  // Stable identifier. Display names are not part of this contract.
+  string uuid = 1;
+  SeriesRelation relation = 2;
+
+  // Canonical modelling order. A unit corresponds to the object called a
+  // Formation by the legacy GeoModeller/gmlib API.
+  repeated Unit units = 3;
+
+  // Fault UUIDs whose discontinuity affects this series.
+  repeated string influenced_by_faults = 4;
+}
+
+message Unit {
+  string uuid = 1;
+
+  // Flattened project-space observations. No line identity is retained.
+  repeated Point3 contact_points = 2;
+
+  // Kept under the owning VISKAR unit. The current gmlib adapter concatenates
+  // orientations from all units in a series for the shared series field.
+  repeated Orientation orientations = 3;
+}
+
+message FiniteFault {
+  double lateral_extent = 1;
+  double vertical_extent = 2;
+  double influence_radius = 3;
+}
+
+message Fault {
+  string uuid = 1;
+  repeated Point3 contact_points = 2;
+  repeated Orientation orientations = 3;
+
+  // UUIDs of faults on which this fault stops.
+  repeated string stops_on = 4;
+
+  // Message fields have presence in proto3. Absent means an infinite fault.
+  // All VISKAR finite faults use the mean of their contact points as center.
+  FiniteFault finite = 5;
+}

@@ -1,21 +1,20 @@
 import numpy as np
 
-MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}}
+BOX = {
+    "xmin": 0,
+    "ymin": 1,
+    "zmin": 2,
+    "xmax": 10,
+    "ymax": 11,
+    "zmax": 12,
+}
+
+MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}, "box": BOX}
 
 INTERSECTIONS_DATA = {
     "resolution": 25,
-    "toCompute": {
-        "section-a": [
-            {
-                "xmin": 0,
-                "ymin": 1,
-                "zmin": 2,
-                "xmax": 10,
-                "ymax": 11,
-                "zmax": 12,
-            }
-        ]
-    },
+    "box": BOX,
+    "toCompute": {"section-a": [BOX]},
     "computeMap": False,
     "springs": {"7": {"x": 1, "y": 2, "z": 3}},
 }

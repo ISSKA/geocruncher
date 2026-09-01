@@ -59,11 +59,10 @@ pipeline {
         withEnv([
           "HOME=${env.WORKSPACE}",
           "UV_CACHE_DIR=/tmp/uv-cache",
+          "UV_PROJECT_ENVIRONMENT=${env.WORKSPACE}/.venv",
+          "PYTHONPATH=${env.WORKSPACE}/geo-algo/VK-Aquifers",
         ]) {
-          // TODO: re-enable tests once known regressions are addressed.
-          // The setuptools blocker is gone (uv + hatchling now); leaving
-          // disabled until the suite is green. To re-enable:
-          //   sh 'uv run --frozen pytest'
+          sh 'uv run --frozen --group dev pytest'
           sh 'uv build'
         }
       }
