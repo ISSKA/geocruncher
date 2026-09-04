@@ -19,6 +19,8 @@ pytestmark = [
     pytest.mark.native,
 ]
 
+UNIT_IDS_FOR_GWB_MESHES = ["1", "2", "3", "4", "6", "8", "9"]
+
 
 @pytest.fixture
 def api_harness(computations, mesh_io, monkeypatch):
@@ -117,7 +119,7 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
 
     assert get_response.status_code == 200
     assert get_response.mimetype == "application/x-tar"
-    assert "rank_1" in entries
+    assert any(name.startswith("unit_") for name in entries)
     assert "fault_topography" in entries
     decode_meshes(entries)
     assert "output-key" in api_harness.redis.deleted
@@ -267,6 +269,7 @@ def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
         fixture_text("geocruncher_dem.asc"),
     )["mesh"]
 
+    unit_meshes = dict(zip(UNIT_IDS_FOR_GWB_MESHES, unit_meshes.values()))
     post_response = api_harness.client.post(
         "/compute/gwb_meshes",
         data=multipart_with_files(

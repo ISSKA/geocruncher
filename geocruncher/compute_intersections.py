@@ -1,3 +1,4 @@
+import logging
 import math
 from collections.abc import Mapping
 from typing import Any
@@ -15,6 +16,7 @@ from .profiler import profile_step, start_step
 
 # How many decimals to return for all intersections data. Could be an API parameter, but that's probably overkill
 INTERSECTIONS_PRECISION = 2
+LOGGER = logging.getLogger(__name__)
 
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
@@ -150,7 +152,7 @@ def compute_cross_section_ranks(
     Returns
     -------
     list
-        A list of ranks after evaluation, reshaped to resolution.
+        A list of units after evaluation
 
     Notes
     -----
@@ -166,12 +168,33 @@ def compute_cross_section_ranks(
 
     is_base = model.pile.reference == "base"
     rank_offset = -1 if is_base else 0
-
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
-    ranks = ranks.tolist()
+    units = [
+        [
+            ("SKY" if (unit := rank_to_unit(model, int(rank))) is None else unit.name)
+            for rank in row
+        ]
+        for row in ranks
+    ]
+
     profile_step("ranks")
-    return ranks
+    return units
+
+
+def rank_to_unit(model: GeologicalModel, rank: int):
+    if rank == 0:
+        return None
+
+    unit_index = rank - 1
+
+    if model.pile.reference == "base" and unit_index == 0:
+        # dummy
+        unit_index = len(model.formations) - 1
+    elif model.pile.reference == "base":
+        unit_index -= 1
+
+    return model.formations[unit_index]
 
 
 def project_hydro_features_on_slice(

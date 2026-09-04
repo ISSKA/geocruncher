@@ -75,7 +75,6 @@ def generate_volumes(
     #        rank_values.append(formation)
 
     rank_values = np.unique(ranks)
-    num_ranks = len(rank_values)
     out_files = {"mesh": {}, "fault": {}}
 
     profile_step("ranks")
@@ -87,13 +86,16 @@ def generate_volumes(
         start_step("volume")
         if rank == RANK_SKY:
             continue
-        if model.pile.reference == "base":
-            if rank == 0:
-                rank_id = num_ranks - 1
-            else:
-                rank_id = rank - 1
-        else:
-            rank_id = rank
+
+        unit_index = rank - 1
+
+        if model.pile.reference == "base" and unit_index == 0:
+            # dummy
+            unit_index = len(model.formations) - 1
+        elif model.pile.reference == "base":
+            unit_index = unit_index - 1
+
+        unit_uuid = model.formations[unit_index].name
 
         volume = np.zeros(extended_shape, dtype=np.float32)
         volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
@@ -112,7 +114,7 @@ def generate_volumes(
 
         start_step("generate_mesh")
         mesh = generate_mesh(scaled_verts, faces)
-        out_files["mesh"][str(rank_id)] = mesh
+        out_files["mesh"][str(unit_uuid)] = mesh
         profile_step("generate_mesh")
 
     if len(model.faults.items()) > 0:
