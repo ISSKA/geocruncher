@@ -85,7 +85,7 @@ def test_compute_tunnel_meshes_writes_each_mesh_to_output_hash(monkeypatch):
     }
 
 
-def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
+def test_compute_meshes_consumes_inputs_and_writes_unit_and_fault_hashes(
     monkeypatch,
 ):
     redis = FakeRedis()
@@ -98,7 +98,7 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
         call["model_data"] = model_data
         call["dem"] = dem
         call["metadata"] = metadata
-        return {"mesh": {"1": b"unit-1"}, "fault": {"fault-a": b"fault-a"}}
+        return {"mesh": {"uuid-1": b"unit-1"}, "fault": {"fault-a": b"fault-a"}}
 
     monkeypatch.setattr(tasks.computations, "compute_meshes", fake_compute_meshes)
 
@@ -119,7 +119,7 @@ def test_compute_meshes_consumes_inputs_and_writes_rank_and_fault_hashes(
     }
     assert redis.deleted == ["model-key", "dem-key"]
     assert redis.hashes["output-key"] == {
-        b"rank_1": b"unit-1",
+        b"unit_uuid-1": b"unit-1",
         b"fault_fault-a": b"fault-a",
     }
 

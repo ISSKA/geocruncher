@@ -117,7 +117,7 @@ def test_meshes_endpoint_runs_eager_task_and_returns_tar(
 
     assert get_response.status_code == 200
     assert get_response.mimetype == "application/x-tar"
-    assert "rank_1" in entries
+    assert any(name.startswith("unit_") for name in entries)
     assert "fault_topography" in entries
     decode_meshes(entries)
     assert "output-key" in api_harness.redis.deleted

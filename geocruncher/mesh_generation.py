@@ -82,22 +82,20 @@ def generate_volumes(
     # to close bodies, we put them in a slightly bigger grid
     extended_shape = tuple(n + 2 for n in shape)
 
-    num_formations = len(model.formations)
-
     for rank in rank_values:
         start_step("volume")
         if rank == RANK_SKY:
             continue
 
-        formation_index = rank - 1
+        unit_index = rank - 1
 
-        if model.pile.reference == "base" and formation_index == 0:
+        if model.pile.reference == "base" and unit_index == 0:
             # dummy
-            formation_index = num_formations - 1
+            unit_index = len(model.formations) - 1
         elif model.pile.reference == "base":
-            formation_index = formation_index - 1
+            unit_index = unit_index - 1
 
-        rank_id = model.formations[formation_index].name
+        unit_uuid = model.formations[unit_index].name
 
         volume = np.zeros(extended_shape, dtype=np.float32)
         volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
@@ -116,7 +114,7 @@ def generate_volumes(
 
         start_step("generate_mesh")
         mesh = generate_mesh(scaled_verts, faces)
-        out_files["mesh"][str(rank_id)] = mesh
+        out_files["mesh"][str(unit_uuid)] = mesh
         profile_step("generate_mesh")
 
     if len(model.faults.items()) > 0:

@@ -152,7 +152,7 @@ def compute_cross_section_ranks(
     Returns
     -------
     list
-        A list of ranks after evaluation, reshaped to resolution.
+        A list of units after evaluation
 
     Notes
     -----
@@ -170,35 +170,31 @@ def compute_cross_section_ranks(
     rank_offset = -1 if is_base else 0
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
-    ranks = [
+    units = [
         [
-            (
-                "SKY"
-                if (formation := rank_to_formation(model, int(rank))) is None
-                else formation.name
-            )
+            ("SKY" if (unit := rank_to_unit(model, int(rank))) is None else unit.name)
             for rank in row
         ]
         for row in ranks
     ]
 
     profile_step("ranks")
-    return ranks
+    return units
 
 
-def rank_to_formation(model: GeologicalModel, rank: int):
+def rank_to_unit(model: GeologicalModel, rank: int):
     if rank == 0:
         return None
 
-    formation_index = rank - 1
+    unit_index = rank - 1
 
-    if model.pile.reference == "base" and formation_index == 0:
+    if model.pile.reference == "base" and unit_index == 0:
         # dummy
-        formation_index = len(model.formations) - 1
+        unit_index = len(model.formations) - 1
     elif model.pile.reference == "base":
-        formation_index -= 1
+        unit_index -= 1
 
-    return model.formations[formation_index]
+    return model.formations[unit_index]
 
 
 def project_hydro_features_on_slice(

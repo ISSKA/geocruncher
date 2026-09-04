@@ -68,12 +68,12 @@ def run_geocruncher(computation: str, args: list[str]):
         generated_meshes_paths = {"mesh": defaultdict(list), "fault": defaultdict(list)}
 
         # write unit files
-        for rank, off_mesh in generated_meshes["mesh"].items():
-            filename = f"rank_{rank}.off"
+        for unit_uuid, off_mesh in generated_meshes["mesh"].items():
+            filename = f"unit_{unit_uuid}.off"
             full_path = os.path.join(out_dir, filename)
             with open(full_path, "wb") as f:
                 f.write(off_mesh)
-            generated_meshes_paths["mesh"][rank].append(full_path)
+            generated_meshes_paths["mesh"][unit_uuid].append(full_path)
 
         # write fault files
         for name, off_mesh in generated_meshes["fault"].items():
