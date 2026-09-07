@@ -114,7 +114,7 @@ def generate_volumes(
 
         start_step("generate_mesh")
         mesh = generate_mesh(scaled_verts, faces)
-        out_files["mesh"][str(unit_uuid)] = mesh
+        out_files["mesh"][unit_uuid] = mesh
         profile_step("generate_mesh")
 
     if len(model.faults.items()) > 0:
