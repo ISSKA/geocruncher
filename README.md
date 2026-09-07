@@ -6,21 +6,17 @@ It implements certain types of computations in Python and C++, and also acts as 
 
 It has the following architecture, handled by docker compose:
 
-- A JSON API written in Flask, taking in computation requests, polls for statuses and returning results
+- A Flask HTTP API that accepts JSON parameters and Protobuf geological models, queues computation requests, reports their status, and returns results
 - A Worker system using Celery, to handle computations in different work queues
 - A message broker & temporary file storage & result backend using redis
 
-Please check out the [documentation](./doc/api-examples.md) to see example API calls.
+See the [HTTP API reference](./doc/api.md) for the complete contract and API documentation.
 
-Documentation for each existing computation, their parameters and returned values will be added in the future. For now, please get in touch with [ISSKA/SISKA](https://www.isska.ch/en/) if you're interrested in learning more about the project.
+To run computations locally, start the Docker stack and call its HTTP API. See the [local setup and migration guide](./doc/running-locally.md#run-geocruncher-locally). For in-process Python workflows, import the functions in `geocruncher.computations`.
 
-Alternatively, a command line interface can be used to launch computations (**DEPRECATED**). See [documentation](./doc/command-line.md).
-
-It posesses an optional integrated profiler and monitoring stack, used in production by the VisualKarsys team for observability and to estimate computation times and identify key areas where performance should be improved. 
+Geocruncher possesses an optional integrated profiler and monitoring stack, used in production by the VisualKarsys team for observability, to estimate computation times and identify key areas where performance should be improved.
 
 ## Installation
-
-Please check the [documentation](./doc/dependencies.md) for additional dependencies.
 
 We recommand using the latest version of Docker. Tested on Docker 24 to 27.
 No other steps are requiered after cloning the repository. We recommand using the master branch.
@@ -30,6 +26,11 @@ git clone https://github.com/ISSKA/geocruncher
 cd geocruncher
 git checkout master
 git submodule update --init
+```
+
+Afterwards you can start the application with the provided run script:
+```bash
+./scripts/run.sh
 ```
 
 ## Development
