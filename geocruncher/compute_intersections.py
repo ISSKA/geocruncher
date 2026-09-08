@@ -11,6 +11,7 @@ from forgeo.gmlib.architecture import (
 )
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
+from .computations_helpers import rank_to_unit_uuid
 from .mesh_io.mesh_io import read_mesh_to_polydata
 from .profiler import profile_step, start_step
 
@@ -172,7 +173,7 @@ def compute_cross_section_ranks(
     ranks.shape = resolution
     units = [
         [
-            ("SKY" if (unit := rank_to_unit(model, int(rank))) is None else unit.name)
+            ("SKY" if (uuid := rank_to_unit_uuid(model, int(rank))) is None else uuid)
             for rank in row
         ]
         for row in ranks
@@ -180,21 +181,6 @@ def compute_cross_section_ranks(
 
     profile_step("ranks")
     return units
-
-
-def rank_to_unit(model: GeologicalModel, rank: int):
-    if rank == 0:
-        return None
-
-    unit_index = rank - 1
-
-    if model.pile.reference == "base" and unit_index == 0:
-        # dummy
-        unit_index = len(model.formations) - 1
-    elif model.pile.reference == "base":
-        unit_index -= 1
-
-    return model.formations[unit_index]
 
 
 def project_hydro_features_on_slice(
