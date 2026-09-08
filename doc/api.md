@@ -299,7 +299,7 @@ The archive may contain:
 
 | Entry name | Contents |
 | --- | --- |
-| `rank_<rank>` | Draco mesh for a geological unit rank |
+| `unit_<unit-uuid>` | Draco mesh for a geological unit |
 | `fault_<fault-name>` | Draco mesh for a fault |
 
 Archive entry names have no file extension.
@@ -406,11 +406,11 @@ The `mesh` object contains:
 
 | Field | Meaning |
 | --- | --- |
-| `forCrossSections` | Map from section ID to one geological rank matrix per requested extent |
+| `forCrossSections` | Map from section ID to one geological unit UUID matrix per requested extent |
 | `drillholes` | Map from section ID to projected drillhole coordinates for each extent |
 | `springs` | Map from section ID to projected spring coordinates for each extent |
 | `matrixGwb` | Map from section ID to flattened groundwater body ID values for each extent |
-| `forMaps` | Top-down geological rank matrix, present when `computeMap` is `true` |
+| `forMaps` | Top-down geological unit UUID matrix, present when `computeMap` is `true` |
 
 Projected spring coordinates are `[distanceAlongSection, elevation]`. A projected drillhole contains two such coordinate pairs. The API rounds projected coordinates to two decimal places.
 
