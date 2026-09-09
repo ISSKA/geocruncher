@@ -9,7 +9,29 @@ pytestmark = [
     pytest.mark.native,
 ]
 
-EXPECTED_TINY_UNIT_IDS = {"1", "2", "3", "4", "6", "8", "9"}
+EXPECTED_TINY_UNIT_UUIDS = {
+    "32145afb-ed7f-5b5f-8667-8062d1642472",
+    "3896929f-2f47-5877-b4a0-e187673a8c39",
+    "96fb037a-c4e1-5755-b17d-d139f36cd21b",
+    "a96e0c19-5b77-5aa7-b44a-2a787837c587",
+    "b607bfee-f661-5266-874c-477d2222fa5f",
+    "d41e20f0-b20f-5641-97f1-63d0b619007d",
+    "dummyFormation",
+}
+
+EXPECTED_MODEL_UNIT_UUIDS = {
+    "32145afb-ed7f-5b5f-8667-8062d1642472",
+    "c8467ee4-fb7d-5038-8e48-d9b18493319b",
+    "b607bfee-f661-5266-874c-477d2222fa5f",
+    "dummyFormation",
+    "8433dc05-22f6-531e-87c4-cfdb143c112b",
+    "96fb037a-c4e1-5755-b17d-d139f36cd21b",
+    "a96e0c19-5b77-5aa7-b44a-2a787837c587",
+    "3896929f-2f47-5877-b4a0-e187673a8c39",
+    "SKY",
+    "d41e20f0-b20f-5641-97f1-63d0b619007d",
+}
+
 EXPECTED_MODEL_RANKS = {0.0, *map(float, range(1, 10))}
 
 
@@ -33,13 +55,13 @@ def test_real_compute_meshes_generates_decodable_tiny_dummy_project_meshes(
     )
 
     assert set(result) == {"mesh", "fault"}
-    assert set(result["mesh"]) == EXPECTED_TINY_UNIT_IDS
+    assert set(result["mesh"]) == EXPECTED_TINY_UNIT_UUIDS
     assert set(result["fault"]) == {"topography"}
 
     unit_summaries = decode_meshes(result["mesh"])
     fault_summaries = decode_meshes(result["fault"])
 
-    assert unit_summaries["1"] == (86, 168)
+    assert unit_summaries["32145afb-ed7f-5b5f-8667-8062d1642472"] == (26, 40)
     assert fault_summaries["topography"] == (521, 952)
 
 
@@ -77,7 +99,7 @@ def test_real_compute_intersections_generates_fixture_slice(
     section = result["mesh"]["forCrossSections"][section_id][0]
     assert len(section) == expected_width
     assert {len(row) for row in section} == {expected_height}
-    assert {value for row in section for value in row} <= EXPECTED_MODEL_RANKS
+    assert {value for row in section for value in row} <= EXPECTED_MODEL_UNIT_UUIDS
 
 
 def test_real_compute_voxels_generates_tiny_vox_grid(
@@ -139,7 +161,7 @@ def test_real_compute_intersections_generates_map_outputs(
     assert len(result["mesh"]["forMaps"]) == 25
     assert {len(row) for row in result["mesh"]["forMaps"]} == {17}
     assert {value for row in result["mesh"]["forMaps"] for value in row} <= (
-        EXPECTED_MODEL_RANKS
+        EXPECTED_MODEL_UNIT_UUIDS
     )
     assert "forMaps" in result["fault"]
     assert isinstance(result["fault"]["forMaps"], dict)
@@ -189,7 +211,9 @@ def test_real_compute_gwb_meshes_returns_decodable_aquifer(
     )["mesh"]
     springs = fixture_json("gwb_spring.json")
 
-    result = computations.compute_gwb_meshes({"1": unit_meshes["1"]}, springs)
+    result = computations.compute_gwb_meshes(
+        {"1": unit_meshes["32145afb-ed7f-5b5f-8667-8062d1642472"]}, springs
+    )
 
     assert set(result) == {"metadata", "meshes"}
     assert len(result["metadata"]) == 1

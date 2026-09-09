@@ -1,3 +1,4 @@
+import logging
 import math
 from collections.abc import Mapping
 from typing import Any
@@ -10,11 +11,13 @@ from forgeo.gmlib.architecture import (
 )
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
+from .computations_helpers import rank_to_unit_uuid
 from .mesh_io.mesh_io import read_mesh_to_polydata
 from .profiler import profile_step, start_step
 
 # How many decimals to return for all intersections data. Could be an API parameter, but that's probably overkill
 INTERSECTIONS_PRECISION = 2
+LOGGER = logging.getLogger(__name__)
 
 
 def calculate_resolution(width: float, height: float, res: int) -> tuple[int, int]:
@@ -150,7 +153,7 @@ def compute_cross_section_ranks(
     Returns
     -------
     list
-        A list of ranks after evaluation, reshaped to resolution.
+        A list of units after evaluation
 
     Notes
     -----
@@ -166,12 +169,18 @@ def compute_cross_section_ranks(
 
     is_base = model.pile.reference == "base"
     rank_offset = -1 if is_base else 0
-
     ranks = evaluator(xyz) + rank_offset
     ranks.shape = resolution
-    ranks = ranks.tolist()
+    units = [
+        [
+            ("SKY" if (uuid := rank_to_unit_uuid(model, int(rank))) is None else uuid)
+            for rank in row
+        ]
+        for row in ranks
+    ]
+
     profile_step("ranks")
-    return ranks
+    return units
 
 
 def project_hydro_features_on_slice(

@@ -48,8 +48,8 @@ def compute_meshes(
     generated_meshes = computations.compute_meshes(data, model_data, dem, metadata)
 
     # write unit files
-    for rank, mesh in generated_meshes["mesh"].items():
-        field = f"rank_{rank}"
+    for unit_uuid, mesh in generated_meshes["mesh"].items():
+        field = f"unit_{unit_uuid}"
         hset_bytes(r, output_key, field, mesh)
 
     # write fault files
