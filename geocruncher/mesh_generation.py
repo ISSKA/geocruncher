@@ -10,12 +10,11 @@ from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 from forgeo.gmlib.utils.tools import BBox3
 from skimage.measure import marching_cubes
 
+from geocruncher.computations_helpers import rank_to_unit_uuid
+
 from .mesh_io.mesh_io import generate_mesh
 from .profiler import profile_step, start_step
 from .rigs import extract
-
-# Constants
-RANK_SKY = 0
 
 
 def compute_ranks(
@@ -75,7 +74,6 @@ def generate_volumes(
     #        rank_values.append(formation)
 
     rank_values = np.unique(ranks)
-    num_ranks = len(rank_values)
     out_files = {"mesh": {}, "fault": {}}
 
     profile_step("ranks")
@@ -85,15 +83,9 @@ def generate_volumes(
 
     for rank in rank_values:
         start_step("volume")
-        if rank == RANK_SKY:
+        unit_uuid = rank_to_unit_uuid(model, int(rank))
+        if unit_uuid is None:
             continue
-        if model.pile.reference == "base":
-            if rank == 0:
-                rank_id = num_ranks - 1
-            else:
-                rank_id = rank - 1
-        else:
-            rank_id = rank
 
         volume = np.zeros(extended_shape, dtype=np.float32)
         volume[1:-1, 1:-1, 1:-1][ranks == rank] = 1
@@ -112,7 +104,7 @@ def generate_volumes(
 
         start_step("generate_mesh")
         mesh = generate_mesh(scaled_verts, faces)
-        out_files["mesh"][str(rank_id)] = mesh
+        out_files["mesh"][unit_uuid] = mesh
         profile_step("generate_mesh")
 
     if len(model.faults.items()) > 0:
