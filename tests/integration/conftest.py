@@ -81,17 +81,7 @@ class GeneratedNetworkProject(FixtureProject):
 
     @property
     def data_dict(self) -> dict:
-        return {
-            "generation_params": self.json("config.json"),
-            "project_box": self.json("project_box.json"),
-            "dem_resolution": self.json("dem_resolution.json"),
-            "stratigraphy": self.json("stratigraphy.json"),
-            "voxels_units": self.json("voxels_units.json"),
-            "fault_ids": self.numbered_ids("fault_*.bin"),
-            "springs": self.json_matching("poi_*.json"),
-            "gwbs": self.json_matching("gwb_*.json"),
-            "is_base": False,
-        }
+        return self.json("generated_network.json")
 
 
 @pytest.fixture(scope="session")
