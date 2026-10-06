@@ -167,9 +167,7 @@ def compute_cross_section_ranks(
     else:
         evaluator = make_evaluator(cppmodel)
 
-    is_base = model.pile.reference == "base"
-    rank_offset = -1 if is_base else 0
-    ranks = evaluator(xyz) + rank_offset
+    ranks = evaluator(xyz)
     ranks.shape = resolution
     units = [
         [
