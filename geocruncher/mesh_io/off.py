@@ -1,21 +1,14 @@
-"""
-Read code adapted from MeshIO
-Sadly, MeshIO usese `np.fromfile`, which makes it impossible to read a mesh from an in-memory buffer
-The code is therefore modified to not use BufferIOs
-"""
-
 import numpy as np
-from meshio._exceptions import ReadError
-from meshio._mesh import CellBlock, Mesh
-from numpy.typing import ArrayLike
+
+from .triangle_mesh import TriangleMesh
 
 
-def read_off(string: str) -> Mesh:
+def read_off(string: str) -> TriangleMesh:
     # assert that the first line reads `OFF`
     lines = string.splitlines()
 
     if lines[0].strip() != "OFF":
-        raise ReadError("Expected the first line to be `OFF`.")
+        raise ValueError("Expected the first line to be `OFF`.")
 
     # fast forward to the next significant line
     i = 1
@@ -43,21 +36,22 @@ def read_off(string: str) -> Mesh:
     vert_lines = lines[i:vert_lines_end]
 
     verts = np.array(
-        [[float(x) for x in line.strip().split()] for line in vert_lines], dtype=float
+        [[float(x) for x in line.strip().split()] for line in vert_lines],
+        dtype=np.float64,
     )
 
     face_lines = lines[vert_lines_end : vert_lines_end + num_faces]
 
-    faces = np.array(
-        [[int(x) for x in line.strip().split()] for line in face_lines], dtype=int
+    faces_raw = np.array(
+        [[int(x) for x in line.strip().split()] for line in face_lines], dtype=np.int32
     )
-    if not np.all(faces[:, 0] == 3):
-        raise ReadError("Can only read triangular faces")
-    cells: list[tuple[str, ArrayLike] | CellBlock] = [
-        CellBlock("triangle", faces[:, 1:])
-    ]
+    if not np.all(faces_raw[:, 0] == 3):
+        raise ValueError(
+            "Found non-triangular faces in OFF file. Only triangular meshes are supported."
+        )
+    faces = faces_raw[:, 1:].astype(np.int32)
 
-    return Mesh(verts, cells)
+    return TriangleMesh(verts, faces)
 
 
 def generate_off(

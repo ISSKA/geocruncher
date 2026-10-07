@@ -747,9 +747,14 @@
             "selected": false,
             "text": "voxels",
             "value": "voxels"
+          },
+          {
+            "selected": false,
+            "text": "generated_network",
+            "value": "generated_network"
           }
         ],
-        "query": "gwb_meshes,intersections,meshes,tunnel_meshes,voxels",
+        "query": "gwb_meshes,intersections,meshes,tunnel_meshes,voxels,generated_network",
         "type": "custom"
       },
       {

@@ -148,3 +148,38 @@ Replace `xxyy` with the computation ID. When the computation succeeds, the respo
 curl --fail --output voxels.vox \
   "http://127.0.0.1:5000/compute/voxels?id=xxyy"
 ```
+
+## Generated network
+
+### Create a generated network computation
+
+The generated network computation uses a DEM, voxel data, and the fault meshes required by the generated-network configuration.
+
+The response body is the computation ID.
+
+The `data` form field contains the generated-network configuration as JSON. The request must also include:
+
+- `dem` — the digital elevation model file.
+- `voxels` — the voxel output used by the network generation.
+- `fault_<fault-id>` — one uploaded fault mesh for every fault ID listed in the generated-network configuration.
+
+```bash
+curl --fail \
+  -F "data=<tests/fixtures/control_project/generated_network.json" \
+  -F "dem=@tests/fixtures/control_project/dem_values.bin" \
+  -F "voxels=@tests/fixtures/control_project/voxels.txt" \
+  -F "fault_418=@tests/fixtures/control_project/fault_418.bin" \
+  -F "fault_419=@tests/fixtures/control_project/fault_419.bin" \
+  -F "fault_420=@tests/fixtures/control_project/fault_420.bin" \
+  -F "fault_421=@tests/fixtures/control_project/fault_421.bin" \
+  http://127.0.0.1:5000/compute/generated_network
+```
+
+### Get generated network results
+
+Replace `xxyy` with the computation ID. When the computation succeeds, the response is JSON.
+
+```bash
+curl --fail --output generated_network_segments.json \
+  "http://127.0.0.1:5000/compute/generated_network?id=xxyy"
+```

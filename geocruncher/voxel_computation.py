@@ -6,7 +6,7 @@ from forgeo.gmlib.architecture import (
 )
 from forgeo.gmlib.GeologicalModel3D import Box, GeologicalModel
 
-from .mesh_io.mesh_io import read_mesh_to_polydata
+from .mesh_io.mesh_io import read_mesh, triangle_mesh_to_polydata
 from .profiler import profile_step, start_step
 
 
@@ -44,7 +44,7 @@ class Voxels:
         for gwb_id, meshes in gwb_meshes.items():
             for mesh_data in meshes:
                 start_step("read_gwbs")
-                mesh = read_mesh_to_polydata(mesh_data)
+                mesh = triangle_mesh_to_polydata(read_mesh(mesh_data))
                 points = pv.PolyData(xyz)
                 profile_step("read_gwbs")
 
@@ -77,7 +77,9 @@ class Voxels:
             )
         )
 
-        data = "".join([(str(r_t[0]) + " " + str(r_t[1]) + "\n") for r_t in ranks_tags])
+        data = "".join(
+            [(str(int(r_t[0])) + " " + str(r_t[1]) + "\n") for r_t in ranks_tags]
+        )
         vox = f"\
 XMIN={box.xmin} XMAX={box.xmax} YMIN={box.ymin} YMAX={box.ymax} ZMIN={box.zmin} ZMAX={box.zmax} \
 NUMBERX={shape[0]} NUMBERY={shape[1]} NUMBERZ={shape[2]} NOVALUE=0\n\

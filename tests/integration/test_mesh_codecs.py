@@ -29,7 +29,7 @@ def test_draco_mesh_roundtrip_through_pyvista_preserves_topology_and_bounds(mesh
     expected_triangles_after_wrapper_triangulation = 3
 
     encoded = mesh_io.generate_mesh(vertices, faces)
-    decoded = mesh_io.read_mesh_to_polydata(encoded)
+    decoded = mesh_io.triangle_mesh_to_polydata(mesh_io.read_mesh(encoded))
     # Draco/PyVista may duplicate or reorder vertices => compare stable coordinates.
     unique_points = np.unique(np.round(decoded.points, 6), axis=0)
 
@@ -54,7 +54,7 @@ def test_off_mesh_bytes_read_to_pyvista_polydata_has_sane_bounds(
     fixture_bytes, mesh_io
 ):
     off = fixture_bytes("gwb_meshes/7.off")
-    decoded = mesh_io.read_mesh_to_polydata(off)
+    decoded = mesh_io.triangle_mesh_to_polydata(mesh_io.read_mesh(off))
 
     assert mesh_io.is_off_file(off)
     assert decoded.n_points == 8

@@ -15,6 +15,7 @@ from geocruncher.contracts import (
     TunnelMeshesData,
     validate_evaluation_extent,
 )
+from geocruncher.generated_network.models import GeneratedNetworkData
 from geocruncher.geological_model.input import (
     GeologicalModelValidationError,
     parse_geological_model,
@@ -317,6 +318,61 @@ def compute_gwb_meshes():
             as_attachment=True,
             download_name="gwb_meshes.tar",
         )
+
+
+@app.route("/compute/generated_network", methods=["POST", "GET"])
+def compute_generated_network():
+    if request.method == "POST":
+        try:
+            data: GeneratedNetworkData = GeneratedNetworkData.model_validate_json(
+                request.form["data"]
+            )
+        except ValidationError as e:
+            return Response(e.json(), 400, mimetype="application/json")
+        metadata = parse_metadata_from_request()
+
+        files_key = generate_key()
+        if "dem" not in request.files or "voxels" not in request.files:
+            return Response("Missing dem or voxels file", 400, mimetype="text/plain")
+        hset_bytes(r, files_key, "dem", request.files["dem"].read())
+        hset_bytes(r, files_key, "voxels", request.files["voxels"].read())
+
+        for fault_id in data.fault_ids:
+            fault_file_key = f"fault_{fault_id}"
+            if fault_file_key not in request.files:
+                return Response(
+                    f"Missing fault file for fault ID {fault_id}",
+                    400,
+                    mimetype="text/plain",
+                )
+            hset_bytes(
+                r, files_key, fault_file_key, request.files[fault_file_key].read()
+            )
+
+        output_key = generate_key()
+        # dump the data to JSON because GeneratedNetworkData model and other models it contains are not serializable by Celery
+        res = tasks.compute_generated_network.delay(
+            GeneratedNetworkData.model_dump_json(data),
+            files_key,
+            output_key,
+            metadata,
+        )
+        return Response(res.id, 202, mimetype="text/plain")
+
+    elif request.method == "GET":
+        _id = request.args.get("id")
+        if not _id:
+            return Response("Missing parameter id", 400, mimetype="text/plain")
+        res = AsyncResult(_id)
+        response = non_success_response(res)
+        if response is not None:
+            return response
+        output_key = res.get()
+        output = get_bytes(r, output_key)
+        r.delete(output_key)
+        if not output:
+            return Response("", 204, mimetype="text/plain")
+        return Response(output, mimetype="application/json")
 
 
 @app.post("/poll")

@@ -25,6 +25,8 @@ The examples below use the development server at `http://127.0.0.1:5000`.
 | `GET` | `/compute/voxels?id=...` | Read voxel data or the current task state |
 | `POST` | `/compute/gwb_meshes` | Start groundwater body mesh generation |
 | `GET` | `/compute/gwb_meshes?id=...` | Read groundwater body meshes or the current task state |
+| `POST` | `/compute/generated_network` | Start generated network computation |
+| `GET` | `/compute/generated_network?id=...` | Read generated network segments or the current task state |
 | `POST` | `/poll` | Read the state and progress of several tasks |
 | `POST` | `/revoke?id=...` | Stop a task |
 
@@ -518,29 +520,142 @@ Each item in `metadata` has this structure:
 
 ```json
 {
-  "unit_id": 1,
+    "unit_id": 1,
   "spring_id": 1,
   "volume": 12345.67
 }
 ```
 
-## Revoking a task
+## Generated network
 
-Send the task ID as the `id` query parameter:
+### Start a computation
+
+```http
+POST /compute/generated_network
+Content-Type: multipart/form-data
+```
+
+The request requires `data`, DEM, voxels, and one or more faults. It does not use the geological model protobuf.
+
+The `data` field contains:
+
+| Field | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `generation_params` | object | yes | Generation parameters |
+| `project_box` | object | yes | Project bounding box |
+| `dem_resolution` | object | yes | DEM resolution |
+| `stratigraphy` | array | yes | Geological units |
+| `voxels_units` | array | yes | Voxel units |
+| `fault_ids` | array | yes | Fault IDs |
+| `springs` | array | yes | Spring data |
+| `gwbs` | array | yes | Groundwater body data |
+| `is_base` | boolean | yes | Whether the project is using base placement for contact data |
+
+Example `data`:
+
+```json
+{
+  "generation_params": {
+    "seed": 42,
+    "k_pts": 20,
+    "cohesion_factor": 0.993,
+    "n_sinks": 658,
+    "search_radius": 300,
+    "inception_surface_constraint_weight": 1,
+    "max_inception_surface_distance": 300,
+    "density_sampling_modifier": 2,
+    "r_min_pervious": 0.01,
+    "r_min_impervious": 0.02
+  },
+  "project_box": {
+    "width": 10000.0,
+    "height": 10000.0,
+    "min_elevation": -2500.0,
+    "max_elevation": 5000.0
+  },
+  "dem_resolution": {
+    "x": 50,
+    "y": 50
+  },
+  "stratigraphy": [
+    { "name": "Molasse", "permeability": "Karstified", "strati_unit_id": 7 },
+    { "name": "Cretaceous", "permeability": "Karstified", "strati_unit_id": 8 },
+  ],
+  "voxels_units": [8, 7],
+  "fault_ids": [418, 419, 420],
+  "springs": [
+    {
+        "poi_id": 5,
+        "spring_id": 2,
+        "x": 13699.859999999986,
+        "y": 2249.9400000000023,
+        "z": 675,
+        "catchment": [
+            [12664.82001694094, 491.0579436759872],
+            ...
+        ],
+        ...
+    },
+  ],
+  "gwbs": [
+    {"id": 7, "unit_id": 1}
+  ],
+  "is_base": true
+}
+```
+
+The `fault_ids` field in `data` must list every fault ID for which a `fault_<id>` file is uploaded.
 
 ```bash
 curl \
-  -X POST \
-  "http://127.0.0.1:5000/revoke?id=6b17af3038d34cbf932815a7d1775377"
+  -F "data=<tests/fixtures/control_project/generated_network.json" \
+  -F "dem=@tests/fixtures/control_project/dem_values.bin" \
+  -F "voxels=@tests/fixtures/control_project/voxels.txt" \
+  -F "fault_418=@tests/fixtures/control_project/fault_418.bin" \
+  -F "fault_419=@tests/fixtures/control_project/fault_419.bin" \
+  -F "fault_420=@tests/fixtures/control_project/fault_420.bin" \
+  http://127.0.0.1:5000/compute/generated_network
 ```
 
-A successful request returns `200 OK` and plain text:
+### Result
 
-```text
-Task 6b17af3038d34cbf932815a7d1775377 revoked
+`GET /compute/generated_network?id=...` returns a JSON array of segments making up the generated network.
+
+The segments are made of two 3D points which each contain:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `x` | number | X coordinate |
+| `y` | number | Y coordinate |
+| `z` | number | Z coordinate |
+| `branchId` | integer | Identifier of the branch to which the point belongs |
+| `cost` | number | Cost of the segment leading to this point |
+| `equivalentRadius` | number | Equivalent radius of the segment leading to this point |
+| `vadoseFlag` | boolean | Whether this point is in the vadose zone |
+
+Example segment:
+```json
+  {
+    "start": {
+      "x": 5285.12890625,
+      "y": 6110.927734375,
+      "z": 700.0,
+      "branchId": 84,
+      "cost": 0.29775333404541016,
+      "equivalentRadius": 0.0,
+      "vadoseFlag": false
+    },
+    "end": {
+      "x": 5285.12890625,
+      "y": 6161.43115234375,
+      "z": 700.0,
+      "branchId": 84,
+      "cost": 0.31714439392089844,
+      "equivalentRadius": 0.0,
+      "vadoseFlag": false
+    }
+  },
 ```
-
-The server waits up to two seconds for Celery to report the `REVOKED` state. It returns `500 Internal Server Error` if that does not happen.
 
 ## Status codes and errors
 
