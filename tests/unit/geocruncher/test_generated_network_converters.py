@@ -25,7 +25,14 @@ pytestmark = pytest.mark.skipif(
 
 def test_densities_reflect_permeability():
     box = ProjectBoxInput.model_validate(
-        {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 30.0}
+        {
+            "x": 0,
+            "y": 0,
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 30.0,
+        }
     )
     stratigraphy = StratigraphyInput(
         [
@@ -61,7 +68,14 @@ def test_densities_reflect_permeability():
 def test_potentials_gwb_cells_are_one():
     """Cells inside a GWB (gwb_id > 0) must have potential 1.0 regardless of rank."""
     box = ProjectBoxInput.model_validate(
-        {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 20.0}
+        {
+            "x": 0,
+            "y": 0,
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 20.0,
+        }
     )
     stratigraphy = StratigraphyInput(
         [
@@ -85,7 +99,14 @@ def test_potentials_gwb_cells_are_one():
 def test_raises_when_density_exceeds_one():
     """cells_w / depth > 1 must raise to avoid invalid density values."""
     box = ProjectBoxInput.model_validate(
-        {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 5.0}
+        {
+            "x": 0,
+            "y": 0,
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 5.0,
+        }
     )
     stratigraphy = StratigraphyInput(
         [
@@ -106,6 +127,8 @@ def test_is_base_reverses_rank_mapping():
     """Base models should reverse the mapping between voxel rank and geological unit."""
     box = ProjectBoxInput.model_validate(
         {
+            "x": 0,
+            "y": 0,
             "width": 10.0,
             "height": 10.0,
             "min_elevation": 0.0,
@@ -150,6 +173,8 @@ def test_is_base_dummy_unit_uses_lowest_rank():
     should be assigned to rank 1."""
     box = ProjectBoxInput.model_validate(
         {
+            "x": 0,
+            "y": 0,
             "width": 10.0,
             "height": 10.0,
             "min_elevation": 0.0,
@@ -303,6 +328,8 @@ def test_vertex_z_coords_match_voxel_top_layer():
     """Z coordinates of surface vertices must equal (top_layer_index + 1) * dz + min_elevation."""
     box = ProjectBoxInput.model_validate(
         {
+            "x": 0,
+            "y": 0,
             "width": 10.0,
             "height": 10.0,
             "min_elevation": 100.0,
@@ -328,7 +355,14 @@ def test_vertex_z_coords_match_voxel_top_layer():
 def test_each_gwb_produces_separate_surface():
     """Distinct gwb_ids in the voxel array must produce distinct surfaces."""
     box = ProjectBoxInput.model_validate(
-        {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 20.0}
+        {
+            "x": 0,
+            "y": 0,
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 20.0,
+        }
     )
     voxels = np.zeros((4, 4, 2, 2), dtype=np.int32)
     voxels[:2, :, 1, 1] = 1  # gwb 1 in left half
@@ -352,7 +386,14 @@ def test_each_gwb_produces_separate_surface():
 def test_gwb_zero_is_excluded():
     """Voxels with gwb_id=0 must not produce a surface."""
     box = ProjectBoxInput.model_validate(
-        {"width": 10.0, "height": 10.0, "min_elevation": 0.0, "max_elevation": 10.0}
+        {
+            "x": 0,
+            "y": 0,
+            "width": 10.0,
+            "height": 10.0,
+            "min_elevation": 0.0,
+            "max_elevation": 10.0,
+        }
     )
     voxels = np.zeros((2, 2, 2, 2), dtype=np.int32)  # all gwb_id=0
 

@@ -30,6 +30,8 @@ PERMEABILITY_MAP: dict[Permeability, float] = {
 
 
 class ProjectBoxInput(BaseModel):
+    x: float
+    y: float
     width: float = Field(gt=0)
     height: float = Field(gt=0)
     min_elevation: float

@@ -41,6 +41,8 @@ GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}
 GENERATED_NETWORK_DATA = {
     "generation_params": {"seed": 7, "n_sinks": 1},
     "project_box": {
+        "x": 0.0,
+        "y": 0.0,
         "width": 10.0,
         "height": 10.0,
         "min_elevation": 0.0,

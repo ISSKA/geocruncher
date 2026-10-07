@@ -40,6 +40,8 @@ def test_generation_parameters_rejects_invalid_parameters(field, value):
 def test_project_box_rejects_non_positive_dimensions():
     with pytest.raises(ValidationError):
         ProjectBoxInput(
+            x=0,
+            y=0,
             width=0,
             height=100,
             min_elevation=100,
@@ -48,6 +50,8 @@ def test_project_box_rejects_non_positive_dimensions():
 
     with pytest.raises(ValidationError):
         ProjectBoxInput(
+            x=0,
+            y=0,
             width=100,
             height=-50,
             min_elevation=100,
@@ -58,6 +62,8 @@ def test_project_box_rejects_non_positive_dimensions():
 def test_project_box_rejects_invalid_elevation_range():
     with pytest.raises(ValidationError):
         ProjectBoxInput(
+            x=0,
+            y=0,
             width=100,
             height=100,
             min_elevation=300,
@@ -68,6 +74,8 @@ def test_project_box_rejects_invalid_elevation_range():
 def test_project_box_depth_property():
     box = ProjectBoxInput.model_validate(
         {
+            "x": 0,
+            "y": 0,
             "width": 1000.0,
             "height": 500.0,
             "min_elevation": 120.0,

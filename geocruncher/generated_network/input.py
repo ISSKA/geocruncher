@@ -104,6 +104,15 @@ def build_karstnsim_content(
     # Load the faults
     faults = [read_mesh(bytes) for bytes in fault_bytes.values()]
 
+    # Offset spring coordinates and catchment polygons to local project box coordinates
+    for spring in data.springs:
+        spring.x -= data.project_box.x
+        spring.y -= data.project_box.y
+        catchment_coords = np.array(spring.catchment, dtype=np.float64)
+        catchment_coords[:, 0] -= data.project_box.x
+        catchment_coords[:, 1] -= data.project_box.y
+        spring.catchment = [tuple(coord) for coord in catchment_coords]
+
     return KarstNSimContent(
         generation_params=data.generation_params,
         project_box=data.project_box,
