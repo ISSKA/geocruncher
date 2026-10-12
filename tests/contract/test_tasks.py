@@ -1,56 +1,37 @@
 import json
 
+import pytest
+
 import api.tasks as tasks
+from geocruncher.generated_network.models import GeneratedNetworkData
+from tests.fixtures.payloads import (
+    BOX,
+    GENERATED_NETWORK_DATA,
+    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_FAULT_BYTES,
+    GENERATED_NETWORK_VOXELS_STR,
+    INTERSECTIONS_DATA,
+    MESHES_DATA,
+    TUNNEL_MESHES_DATA,
+)
 from tests.support.api import FakeRedis
 
 ##### Fixtures/Fakes ########
 
-BOX = {
-    "xmin": 0,
-    "ymin": 1,
-    "zmin": 2,
-    "xmax": 10,
-    "ymax": 11,
-    "zmax": 12,
-}
 
-MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}, "box": BOX}
+@pytest.fixture
+def redis_with_inputs():
+    fake_redis = FakeRedis()
+    fake_redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    fake_redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
+    for fault_id, data in GENERATED_NETWORK_FAULT_BYTES.items():
+        fake_redis.hset("files_key", f"fault_{fault_id}", data)
+    return fake_redis
 
-INTERSECTIONS_DATA = {
-    "resolution": 25,
-    "box": BOX,
-    "toCompute": {
-        "section-a": [
-            {
-                "xmin": 0,
-                "ymin": 1,
-                "zmin": 2,
-                "xmax": 10,
-                "ymax": 11,
-                "zmax": 12,
-            }
-        ]
-    },
-    "computeMap": False,
-    "springs": {"7": {"x": 1, "y": 2, "z": 3}},
-}
 
-TUNNEL_MESHES_DATA = {
-    "tunnels": [
-        {
-            "name": "main",
-            "shape": "Circle",
-            "functions": [{"x": "t", "y": "0", "z": "0"}],
-            "radius": 2.0,
-        }
-    ],
-    "nb_vertices": 8,
-    "step": 0.5,
-    "idxStart": -1,
-    "idxEnd": -1,
-    "tStart": 0.0,
-    "tEnd": 1.0,
-}
+@pytest.fixture
+def generated_network_data_json():
+    return GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA).model_dump_json()
 
 
 ######## Tests ########
@@ -334,3 +315,81 @@ def test_compute_gwb_meshes_reads_unit_meshes_and_writes_metadata_and_meshes(
         b"mesh_0": b"gwb-a",
         b"mesh_1": b"gwb-b",
     }
+
+
+def test_compute_generated_network_reads_inputs_and_stores_output(
+    monkeypatch, redis_with_inputs, generated_network_data_json
+):
+    captured = {}
+    monkeypatch.setattr(tasks, "r", redis_with_inputs)
+
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["dem"] = dem
+        captured["voxels"] = voxels
+        captured["faults"] = faults
+        return b"output"
+
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
+
+    result = tasks.compute_generated_network.run(
+        generated_network_data_json,
+        "files_key",
+        "output_key",
+    )
+
+    assert result == "output_key"
+    assert captured["dem"] == GENERATED_NETWORK_DEM_BYTES
+    assert captured["voxels"] == GENERATED_NETWORK_VOXELS_STR
+    assert captured["faults"] == GENERATED_NETWORK_FAULT_BYTES
+    assert redis_with_inputs.get("output_key") == b"output"
+    assert "files_key" in redis_with_inputs.deleted
+
+
+def test_compute_generated_network_handles_missing_faults(
+    monkeypatch, generated_network_data_json
+):
+    redis = FakeRedis()
+    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
+    monkeypatch.setattr(tasks, "r", redis)
+
+    captured = {}
+
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["faults"] = faults
+        return b"output"
+
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
+
+    tasks.compute_generated_network.run(
+        generated_network_data_json,
+        "files_key",
+        "output_key",
+    )
+
+    assert captured["faults"] == {}
+
+
+def test_compute_generated_network_parses_multiple_fault_ids(monkeypatch):
+    redis = FakeRedis()
+    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
+    redis.hset("files_key", "fault_1", b"fault-1")
+    redis.hset("files_key", "fault_42", b"fault-42")
+    monkeypatch.setattr(tasks, "r", redis)
+
+    captured = {}
+
+    def fake_run(data, dem, voxels, faults, metadata):
+        captured["faults"] = faults
+        return b"output"
+
+    monkeypatch.setattr(tasks, "run_karstnsim", fake_run)
+
+    tasks.compute_generated_network.run(
+        GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA).model_dump_json(),
+        "files_key",
+        "output_key",
+    )
+
+    assert captured["faults"] == {1: b"fault-1", 42: b"fault-42"}
