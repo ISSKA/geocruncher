@@ -7,7 +7,6 @@
         "search_radius": 300,
         "inception_surface_constraint_weight": 1,
         "max_inception_surface_distance": 300,
-        "density_sampling_modifier": 2,
         "r_min_pervious": 0.01,
         "r_min_impervious": 0.02
     },
@@ -27,7 +26,6 @@
     "springs": [
         {
             "poi_id": 5,
-            "spring_id": 2,
             "x": 13699.859999999986,
             "y": 2249.9400000000023,
             "z": 675,
@@ -47,7 +45,6 @@
         },
         {
             "poi_id": 6,
-            "spring_id": 3,
             "x": 3464.8499999999767,
             "y": 4124.930000000022,
             "z": 750,

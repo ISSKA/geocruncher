@@ -541,14 +541,14 @@ The `data` field contains:
 
 | Field | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `generation_params` | object | yes | Generation parameters |
+| `generation_params` | object | yes | (SEE https://github.com/ring-team/KarstNSim_Public/blob/main/config_reference.md) Only the parameters listed in the example below are used. |
 | `project_box` | object | yes | Project bounding box |
 | `dem_resolution` | object | yes | DEM resolution |
-| `stratigraphy` | array | yes | Geological units |
-| `voxels_units` | array | yes | Voxel units |
-| `fault_ids` | array | yes | Fault IDs |
-| `springs` | array | yes | Spring data |
-| `gwbs` | array | yes | Groundwater body data |
+| `stratigraphy` | array | yes | Permeability values: `Karstified`, `NonKarstified`, `PorousPermeability`, `Undefined`|
+| `voxels_units` | array | yes | Must contain the IDs of the geological units in the `stratigraphy` array |
+| `fault_ids` | array | yes | Must list every fault ID for which a `fault_<id>.bin` file is uploaded.|
+| `springs` | array | yes | `catchment` is a list of 2D points defining the polygon of the spring's catchment area. |
+| `gwbs` | array | yes | `gwb_id` must match the IDs used in the `voxels.txt` file<br>  `spring_id` must match 1:1 with the `poi_id` of the corresponding spring |
 | `is_base` | boolean | yes | Whether the project is using base placement for contact data |
 
 Example `data`:
@@ -563,11 +563,12 @@ Example `data`:
     "search_radius": 300,
     "inception_surface_constraint_weight": 1,
     "max_inception_surface_distance": 300,
-    "density_sampling_modifier": 2,
     "r_min_pervious": 0.01,
     "r_min_impervious": 0.02
   },
   "project_box": {
+    "x": 0.0,
+    "y": 0.0,
     "width": 10000.0,
     "height": 10000.0,
     "min_elevation": -2500.0,
@@ -578,33 +579,30 @@ Example `data`:
     "y": 50
   },
   "stratigraphy": [
-    { "name": "Molasse", "permeability": "Karstified", "strati_unit_id": 7 },
-    { "name": "Cretaceous", "permeability": "Karstified", "strati_unit_id": 8 },
+    { "permeability": "Karstified", "strati_unit_id": 7 },
+    { "permeability": "NonKarstified", "strati_unit_id": 8 },
   ],
   "voxels_units": [8, 7],
   "fault_ids": [418, 419, 420],
   "springs": [
     {
         "poi_id": 5,
-        "spring_id": 2,
         "x": 13699.859999999986,
         "y": 2249.9400000000023,
         "z": 675,
         "catchment": [
             [12664.82001694094, 491.0579436759872],
             ...
-        ],
-        ...
+        ]
     },
   ],
   "gwbs": [
-    {"id": 7, "unit_id": 1}
+    {"gwb_id": 6, "spring_id": 5}
   ],
   "is_base": true
 }
 ```
-
-The `fault_ids` field in `data` must list every fault ID for which a `fault_<id>` file is uploaded.
+Example curl request:
 
 ```bash
 curl \
