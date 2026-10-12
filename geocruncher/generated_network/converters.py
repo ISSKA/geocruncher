@@ -32,12 +32,8 @@ from geocruncher.geometry import (
 
 LOGGER = logging.getLogger(__name__)
 
-SKY = GeologicalUnitInput(
-    name="Sky", permeability=Permeability.NonKarstified, strati_unit_id=0
-)
-DUMMY = GeologicalUnitInput(
-    name="Dummy", permeability=Permeability.Undefined, strati_unit_id=0
-)
+SKY = GeologicalUnitInput(permeability=Permeability.NonKarstified, strati_unit_id=0)
+DUMMY = GeologicalUnitInput(permeability=Permeability.Undefined, strati_unit_id=0)
 
 
 def load_project_box(

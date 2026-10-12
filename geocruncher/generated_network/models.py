@@ -49,7 +49,6 @@ class ProjectBoxInput(BaseModel):
 
 
 class GeologicalUnitInput(BaseModel):
-    name: str
     permeability: Permeability
     strati_unit_id: int
 

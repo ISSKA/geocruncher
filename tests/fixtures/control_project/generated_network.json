@@ -14,13 +14,13 @@
     "project_box": { "x":0, "y":0, "width": 14999.699999999953, "height": 9999.700000000012, "min_elevation": -2500, "max_elevation": 5000 },
     "dem_resolution": { "x": 601, "y": 401 },
     "stratigraphy": [
-        { "name": "Molasse", "permeability": "Karstified", "strati_unit_id": 7 },
-        { "name": "Cretaceous", "permeability": "Karstified", "strati_unit_id": 8 },
-        { "name": "Malm", "permeability": "Karstified", "strati_unit_id": 9 },
-        { "name": "Lower_Jurassic", "permeability": "NonKarstified", "strati_unit_id": 10 },
-        { "name": "Lias", "permeability": "NonKarstified", "strati_unit_id": 11 },
-        { "name": "Triassic", "permeability": "NonKarstified", "strati_unit_id": 12 },
-        { "name": "Dummy", "permeability": "Undefined", "strati_unit_id": 0 }
+        { "permeability": "Karstified", "strati_unit_id": 7 },
+        { "permeability": "Karstified", "strati_unit_id": 8 },
+        { "permeability": "Karstified", "strati_unit_id": 9 },
+        { "permeability": "NonKarstified", "strati_unit_id": 10 },
+        { "permeability": "NonKarstified", "strati_unit_id": 11 },
+        { "permeability": "NonKarstified", "strati_unit_id": 12 },
+        { "permeability": "Undefined", "strati_unit_id": 0 }
     ],
     "voxels_units": [12, 11, 10, 9, 8, 7],
     "fault_ids": [418, 419, 420, 421],
