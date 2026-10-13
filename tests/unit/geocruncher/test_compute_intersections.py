@@ -121,9 +121,9 @@ def test_project_hydro_features_on_slice_projects_near_features_and_combines_gwb
         def __init__(self, points):
             self.points = points
 
-        def select_enclosed_points(self, mesh, tolerance):
-            assert tolerance == pytest.approx(0.00001)
-            return {"SelectedPoints": mesh_selections[mesh]}
+        def select_interior_points(self, mesh, method, locator_tolerance):
+            assert locator_tolerance == pytest.approx(0.00001)
+            return {"selected_points": mesh_selections[mesh]}
 
     read_calls = []
 
