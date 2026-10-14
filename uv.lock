@@ -588,7 +588,7 @@ requires-dist = [
     { name = "lxml" },
     { name = "numpy" },
     { name = "pydantic" },
-    { name = "pykarstnsim", index = "https://pypi.org/simple/" },
+    { name = "pykarstnsim" },
     { name = "pyvista" },
     { name = "redis" },
     { name = "scikit-image" },
@@ -1429,27 +1429,27 @@ wheels = [
 
 [[package]]
 name = "pykarstnsim"
-version = "1.0.1"
-source = { registry = "https://pypi.org/simple/" }
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/54/62fffe5093d4b07cda220d9ed9449abf9d0cfa3cf2e4b649ccebcc0529c3/pykarstnsim-1.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:981441654aa5a020e685367969eac61bfdc85bc6bf9492fe6f70e9ce52aadcc3", size = 439566, upload-time = "2026-08-10T12:43:48.95Z" },
-    { url = "https://files.pythonhosted.org/packages/28/b4/91c7ee4e31e613755bc793a69c60b422135c4a4431b52e2337b4bed06592/pykarstnsim-1.0.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:70e5e36ac7b2785e99c34a2e9d8a2f118206f979d879d1af97f150caaaebe7fb", size = 683804, upload-time = "2026-08-10T12:43:50.513Z" },
-    { url = "https://files.pythonhosted.org/packages/7c/f5/5c5c7486f430c1973fee5f7608cd3a7796bc5de019a84827bfd8beda996a/pykarstnsim-1.0.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:21dddb9379502b3993feb8413b8e1ed00b702aa43b2fc118e26ca6a83f5e9567", size = 1656167, upload-time = "2026-08-10T12:43:52.101Z" },
-    { url = "https://files.pythonhosted.org/packages/29/6e/377a67a1c29306853975b56e927b54b5ee253f04ef8b0f8cccd5a7120dc5/pykarstnsim-1.0.1-cp312-cp312-win32.whl", hash = "sha256:8b39c0f589a18e965047e4a9201d0f41ff4df61cfac2ed003b569c3c24421675", size = 361105, upload-time = "2026-08-10T12:43:53.502Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/4d/67e179c5d1356861c71ba5cc916f0800daf207d987aff1dea33ebfc097bc/pykarstnsim-1.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:6f62161cc4e91fd229280e9b716093141e5f2ed4cd3f25eb23f9a07801f272aa", size = 430569, upload-time = "2026-08-10T12:43:54.952Z" },
-    { url = "https://files.pythonhosted.org/packages/ff/e6/778a8a62fdda6836d6c718d8a101ad3826fb7f7bf7b58b20498a85bc684f/pykarstnsim-1.0.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:47e2ba135c21475d0b7c9686cdc83bdb333df382645f28866e1bd6ba89a4d60f", size = 439600, upload-time = "2026-08-10T12:43:56.601Z" },
-    { url = "https://files.pythonhosted.org/packages/ef/88/19173515e864066000dba4ad10a7dfa0ad8b7e42d9cedbee5e71a928fcdc/pykarstnsim-1.0.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ac18f89e0e3dd952d3ab6b67ffab4bb1c404dcd653b17af602aa20523471a9a6", size = 683825, upload-time = "2026-08-10T12:43:58.775Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/f8/79cdcbad1ff6f39482ffdaa824366c1c5d37fe809f404549730607b1349e/pykarstnsim-1.0.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:86bdc6933bf0632db0f675987983e85c9d253388fe1c7a11b992a4ede614de56", size = 1656142, upload-time = "2026-08-10T12:44:00.486Z" },
-    { url = "https://files.pythonhosted.org/packages/e6/7b/b12e3adaabf1bebf5e3dc983125f1e4ab2358d648209b9ccecf543e864f4/pykarstnsim-1.0.1-cp313-cp313-win32.whl", hash = "sha256:c2f489ac554e0b368175cd6253a76c404cdd91ccbaedb3a28fd466fb69fa9950", size = 361163, upload-time = "2026-08-10T12:44:01.89Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/d0/e0174fbc9e70832012789a03397d29aa161372bd616a44b458ef2f853c63/pykarstnsim-1.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:83299463ff6dfc4df8eabccfd4e6e62a3b5c9798180eb69dfee820702cf2cb1b", size = 430491, upload-time = "2026-08-10T12:44:03.263Z" },
-    { url = "https://files.pythonhosted.org/packages/20/ca/25c9717afc6a56a792eb3978f896f717df77b8faef463dfce87f43f17a8e/pykarstnsim-1.0.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:f19d7459650c840027f38daa8fdc8aacb91e1d34fdea6a2578b3ff6be8d91c6e", size = 440260, upload-time = "2026-08-10T12:44:05.247Z" },
-    { url = "https://files.pythonhosted.org/packages/cf/0e/a62fde3740bfb4b2ff3cd7ce3851cf90a76c849c16e223788ce46ecdc2c6/pykarstnsim-1.0.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e009336583ced3581af20340e2e252c42d992b1a174fda761cd48504f8c44112", size = 683982, upload-time = "2026-08-10T12:44:06.829Z" },
-    { url = "https://files.pythonhosted.org/packages/10/c3/66eb5c8a3da3b9a00e9c2a0c24974967eeefbab6b0bb0bed4a79f7cee266/pykarstnsim-1.0.1-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:edf6861296bc6277fd4ded6fc5082dd0f7c9babf6b9552f4d6affab6939a2612", size = 1656532, upload-time = "2026-08-10T12:44:08.402Z" },
-    { url = "https://files.pythonhosted.org/packages/85/86/507f9e354043c6f55dc8de3a300b5ae95ae966a152f01ac55abb8ab31100/pykarstnsim-1.0.1-cp314-cp314-win32.whl", hash = "sha256:55c4c5e81d3d0927162a225de21465ab2d76c6a4ba8ba2bde7d8b51821f60e2b", size = 368358, upload-time = "2026-08-10T12:44:09.912Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/31/9e825623b8aebbf1175d1dddf7d10186091249f4cc72328d6254351655f8/pykarstnsim-1.0.1-cp314-cp314-win_amd64.whl", hash = "sha256:a97e99328425a23dcdba9fae537faf00f4e303f3a5875f1f865a38402d8164e9", size = 442389, upload-time = "2026-08-10T12:44:11.389Z" },
+    { url = "https://files.pythonhosted.org/packages/54/03/27d3b6fe00e33f12814ff7d024a759e75e14d09b3c6f2a1a4b1bd99833ec/pykarstnsim-2.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:581a567bf1f311ba6915ec28ec059453231e5c6d8a905fa4d5017435678a4770", size = 568177, upload-time = "2026-10-13T14:36:46.43Z" },
+    { url = "https://files.pythonhosted.org/packages/04/ac/85e812ecd3dede1c7896d081aeae5d4d4c74f1dcd03eb0269c306259a93b/pykarstnsim-2.0.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:fee0bbb3a94a7bc1dc821437ab8c3fc0fc38b529d03c51d34737b1e02c19e0dd", size = 827993, upload-time = "2026-10-13T14:36:47.844Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/2d/2a043432328872fee69cebe64d662cb0f5159152ee9f37ae99cbc01fb567/pykarstnsim-2.0.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:737dc930012ed385fc8604c6580d6e51aed0c7a463db250938a6d6a42678b748", size = 1809098, upload-time = "2026-10-13T14:36:49.169Z" },
+    { url = "https://files.pythonhosted.org/packages/55/a3/60867aa6f1e00c529dced278058e51abd5460661844bb5b9470c7b2c9af8/pykarstnsim-2.0.0-cp312-cp312-win32.whl", hash = "sha256:5b3a6170aa42d5d1df1721233ab9e00df5da0fe48bf19b917cf1bb4864bdbdc4", size = 421551, upload-time = "2026-10-13T14:36:50.56Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/19/c2989eb5acf8a6ea4c23f3574cdfdbcefe95d6e0aae5a6988e1fce04d736/pykarstnsim-2.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:4e0d3559cf34aa26e277e7e5a382c79d71e155e705eb5365dc7f0d91df8576da", size = 500297, upload-time = "2026-10-13T14:36:52.07Z" },
+    { url = "https://files.pythonhosted.org/packages/09/cc/6ec82fb72e134a1f2bec927330030f23e82ec3ccf025e920d6b5577acb77/pykarstnsim-2.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:872524b21b10e1fc2c09455814732e7901c8cdcb99e2beceff22e93c73bcb5a1", size = 568287, upload-time = "2026-10-13T14:36:53.646Z" },
+    { url = "https://files.pythonhosted.org/packages/34/5c/65e4ac17a7bfa67316abff0f389ba8944afec01bc725d485a21e4369c446/pykarstnsim-2.0.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a14ed4b2aca874e9d41ba792cc0310d053946880c1b8005493610093c13f1a1c", size = 828059, upload-time = "2026-10-13T14:36:54.896Z" },
+    { url = "https://files.pythonhosted.org/packages/3b/fb/3ec0b21bdc28edc7b02422135a399712272d2fbfad37535762bbd9d147b2/pykarstnsim-2.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:cd70f6e7d5f9189797ea42eb0617383e7b62a1d8f001a8352535608d8162040c", size = 1809318, upload-time = "2026-10-13T14:36:56.337Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/d2/37bcf42a873aaafce456ef6cba2ac859bdb9b7a9d37c1c0c917b13d4f34d/pykarstnsim-2.0.0-cp313-cp313-win32.whl", hash = "sha256:467989be933c513302891a676ca85d3f22b576b56edf23a6a95692bdf22caea1", size = 421614, upload-time = "2026-10-13T14:36:57.896Z" },
+    { url = "https://files.pythonhosted.org/packages/19/31/757ef103c07a8009ac6f2b20c2067f20e69c7f7da35a031d9606ab2ff98f/pykarstnsim-2.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:e67ef392faade2ed6dcda682794ecb75f9d0ccd8394e257a82ab5614462a2032", size = 500286, upload-time = "2026-10-13T14:36:59.161Z" },
+    { url = "https://files.pythonhosted.org/packages/71/17/76c886ef3936c30b9dce0cba224ac82e2fefe8aa3b070ede770dc7e2abed/pykarstnsim-2.0.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:81d6aa19b8d2f2f04558dced22a4e3126de16eb2455581684a213cb31f371ed0", size = 568947, upload-time = "2026-10-13T14:37:00.506Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/05/5075b14788f5e9aaa9ad31a5827eba70feda8b9f35327db57576889cdc2f/pykarstnsim-2.0.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4d1f1f21fc4f1c7867d1b002f8bf2e1f4e2c85a73eec344e13ee150c861066be", size = 828354, upload-time = "2026-10-13T14:37:01.874Z" },
+    { url = "https://files.pythonhosted.org/packages/55/b9/fd4ccaf57d0c2db323e50a7eca38ed1520dd996ff170ccc414d062f4bf04/pykarstnsim-2.0.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:2acdaabbe38b8a0c9429435085ae2ce1dfa8295fa45c916e416ddaabf21f446e", size = 1809698, upload-time = "2026-10-13T14:37:03.302Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/42/003860a7fb47bf01fec524a4e75b67afe037d664d5cc524685335eb96e02/pykarstnsim-2.0.0-cp314-cp314-win32.whl", hash = "sha256:fc9df3de6c673e81df5cccea53dedd2aa476e3ec0ebc0a583dee36d91c4c5a1b", size = 430727, upload-time = "2026-10-13T14:37:04.676Z" },
+    { url = "https://files.pythonhosted.org/packages/07/94/9430025834f5ddccf1a5a9f0dda69908e12551e3058d9312bb0351e70db8/pykarstnsim-2.0.0-cp314-cp314-win_amd64.whl", hash = "sha256:a627df8e9d36acd6e2f8676e300953d70090f755a0a3eb0215ba07dfc81b93de", size = 513896, upload-time = "2026-10-13T14:37:06.007Z" },
 ]
 
 [[package]]

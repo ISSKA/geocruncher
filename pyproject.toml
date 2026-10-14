@@ -46,7 +46,6 @@ build-backend = "uv_build"
 
 [tool.uv.sources]
 isskasiska-geocruncherbuf-bufbuild-py = { index = "buf" }
-pykarstnsim = { index = "pypi" }
 
 [[tool.uv.index]]
 name = "buf"
