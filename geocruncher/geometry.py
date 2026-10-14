@@ -126,7 +126,6 @@ def elevation_at_xy_batch(
     ys: np.ndarray,
     surface_data: np.ndarray,
     surface_resolution: Vec2Float,
-    dem_resolution: Vec2Int,
 ) -> np.ndarray:
     """
     Vectorised bilinear interpolation of elevation for arrays of (x, y) points.
@@ -134,16 +133,6 @@ def elevation_at_xy_batch(
     # Convert (x, y) to DEM grid coordinates
     cols = xs / surface_resolution["x"]
     rows = ys / surface_resolution["y"]
-
-    out_of_bounds = (
-        (cols < 0)
-        | (cols >= dem_resolution["x"] - 1)
-        | (rows < 0)
-        | (rows >= dem_resolution["y"] - 1)
-    )
-    if out_of_bounds.any():
-        bad = np.argmax(out_of_bounds)
-        raise ValueError(f"Point ({xs[bad]},{ys[bad]}) out of DEM bounds")
 
     # Bilinear interpolation for each point (x, y) using the four surrounding DEM grid points
     col0 = np.floor(cols).astype(np.int32)

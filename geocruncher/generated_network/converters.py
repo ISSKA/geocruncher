@@ -217,8 +217,25 @@ def load_sinks(
             continue
 
         pts = random_points_in_polygon(polygon, count, rng)
+
+        # Filter points to those within the DEM bounds
+        cols = pts[:, 0] / surface_resolution["x"]
+        rows = pts[:, 1] / surface_resolution["y"]
+
+        in_bounds = (
+            (cols >= 0)
+            & (cols < dem_resolution["x"] - 1)
+            & (rows >= 0)
+            & (rows < dem_resolution["y"] - 1)
+        )
+
+        pts = pts[in_bounds]
+
         elevations = elevation_at_xy_batch(
-            pts[:, 0], pts[:, 1], surface_data, surface_resolution, dem_resolution
+            pts[:, 0],
+            pts[:, 1],
+            surface_data,
+            surface_resolution,
         )
 
         next_offset = sink_offset + count
