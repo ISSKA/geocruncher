@@ -20,7 +20,7 @@ def generation_result(generated_network_project):
 
     return run_karstnsim(
         data,
-        generated_network_project.dem_bytes,
+        generated_network_project.dem_str,
         generated_network_project.voxels_str,
         generated_network_project.fault_bytes,
     )
@@ -36,7 +36,7 @@ def test_invalid_spring_raises_value_error(generated_network_project):
     with pytest.raises(ValueError, match="groundwater body"):
         run_karstnsim(
             broken,
-            generated_network_project.dem_bytes,
+            generated_network_project.dem_str,
             generated_network_project.voxels_str,
             generated_network_project.fault_bytes,
         )
@@ -53,7 +53,7 @@ def test_raises_when_generation_returns_none(generated_network_project, monkeypa
     with pytest.raises(ValueError, match="no result"):
         run_karstnsim(
             data,
-            generated_network_project.dem_bytes,
+            generated_network_project.dem_str,
             generated_network_project.voxels_str,
             generated_network_project.fault_bytes,
         )

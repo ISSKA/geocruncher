@@ -28,7 +28,7 @@ from geocruncher.profiler import (
 
 def run_karstnsim(
     data: GeneratedNetworkData,
-    dem_bytes: bytes,
+    dem_str: str,
     voxels_str: str,
     fault_bytes: dict[int, bytes],
     metadata: ProfilerMetadata | None = None,
@@ -36,7 +36,7 @@ def run_karstnsim(
     """Run the karstnsim simulation and return the result as bytes."""
     profiler = set_profiler(PROFILES["generated_network"])
 
-    content = build_karstnsim_content(data, dem_bytes, voxels_str, fault_bytes)
+    content = build_karstnsim_content(data, dem_str, voxels_str, fault_bytes)
 
     profiler.set_metadata(
         "voxel_count",

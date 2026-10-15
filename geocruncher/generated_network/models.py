@@ -95,7 +95,6 @@ class GeneratedNetworkData(BaseModel):
 
     generation_params: GenerationParametersInput
     project_box: ProjectBoxInput
-    dem_resolution: Vec2Int
     stratigraphy: list[GeologicalUnitInput]
     voxels_units: list[int]
     fault_ids: list[int]

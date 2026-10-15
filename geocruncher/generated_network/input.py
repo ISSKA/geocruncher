@@ -9,6 +9,7 @@ from geocruncher.generated_network.models import (
     StratigraphyInput,
     VoxelsUnitsInput,
 )
+from geocruncher.geological_model.gmlib.topography import ascii_grid_to_implicit_dtm
 from geocruncher.geometry import Vec2Float, Vec2Int, Vec3Int
 from geocruncher.mesh_io.mesh_io import read_mesh
 
@@ -60,17 +61,15 @@ def load_voxels(voxels_lines: list[str]) -> np.ndarray:
 
 def build_karstnsim_content(
     data: GeneratedNetworkData,
-    dem_bytes: bytes,
+    dem_str: str,
     voxels_str: str,
     fault_bytes: dict[int, bytes],
 ) -> KarstNSimContent:
     """Build a KarstNSimContent object from the given data and raw files."""
 
     # Load the DEM surface data
-    surface_data = np.frombuffer(dem_bytes, dtype=np.float32)
-    surface_data = surface_data.reshape(
-        (data.dem_resolution["y"], data.dem_resolution["x"])
-    )
+    grid = ascii_grid_to_implicit_dtm(dem_str)
+    surface_data = grid.z.T[::-1]
 
     # Load and process the voxel grid
     voxels_lines = voxels_str.splitlines()
@@ -79,12 +78,13 @@ def build_karstnsim_content(
         x=voxels.shape[0], y=voxels.shape[1], z=voxels.shape[2]
     )
 
-    if surface_data.shape[0] < 2 or surface_data.shape[1] < 2:
+    if surface_data.ndim != 2 or min(surface_data.shape) < 2:
         raise ValueError("Surface data grid must have at least 2 rows and 2 columns")
 
-    # Resample the surface data to match the compute resolution
-    y_step = max(1, data.dem_resolution["y"] // compute_resolution["y"])
-    x_step = max(1, data.dem_resolution["x"] // compute_resolution["x"])
+    n_rows, n_cols = surface_data.shape
+
+    y_step = max(1, n_rows // compute_resolution["y"])
+    x_step = max(1, n_cols // compute_resolution["x"])
 
     surface_data = surface_data[::y_step, ::x_step]
     # Flip the surface data vertically to match

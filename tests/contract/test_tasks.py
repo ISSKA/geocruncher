@@ -7,7 +7,7 @@ from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
     BOX,
     GENERATED_NETWORK_DATA,
-    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_DEM_STR,
     GENERATED_NETWORK_FAULT_BYTES,
     GENERATED_NETWORK_VOXELS_STR,
     INTERSECTIONS_DATA,
@@ -22,7 +22,7 @@ from tests.support.api import FakeRedis
 @pytest.fixture
 def redis_with_inputs():
     fake_redis = FakeRedis()
-    fake_redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    fake_redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_STR)
     fake_redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
     for fault_id, data in GENERATED_NETWORK_FAULT_BYTES.items():
         fake_redis.hset("files_key", f"fault_{fault_id}", data)
@@ -338,7 +338,7 @@ def test_compute_generated_network_reads_inputs_and_stores_output(
     )
 
     assert result == "output_key"
-    assert captured["dem"] == GENERATED_NETWORK_DEM_BYTES
+    assert captured["dem"] == GENERATED_NETWORK_DEM_STR
     assert captured["voxels"] == GENERATED_NETWORK_VOXELS_STR
     assert captured["faults"] == GENERATED_NETWORK_FAULT_BYTES
     assert redis_with_inputs.get("output_key") == b"output"
@@ -349,7 +349,7 @@ def test_compute_generated_network_handles_missing_faults(
     monkeypatch, generated_network_data_json
 ):
     redis = FakeRedis()
-    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_STR)
     redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
     monkeypatch.setattr(tasks, "r", redis)
 
@@ -372,7 +372,7 @@ def test_compute_generated_network_handles_missing_faults(
 
 def test_compute_generated_network_parses_multiple_fault_ids(monkeypatch):
     redis = FakeRedis()
-    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_BYTES)
+    redis.hset("files_key", "dem", GENERATED_NETWORK_DEM_STR)
     redis.hset("files_key", "voxels", GENERATED_NETWORK_VOXELS_STR)
     redis.hset("files_key", "fault_1", b"fault-1")
     redis.hset("files_key", "fault_42", b"fault-42")

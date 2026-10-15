@@ -8,7 +8,7 @@ from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
     BOX,
     GENERATED_NETWORK_DATA,
-    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_DEM_STR,
     GENERATED_NETWORK_FAULT_BYTES,
     GENERATED_NETWORK_VOXELS_STR,
     GWB_MESHES_DATA,
@@ -48,7 +48,7 @@ def form_data():
     return multipart_with_files(
         GENERATED_NETWORK_DATA,
         metadata={"request_id": "req-generated-network"},
-        dem=GENERATED_NETWORK_DEM_BYTES,
+        dem=GENERATED_NETWORK_DEM_STR.encode(),
         voxels=GENERATED_NETWORK_VOXELS_STR.encode(),
         **{
             f"fault_{fault_id}": data
@@ -548,7 +548,9 @@ def test_post_generated_network_stores_inputs_and_queues_task(
 @pytest.mark.parametrize(
     "payload",
     [
-        multipart_with_files(GENERATED_NETWORK_DATA, dem=GENERATED_NETWORK_DEM_BYTES),
+        multipart_with_files(
+            GENERATED_NETWORK_DATA, dem=GENERATED_NETWORK_DEM_STR.encode()
+        ),
         multipart_with_files(
             GENERATED_NETWORK_DATA, voxels=GENERATED_NETWORK_VOXELS_STR.encode()
         ),
@@ -596,7 +598,7 @@ def test_post_generated_network_without_faults_succeeds(
                 **GENERATED_NETWORK_DATA,
                 "fault_ids": [],
             },
-            dem=GENERATED_NETWORK_DEM_BYTES,
+            dem=GENERATED_NETWORK_DEM_STR.encode(),
             voxels=GENERATED_NETWORK_VOXELS_STR.encode(),
         ),
         content_type="multipart/form-data",

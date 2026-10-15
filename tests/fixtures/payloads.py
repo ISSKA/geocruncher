@@ -1,5 +1,3 @@
-import numpy as np
-
 BOX = {
     "xmin": 0,
     "ymin": 1,
@@ -48,10 +46,6 @@ GENERATED_NETWORK_DATA = {
         "min_elevation": 0.0,
         "max_elevation": 10.0,
     },
-    "dem_resolution": {
-        "x": 4,
-        "y": 4,
-    },
     "stratigraphy": [
         {"name": "Unit", "permeability": "Karstified", "strati_unit_id": 1}
     ],
@@ -70,15 +64,18 @@ GENERATED_NETWORK_DATA = {
     "is_base": False,
 }
 
-GENERATED_NETWORK_DEM_BYTES = np.array(
-    [
-        [1, 2, 3, 4],
-        [5, 6, 7, 8],
-        [9, 10, 11, 12],
-        [13, 14, 15, 16],
-    ],
-    dtype=np.float32,
-).tobytes()
+GENERATED_NETWORK_DEM_STR = """
+ ncols 4
+ nrows 4
+ xllcorner 0
+ yllcorner 0
+ cellsize 1
+ nodata_value -9999
+ 1 2 3 4
+ 5 6 7 8
+ 9 10 11 12
+ 13 14 15 16
+""".strip()
 
 GENERATED_NETWORK_VOXELS_STR = """
 XMIN=0 XMAX=10 YMIN=0 YMAX=10 ZMIN=0 ZMAX=10 NUMBERX=2 NUMBERY=2 NUMBERZ=1 NOVALUE=0

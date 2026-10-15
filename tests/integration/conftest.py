@@ -66,8 +66,8 @@ class DummyProject(FixtureProject):
 
 class GeneratedNetworkProject(FixtureProject):
     @property
-    def dem_bytes(self) -> bytes:
-        return self.bytes("dem_values.bin")
+    def dem_str(self) -> str:
+        return self.text("dem.asc")
 
     @property
     def voxels_str(self) -> str:

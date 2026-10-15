@@ -543,7 +543,6 @@ The `data` field contains:
 | --- | --- | --- | --- |
 | `generation_params` | object | yes | (SEE https://github.com/ring-team/KarstNSim_Public/blob/main/config_reference.md) Only the parameters listed in the example below are used. |
 | `project_box` | object | yes | Project bounding box |
-| `dem_resolution` | object | yes | DEM resolution |
 | `stratigraphy` | array | yes | Permeability values: `Karstified`, `NonKarstified`, `PorousPermeability`, `Undefined`|
 | `voxels_units` | array | yes | Must contain the IDs of the geological units in the `stratigraphy` array |
 | `fault_ids` | array | yes | Must list every fault ID for which a `fault_<id>.bin` file is uploaded.|
@@ -573,10 +572,6 @@ Example `data`:
     "height": 10000.0,
     "min_elevation": -2500.0,
     "max_elevation": 5000.0
-  },
-  "dem_resolution": {
-    "x": 50,
-    "y": 50
   },
   "stratigraphy": [
     { "permeability": "Karstified", "strati_unit_id": 7 },

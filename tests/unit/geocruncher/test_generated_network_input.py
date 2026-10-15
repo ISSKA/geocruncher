@@ -5,7 +5,7 @@ from geocruncher.generated_network.input import build_karstnsim_content, load_vo
 from geocruncher.generated_network.models import GeneratedNetworkData
 from tests.fixtures.payloads import (
     GENERATED_NETWORK_DATA,
-    GENERATED_NETWORK_DEM_BYTES,
+    GENERATED_NETWORK_DEM_STR,
     GENERATED_NETWORK_FAULT_BYTES,
     GENERATED_NETWORK_VOXELS_STR,
 )
@@ -28,7 +28,7 @@ def synthetic_karstnsim_content(monkeypatch):
 
     return build_karstnsim_content(
         data,
-        GENERATED_NETWORK_DEM_BYTES,
+        GENERATED_NETWORK_DEM_STR,
         GENERATED_NETWORK_VOXELS_STR,
         GENERATED_NETWORK_FAULT_BYTES,
     )
@@ -167,23 +167,22 @@ def test_transforms_surface(synthetic_karstnsim_content):
 
 
 def test_rejects_single_cell_dem():
-    data = GeneratedNetworkData.model_validate(
-        {
-            **GENERATED_NETWORK_DATA,
-            "dem_resolution": {
-                "x": 1,
-                "y": 1,
-            },
-        }
-    )
-
+    dem = """
+        ncols 4
+        nrows 1
+        xllcorner 0
+        yllcorner 0
+        cellsize 1
+        nodata_value -9999
+        1 2 3 4
+    """.strip()
     with pytest.raises(
         ValueError,
         match="Surface data grid must have at least 2 rows",
     ):
         build_karstnsim_content(
-            data,
-            np.array([[1]], dtype=np.float32).tobytes(),
+            GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA),
+            dem,
             GENERATED_NETWORK_VOXELS_STR,
             {},
         )
@@ -197,7 +196,7 @@ def test_loads_all_faults(monkeypatch):
 
     content = build_karstnsim_content(
         GeneratedNetworkData.model_validate(GENERATED_NETWORK_DATA),
-        GENERATED_NETWORK_DEM_BYTES,
+        GENERATED_NETWORK_DEM_STR,
         GENERATED_NETWORK_VOXELS_STR,
         GENERATED_NETWORK_FAULT_BYTES,
     )

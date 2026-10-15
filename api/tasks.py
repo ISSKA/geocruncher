@@ -183,7 +183,7 @@ def compute_generated_network(
     stored = get_hash_bytes(r, files_key)
     r.delete(files_key)
 
-    dem_bytes = stored[b"dem"]
+    dem = stored[b"dem"].decode("utf-8")
     voxels_str = stored[b"voxels"].decode("utf-8")
     fault_bytes = {
         int(k.decode().split("_")[1]): v
@@ -192,8 +192,6 @@ def compute_generated_network(
     }
     # Turn the serialized data back into a validated GeneratedNetworkData object
     validated_data = GeneratedNetworkData.model_validate_json(data)
-    result_bytes = run_karstnsim(
-        validated_data, dem_bytes, voxels_str, fault_bytes, metadata
-    )
+    result_bytes = run_karstnsim(validated_data, dem, voxels_str, fault_bytes, metadata)
     r.set(output_key, result_bytes)
     return output_key
