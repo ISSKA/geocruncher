@@ -75,7 +75,10 @@ def test_matches_control_output(generation_result, control_output):
             assert a_pt["vadoseFlag"] == e_pt["vadoseFlag"], (
                 f"segment {i} {key} vadoseFlag mismatch"
             )
-            for field in ("x", "y", "z", "cost", "equivalentRadius"):
+            assert a_pt["isHighCost"] == e_pt["isHighCost"], (
+                f"segment {i} {key} isHighCost mismatch"
+            )
+            for field in ("x", "y", "z", "equivalentRadius"):
                 assert isclose(a_pt[field], e_pt[field], rel_tol=1e-3), (
                     f"segment {i} {key}.{field}: {a_pt[field]} != {e_pt[field]}"
                 )
