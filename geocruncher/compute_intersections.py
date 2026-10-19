@@ -305,11 +305,11 @@ def project_hydro_features_on_slice(
     for gwb_id, meshes in gwb_meshes.items():
         gwb_id_int = int(gwb_id)
         for data in meshes:
-            mesh = triangle_mesh_to_polydata(read_mesh(data))
-            inside_points = points_polydata.select_enclosed_points(
-                mesh, tolerance=0.00001
+            mesh = read_mesh_to_polydata(data)
+            inside_points = points_polydata.select_interior_points(
+                mesh, method="cell_locator", locator_tolerance=0.00001
             )
-            selected_points = inside_points["SelectedPoints"].astype(np.uint16)
+            selected_points = inside_points["selected_points"].astype(np.uint16)
             matrix_gwb.append(selected_points * gwb_id_int)
 
     # Combine all gwb values into one matrix

@@ -49,8 +49,10 @@ class Voxels:
                 profile_step("read_gwbs")
 
                 start_step("test_inside_gwbs")
-                inside_points = points.select_enclosed_points(mesh, tolerance=0.00001)
-                selected_points = inside_points["SelectedPoints"].astype(
+                inside_points = points.select_interior_points(
+                    mesh, method="cell_locator", locator_tolerance=0.00001
+                )
+                selected_points = inside_points["selected_points"].astype(
                     np.uint16
                 )  # cast array to int16 to avoid overflow error
                 gwb_tags = [
