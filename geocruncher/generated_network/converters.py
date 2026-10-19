@@ -230,7 +230,7 @@ def load_sinks(
         )
 
         pts = pts[in_bounds]
-
+        kept = len(pts)
         elevations = elevation_at_xy_batch(
             pts[:, 0],
             pts[:, 1],
@@ -238,7 +238,7 @@ def load_sinks(
             surface_resolution,
         )
 
-        next_offset = sink_offset + count
+        next_offset = sink_offset + kept
         connectivity[sink_offset:next_offset, idx] = ConnectivityType.CONNECTED
 
         sinks.extend(
@@ -252,7 +252,7 @@ def load_sinks(
         )
         sink_offset = next_offset
 
-    return sinks, ConnectivityMatrix(connectivity.tolist())
+    return sinks, ConnectivityMatrix(connectivity[:sink_offset].tolist())
 
 
 def load_water_tables(
