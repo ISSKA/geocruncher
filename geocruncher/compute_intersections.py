@@ -305,7 +305,7 @@ def project_hydro_features_on_slice(
     for gwb_id, meshes in gwb_meshes.items():
         gwb_id_int = int(gwb_id)
         for data in meshes:
-            mesh = read_mesh_to_polydata(data)
+            mesh = triangle_mesh_to_polydata(read_mesh(data))
             inside_points = points_polydata.select_interior_points(
                 mesh, method="cell_locator", locator_tolerance=0.00001
             )
