@@ -60,7 +60,7 @@ GENERATED_NETWORK_DATA = {
             "catchment": [[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [0.0, 0.0]],
         }
     ],
-    "gwbs": [{"gwb_id": 1, "spring_id": 1}],
+    "gwbs": [{"gwb_id": 1, "spring_ids": [1]}],
     "is_base": False,
 }
 
