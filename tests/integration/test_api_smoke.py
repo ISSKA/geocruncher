@@ -292,7 +292,7 @@ def test_gwb_meshes_endpoint_runs_eager_task_and_returns_tar(
     assert get_response.mimetype == "application/x-tar"
     assert len(metadata) == 1
     assert metadata[0]["unit_id"] == 1
-    assert metadata[0]["spring_id"] == 1
+    assert metadata[0]["spring_ids"] == [1]
     assert metadata[0]["volume"] > 0
     assert set(entries) == {"mesh_0"}
     decode_meshes(entries)

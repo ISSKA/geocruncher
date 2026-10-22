@@ -71,7 +71,7 @@ VoxelsUnitsInput = RootModel[list[int]]
 
 class GroundwaterBodyInput(BaseModel):
     gwb_id: int
-    spring_id: int
+    spring_ids: list[int]
 
 
 class GenerationParametersInput(BaseModel):

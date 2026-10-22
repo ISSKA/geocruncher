@@ -221,7 +221,7 @@ def test_real_compute_gwb_meshes_returns_decodable_aquifer(
     assert set(result) == {"metadata", "meshes"}
     assert len(result["metadata"]) == 1
     assert result["metadata"][0]["unit_id"] == 1
-    assert result["metadata"][0]["spring_id"] == 1
+    assert result["metadata"][0]["spring_ids"] == [1]
     assert result["metadata"][0]["volume"] > 0
     assert len(result["meshes"]) == 1
 

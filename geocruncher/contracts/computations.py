@@ -140,7 +140,7 @@ class GwbMeshesResult(TypedDict):
     """Metadata for one groundwater-body mesh result."""
 
     unit_id: int
-    spring_id: int
+    spring_ids: list[int]
     volume: float
 
 
