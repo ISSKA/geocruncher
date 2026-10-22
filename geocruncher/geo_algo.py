@@ -4,6 +4,8 @@ GeoAlgo is a set of C++ algorithms that enable the computation of ground water b
 
 import PyGeoAlgo as ga
 
+from geocruncher.contracts.computations import GwbMeshesResult
+
 from .contracts import GeoAlgoOutput, Spring
 from .profiler import profile_step, start_step
 
@@ -33,21 +35,23 @@ class GeoAlgo:
 
         start_step("compute")
         aquifer_calc = ga.AquiferCalc(m, s)
-        aquifers = aquifer_calc.calculate()
+        groundwater_bodies = aquifer_calc.calculate()
         profile_step("compute")
 
         start_step("generate_mesh")
-        metadata = []
-        meshes = []
-        for aquifer in aquifers:
-            metadata.append(
-                {
-                    "unit_id": aquifer.unit_id,
-                    "spring_id": aquifer.spring.id,
-                    "volume": aquifer.volume,
-                }
-            )
-            meshes.append(ga.FileIO.write_to_bytes(aquifer.mesh))
+        metadata: list[GwbMeshesResult] = []
+        meshes: list[bytes] = []
+
+        for body in groundwater_bodies:
+            for part in body.parts:
+                metadata.append(
+                    {
+                        "unit_id": part.unit_id,
+                        "spring_ids": body.spring_ids,
+                        "volume": part.volume,
+                    }
+                )
+                meshes.append(ga.FileIO.write_to_bytes(part.mesh))
 
         profile_step("generate_mesh")
         return {"metadata": metadata, "meshes": meshes}

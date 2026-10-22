@@ -3,6 +3,7 @@
 #include "AquiferCalc.h"
 #include <CGAL/Polygon_mesh_processing/bbox.h>
 #include <CGAL/Polygon_mesh_processing/transform.h>
+#include <numeric>
 
 namespace PMP = CGAL::Polygon_mesh_processing;
 CGAL::Bbox_3 NULL_BBOX; // Use when assigning a spring to no mesh
@@ -97,44 +98,79 @@ bool TestSuite::runSimpleTest(const TestCase& testcase)
   std::cout << "Mesh Bbox3: " << bboxOriginal << std::endl;
 
   AquiferCalc aquiferCalc(std::move(meshes), std::move(springs));
-  auto aquifers = aquiferCalc.calculate();
-
+  auto groundwater_bodies = aquiferCalc.calculate();
+  
   const auto& null_bbox_copy = NULL_BBOX;
   const size_t expectedAquifers = testcase.withBbox
-    ? std::count_if(testcase.springToExpectedBbox.cbegin(), testcase.springToExpectedBbox.cend(), [&null_bbox_copy](const std::pair<const Point_3, CGAL::Bbox_3>& elem) { return elem.second != null_bbox_copy; })
+    ? std::count_if(
+        testcase.springToExpectedBbox.cbegin(),
+        testcase.springToExpectedBbox.cend(),
+        [&null_bbox_copy](const std::pair<const Point_3, CGAL::Bbox_3>& elem) {
+          return elem.second != null_bbox_copy;
+        })
     : testcase.springToExpectedBbox.size();
   
-  if (aquifers.size() < expectedAquifers) {
-    std::cout << "Failed. Expected " << expectedAquifers << " aquifers, but only found " << aquifers.size() << std::endl;
+  const size_t actualParts = std::accumulate(
+    groundwater_bodies.cbegin(),
+    groundwater_bodies.cend(),
+    size_t(0),
+    [](size_t count, const GroundwaterBody& body) {
+      return count + body.parts.size();
+    }
+  );
+  
+  if (actualParts < expectedAquifers) {
+    std::cout << "Failed. Expected at least " << expectedAquifers
+      << " aquifer parts, but only found " << actualParts << std::endl;
     return false;
   }
-
-  for (const auto& aquifer_unit : aquifers) {
-    if (!aquifer_unit.has_spring) {
-      std::cout << "Failed. An aquifer was returned that has no spring assigned." << std::endl;
+  
+  for (const auto& body : groundwater_bodies) {
+    if (body.spring_ids.empty()) {
+      std::cout << "Failed. A groundwater body has no springs assigned." << std::endl;
       return false;
     }
-
-    const Point_3& spring = aquifer_unit.spring.location;
-
-    // Check bounding box corresponds
-    CGAL::Bbox_3 bboxAquifer = PMP::bbox(aquifer_unit.mesh);
-    CGAL::Bbox_3 bboxExpected;
-    if (testcase.withBbox) {
-      bboxExpected = testcase.springToExpectedBbox.at(spring);
-    } else {
-      // Expected bounding box is the whole bounding box, clipped at Spring Z coordinate.
-      bboxExpected = CGAL::Bbox_3(
-        bboxOriginal.xmin(), bboxOriginal.ymin(), bboxOriginal.zmin(),
-        bboxOriginal.xmax(), bboxOriginal.ymax(), spring.z()
+  
+    for (const auto& aquifer_unit : body.parts) {
+      const auto springIt = std::find_if(
+        springs.begin(),
+        springs.end(),
+        [&body](const Spring& s) {
+          return std::find(body.spring_ids.begin(), body.spring_ids.end(), s.id)
+            != body.spring_ids.end();
+        }
       );
+  
+      if (springIt == springs.end()) {
+        std::cout << "Failed. No matching spring found for groundwater body." << std::endl;
+        return false;
+      }
+  
+      // Use the spring associated with this groundwater body.
+      // The highest spring is processed first.
+      const Point_3& spring = springIt->location;
+  
+      CGAL::Bbox_3 bboxAquifer = PMP::bbox(aquifer_unit.mesh);
+      CGAL::Bbox_3 bboxExpected;
+  
+      if (testcase.withBbox) {
+        bboxExpected = testcase.springToExpectedBbox.at(spring);
+      } else {
+        bboxExpected = CGAL::Bbox_3(
+          bboxOriginal.xmin(), bboxOriginal.ymin(), bboxOriginal.zmin(),
+          bboxOriginal.xmax(), bboxOriginal.ymax(), spring.z()
+        );
+      }
+  
+      std::cout << "Spring: " << spring << std::endl;
+      std::cout << "Bbox3 actual:   " << bboxAquifer << std::endl;
+      std::cout << "Bbox3 expected: " << bboxExpected << std::endl;
+  
+      if (!equalsWithTolerance(
+            bboxExpected, bboxAquifer, BBOX_TOLERANCE_FRACTION)) {
+        return false;
+      }
     }
-    std::cout << "Spring: " << spring << std::endl;
-    std::cout << "Bbox3 actual:   " << bboxAquifer << std::endl;
-    std::cout << "Bbox3 expected: " << bboxExpected << std::endl;
-
-    bool bboxCorrect = equalsWithTolerance(bboxExpected, bboxAquifer, BBOX_TOLERANCE_FRACTION);
-    if (!bboxCorrect) return false;
   }
 
   return true;
@@ -184,28 +220,45 @@ bool TestSuite::runMultiMeshTests()
   Spring box1_spring(0, Point_3(bbox1_orig.xmax(), bbox1_orig.ymax(), springZ), box1.unit_id);
 
   AquiferCalc aquiferCalc(std::move(std::vector<UnitMesh> { box1, box2, box3, box4 }), std::move(std::vector<Spring> { box1_spring }));
-  auto aquifers = aquiferCalc.calculate();
-
-  // Validate results
-  const std::vector<int> aquifer_unit_ids{ box1.unit_id, box2.unit_id, box3.unit_id };
-  if (aquifers.size() == aquifer_unit_ids.size()) {
-    std::cout << "OK Number of aquifers: " << aquifers.size() << std::endl;
+  auto groundwater_bodies = aquiferCalc.calculate();
+  
+  // Validate the number of groundwater bodies.
+  if (groundwater_bodies.size() == 1) {
+    std::cout << "OK Number of groundwater bodies: "
+      << groundwater_bodies.size() << std::endl;
   } else {
-    std::cout << "FAIL Expected " << aquifer_unit_ids.size() << " groundwater bodies, but got " << aquifers.size() << std::endl;
+    std::cout << "FAIL Expected 1 groundwater body, but got "
+      << groundwater_bodies.size() << std::endl;
     return false;
   }
-
-  for (int id : aquifer_unit_ids) {
-    auto aquiferWithUnitId = std::find_if(aquifers.cbegin(), aquifers.cend(), [id](const UnitMesh& aqui) { return aqui.unit_id == id; });
-    if (aquiferWithUnitId == aquifers.cend()) {
-      std::cout << "FAIL No aquifer found for unit ID " << id << std::endl;
+  
+  // The body should contain the three connected meshes.
+  const std::vector<int> expectedUnitIds{
+    box1.unit_id, box2.unit_id, box3.unit_id
+  };
+  
+  const auto& body = groundwater_bodies.front();
+  
+  for (int id : expectedUnitIds) {
+    auto partIt = std::find_if(
+      body.parts.cbegin(),
+      body.parts.cend(),
+      [id](const UnitMesh& part) {
+        return part.unit_id == id;
+      }
+    );
+  
+    if (partIt == body.parts.cend()) {
+      std::cout << "FAIL No groundwater part found for unit ID "
+        << id << std::endl;
       return false;
     }
   }
-
-  // Check bbox sizes are correct (original bbox, limited at spring Z)
-  for (const auto& aqui : aquifers) {
-    Mesh* orig_mesh;
+  
+  // Check bounding boxes of each part.
+  for (const auto& aqui : body.parts) {
+    const Mesh* orig_mesh = nullptr;
+  
     if (aqui.unit_id == box1.unit_id) {
       orig_mesh = &box1.mesh;
     } else if (aqui.unit_id == box2.unit_id) {
@@ -213,20 +266,44 @@ bool TestSuite::runMultiMeshTests()
     } else if (aqui.unit_id == box3.unit_id) {
       orig_mesh = &box3.mesh;
     } else {
-      continue; // Shouldn't happen
+      std::cout << "FAIL Unexpected unit ID " << aqui.unit_id << std::endl;
+      return false;
     }
-    
+  
     auto orig_bbox = PMP::bbox(*orig_mesh);
-    CGAL::Bbox_3 expected_bbox(orig_bbox.xmin(), orig_bbox.ymin(), orig_bbox.zmin(), orig_bbox.xmax(), orig_bbox.ymax(), std::min(orig_bbox.zmax(), springZ));
+  
+    CGAL::Bbox_3 expected_bbox(
+      orig_bbox.xmin(),
+      orig_bbox.ymin(),
+      orig_bbox.zmin(),
+      orig_bbox.xmax(),
+      orig_bbox.ymax(),
+      std::min(orig_bbox.zmax(), springZ)
+    );
+  
     auto aqui_bbox = PMP::bbox(aqui.mesh);
-
-    if (equalsWithTolerance(expected_bbox, aqui_bbox, BBOX_TOLERANCE_FRACTION)) {
-      std::cout << "OK Bbox of aquifer for unit " << aqui.unit_id << std::endl;
+  
+    if (equalsWithTolerance(
+          expected_bbox, aqui_bbox, BBOX_TOLERANCE_FRACTION)) {
+      std::cout << "OK Bbox of aquifer for unit "
+        << aqui.unit_id << std::endl;
     } else {
-      std::cout << "FAIL Bbox of aquifer for unit " << aqui.unit_id << "  incorrect" << std::endl;
+      std::cout << "FAIL Bbox of aquifer for unit "
+        << aqui.unit_id << " incorrect" << std::endl;
+      return false;
     }
   }
-
+  
+  // The spring should be associated with the resulting body.
+  if (std::find(
+        body.spring_ids.cbegin(),
+        body.spring_ids.cend(),
+        box1_spring.id) == body.spring_ids.cend()) {
+    std::cout << "FAIL Spring was not associated with the groundwater body."
+      << std::endl;
+    return false;
+  }
+  
   return true;
 }
 

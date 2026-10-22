@@ -51,3 +51,8 @@ public:
 
 typedef CGAL::Surface_mesh<Point_3> Mesh;
 typedef VkUnitMesh<Mesh> UnitMesh;
+
+struct GroundwaterBody {
+  std::vector<UnitMesh> parts;
+  std::vector<int> spring_ids;
+};

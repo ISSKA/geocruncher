@@ -51,4 +51,9 @@ PYBIND11_MODULE(PyGeoAlgo, m) {
         .def_readwrite("spring", &VkUnitMesh<Mesh>::spring)
         .def_readwrite("volume", &VkUnitMesh<Mesh>::volume)
         .def_readwrite("mesh", &VkUnitMesh<Mesh>::mesh);
+
+    py::class_<GroundwaterBody>(m, "GroundwaterBody")
+        .def(py::init<>())
+        .def_readwrite("parts", &GroundwaterBody::parts)
+        .def_readwrite("spring_ids", &GroundwaterBody::spring_ids);
 }
