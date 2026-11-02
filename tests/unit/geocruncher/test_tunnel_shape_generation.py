@@ -103,10 +103,10 @@ def test_tunnel_to_meshes_projects_vertices_and_delegates_mesh_generation(monkey
             np.array([0, 1, 0]),
             np.array([-1, 0, 0]),
         ],
-        idxStart=0,
-        tStart=0.25,
-        idxEnd=0,
-        tEnd=0.75,
+        idx_start=0,
+        t_start=0.25,
+        idx_end=0,
+        t_end=0.75,
     )
 
     assert mesh == b"mesh"

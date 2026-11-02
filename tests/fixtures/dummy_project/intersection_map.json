@@ -7,7 +7,7 @@
     "ymax": 201000.00115879584,
     "zmax": 5000.0
   },
-  "toCompute": {
+  "to_compute": {
     "map-section": [
       {
         "xmin": 534393.9242104401,
@@ -20,5 +20,5 @@
     ]
   },
   "resolution": 25,
-  "computeMap": true
+  "compute_map": true
 }

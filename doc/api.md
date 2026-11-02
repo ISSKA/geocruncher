@@ -164,7 +164,7 @@ An evaluation extent describes a box in project coordinates:
 
 All six fields are required numbers. For the top-level `box` sent to a project computation, every value must be finite and each minimum must be less than its corresponding maximum.
 
-Extents inside `toCompute` describe oriented vertical sections. Their x or y coordinates may run in either direction, as shown in the examples below.
+Extents inside `to_compute` describe oriented vertical sections. Their x or y coordinates may run in either direction, as shown in the examples below.
 
 ### Integer resolution
 
@@ -210,10 +210,10 @@ The `data` field contains:
 | `tunnels` | array of tunnel objects | yes | Tunnels to generate |
 | `nb_vertices` | integer | yes | Number of vertices around each cross section |
 | `step` | number | yes | Increment of the function parameter `t` |
-| `idxStart` | integer | yes | First function index for a partial tunnel, or `-1` for the start |
-| `idxEnd` | integer | yes | Last function index for a partial tunnel, or `-1` for the end |
-| `tStart` | number | yes | Starting `t` value when `idxStart` selects a function |
-| `tEnd` | number | yes | Ending `t` value when `idxEnd` selects a function |
+| `idx_start` | integer | yes | First function index for a partial tunnel, or `-1` for the start |
+| `idx_end` | integer | yes | Last function index for a partial tunnel, or `-1` for the end |
+| `t_start` | number | yes | Starting `t` value when `idx_start` selects a function |
+| `t_end` | number | yes | Ending `t` value when `idx_end` selects a function |
 
 Each tunnel object contains:
 
@@ -248,10 +248,10 @@ Example data:
   ],
   "nb_vertices": 12,
   "step": 0.25,
-  "idxStart": -1,
-  "idxEnd": -1,
-  "tStart": 0,
-  "tEnd": 1
+  "idx_start": -1,
+  "idx_end": -1,
+  "t_start": 0,
+  "t_end": 1
 }
 ```
 
@@ -346,8 +346,8 @@ The `data` object contains:
 | --- | --- | --- | --- |
 | `resolution` | integer | yes | Target resolution of the longer side of each output grid |
 | `box` | evaluation extent | yes | Bounds used to load the geological model |
-| `toCompute` | object | yes | Map from section ID to an array of section extents |
-| `computeMap` | boolean | yes | Whether to calculate top-down map results |
+| `to_compute` | object | yes | Map from section ID to an array of section extents |
+| `compute_map` | boolean | yes | Whether to calculate top-down map results |
 | `springs` | object or `null` | no | Map from spring ID to a 3D point |
 | `drillholes` | object or `null` | no | Map from drillhole ID to an evaluation extent |
 
@@ -363,7 +363,7 @@ Example data:
     "ymax": 201000.0,
     "zmax": 5000.0
   },
-  "toCompute": {
+  "to_compute": {
     "section-1": [
       {
         "xmin": 543440.0,
@@ -376,7 +376,7 @@ Example data:
     ]
   },
   "resolution": 150,
-  "computeMap": true
+  "compute_map": true
 }
 ```
 
@@ -412,7 +412,7 @@ The `mesh` object contains:
 | `drillholes` | Map from section ID to projected drillhole coordinates for each extent |
 | `springs` | Map from section ID to projected spring coordinates for each extent |
 | `matrixGwb` | Map from section ID to flattened groundwater body ID values for each extent |
-| `forMaps` | Top-down geological unit UUID matrix, present when `computeMap` is `true` |
+| `forMaps` | Top-down geological unit UUID matrix, present when `compute_map` is `true` |
 
 Projected spring coordinates are `[distanceAlongSection, elevation]`. A projected drillhole contains two such coordinate pairs. The API rounds projected coordinates to two decimal places.
 
@@ -421,7 +421,7 @@ The `fault` object contains:
 | Field | Meaning |
 | --- | --- |
 | `forCrossSections` | Map from section ID to fault intersections for each requested extent |
-| `forMaps` | Map from fault name to its top-down intersection data, empty when `computeMap` is `false` |
+| `forMaps` | Map from fault name to its top-down intersection data, empty when `compute_map` is `false` |
 
 When the request has no springs, drillholes, or groundwater meshes, `drillholes`, `springs`, and `matrixGwb` contain an empty array for each section ID.
 

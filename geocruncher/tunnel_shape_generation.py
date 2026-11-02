@@ -10,7 +10,7 @@ from .profiler import profile_step, start_step
 
 
 def tunnel_to_meshes(
-    functions, step, xy_points, idxStart, tStart, idxEnd, tEnd
+    functions, step, xy_points, idx_start, t_start, idx_end, t_end
 ) -> bytes:
     """Generate a mesh for a tunnel
 
@@ -25,8 +25,8 @@ def tunnel_to_meshes(
     # NOTE: the 3 above lines are timed with the next profile on first loop iteration, but not subsequent
     # to avoid that, we would need to profile right here. but since these 3 lines are insignificant, we don't
     for j in np.arange(
-        idxStart if idxStart != -1 else 0,
-        idxEnd + 1 if idxEnd != -1 else len(functions),
+        idx_start if idx_start != -1 else 0,
+        idx_end + 1 if idx_end != -1 else len(functions),
     ):
         start_step("sympy_parse_diff_function")
         f = functions[j]
@@ -38,7 +38,7 @@ def tunnel_to_meshes(
         dfz = diff(fz, t)
         profile_step("sympy_parse_diff_function")
         for i in np.arange(
-            tStart if j == idxStart else 0.0, tEnd if j == idxEnd else 1.0, step
+            t_start if j == idx_start else 0.0, t_end if j == idx_end else 1.0, step
         ):
             start_step("interpolate_function")
             normal = np.array(

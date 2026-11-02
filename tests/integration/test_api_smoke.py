@@ -175,7 +175,7 @@ def test_intersections_endpoint_runs_eager_task_and_returns_json(
         "output-key",
     )
     data = fixture_json("intersection_hydro.json")
-    section_id = next(iter(data["toCompute"]))
+    section_id = next(iter(data["to_compute"]))
 
     post_response = api_harness.client.post(
         "/compute/intersections",

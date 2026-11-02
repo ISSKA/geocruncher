@@ -190,8 +190,8 @@ def test_compute_intersections_without_hydro_data_does_not_consume_gwb_meshes(
     data = {
         "resolution": 25,
         "box": BOX,
-        "toCompute": INTERSECTIONS_DATA["toCompute"],
-        "computeMap": False,
+        "to_compute": INTERSECTIONS_DATA["to_compute"],
+        "compute_map": False,
     }
     redis = FakeRedis()
     redis.values.update({"model-key": b"model", "dem-key": b"dem"})
