@@ -7,7 +7,7 @@
     "ymax": 201000.00115879584,
     "zmax": 5000.0
   },
-  "toCompute": {
+  "to_compute": {
     "hydro-section": [
       {
         "xmin": 534393.9242104401,
@@ -20,7 +20,7 @@
     ]
   },
   "resolution": 25,
-  "computeMap": false,
+  "compute_map": false,
   "springs": {
     "spring-1": {
       "x": 541266.2508014125,

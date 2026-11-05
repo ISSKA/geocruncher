@@ -36,7 +36,7 @@ EXPECTED_MODEL_RANKS = {0.0, *map(float, range(1, 10))}
 
 
 def _expected_slice_resolution(computations, data):
-    box = next(iter(data["toCompute"].values()))[0]
+    box = next(iter(data["to_compute"].values()))[0]
     x_extent = round(box["xmax"]) - round(box["xmin"])
     y_extent = round(box["ymax"]) - round(box["ymin"])
     height = round(box["zmax"]) - round(box["zmin"])
@@ -84,7 +84,7 @@ def test_real_compute_intersections_generates_fixture_slice(
     computations, dummy_project, fixture_json
 ):
     data = fixture_json("intersection.json")
-    section_id = next(iter(data["toCompute"]))
+    section_id = next(iter(data["to_compute"]))
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
     result = computations.compute_intersections(
@@ -153,7 +153,7 @@ def test_real_compute_intersections_generates_map_outputs(
     computations, dummy_project, fixture_json
 ):
     data = fixture_json("intersection_map.json")
-    section_id = next(iter(data["toCompute"]))
+    section_id = next(iter(data["to_compute"]))
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
     result = computations.compute_intersections(
@@ -178,7 +178,7 @@ def test_real_compute_intersections_projects_hydro_features_and_gwb_matrix(
     computations, dummy_project, fixture_bytes, fixture_json
 ):
     data = fixture_json("intersection_hydro.json")
-    section_id = next(iter(data["toCompute"]))
+    section_id = next(iter(data["to_compute"]))
     expected_width, expected_height = _expected_slice_resolution(computations, data)
 
     result = computations.compute_intersections(
@@ -221,7 +221,7 @@ def test_real_compute_gwb_meshes_returns_decodable_aquifer(
     assert set(result) == {"metadata", "meshes"}
     assert len(result["metadata"]) == 1
     assert result["metadata"][0]["unit_id"] == 1
-    assert result["metadata"][0]["spring_id"] == 1
+    assert result["metadata"][0]["spring_ids"] == [1]
     assert result["metadata"][0]["volume"] > 0
     assert len(result["meshes"]) == 1
 

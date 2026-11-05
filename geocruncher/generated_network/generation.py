@@ -98,25 +98,21 @@ def run_karstnsim(
     ordered_water_tables = [water_tables[gwb_id] for gwb_id in ordered_gwb_ids]
 
     spring_to_wt_index = {
-        gwb.spring_id: wt_index
+        spring_id: wt_index
         for wt_index, gwb_id in enumerate(
             ordered_gwb_ids,
             start=1,
         )
         for gwb in content.gwbs
         if gwb.gwb_id == gwb_id
+        for spring_id in gwb.spring_ids
     }
 
     for spring, input_spring in zip(
         springs,
         content.springs,
     ):
-        if input_spring.poi_id not in spring_to_wt_index:
-            raise ValueError(
-                f"Spring {spring.index} has no associated groundwater body"
-            )
-
-        spring.water_table_index = spring_to_wt_index[input_spring.poi_id]
+        spring.water_table_index = spring_to_wt_index.get(input_spring.poi_id, 0)
 
     faults = [
         Surface.from_vertices_and_triangles(

@@ -67,28 +67,42 @@ int main(int argc, char *argv[])
       }
 
       AquiferCalc aquiferCalc(std::move(meshes), std::move(springs));
-      std::vector<UnitMesh> aquifers;
+      std::vector<GroundwaterBody> groundwater_bodies;
       try {
-        aquifers = aquiferCalc.calculate();
+        groundwater_bodies = aquiferCalc.calculate();
       } catch (const std::exception& ex) {
         std::cerr << "Failed to compute aquifers: \"" << ex.what() << "\"" << std::endl;
         return -1;
       }
-
+      
       int i = 0;
-      for (auto& aquifer : aquifers) {
-        std::ostringstream targetFile;
-        replaceAll(targetDir, "\\", "\\\\"); // Escape backslashes for path in JSON string
-        targetFile << targetDir << "/aquifer_" << i << ".off";
-        FileIO::write_off(targetFile.str(), aquifer.mesh);
-        output << "{ "
-          << "\"file\": \"" << targetFile.str() << "\", "
-          << "\"unitId\": " << aquifer.unit_id << ", "
-          << "\"springId\": " << aquifer.spring.id << ", "
-          << "\"volume\": " << aquifer.volume
-          << " }"
-          << std::endl;
-        i++;
+      for (auto& body : groundwater_bodies) {
+        for (auto& part : body.parts) {
+          std::ostringstream targetFile;
+          replaceAll(targetDir, "\\", "\\\\"); // Escape backslashes for path in JSON string
+          targetFile << targetDir << "/aquifer_" << i << ".off";
+      
+          FileIO::write_off(targetFile.str(), part.mesh);
+      
+          output << "{ "
+            << "\"file\": \"" << targetFile.str() << "\", "
+            << "\"unitId\": " << part.unit_id << ", "
+            << "\"springIds\": [";
+      
+          for (std::size_t j = 0; j < body.spring_ids.size(); ++j) {
+            if (j > 0) {
+              output << ", ";
+            }
+            output << body.spring_ids[j];
+          }
+      
+          output << "], "
+            << "\"volume\": " << part.volume
+            << " }"
+            << std::endl;
+      
+          ++i;
+        }
       }
 
       if (i == 0) {

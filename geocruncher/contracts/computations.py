@@ -73,10 +73,10 @@ class TunnelMeshesData(TypedDict):
     tunnels: list[Tunnel]
     nb_vertices: int
     step: float
-    idxStart: int
-    idxEnd: int
-    tStart: float
-    tEnd: float
+    idx_start: int
+    idx_end: int
+    t_start: float
+    t_end: float
 
 
 class MeshesData(TypedDict):
@@ -100,8 +100,8 @@ class IntersectionsData(TypedDict):
     drillholes: NotRequired[dict[str, EvaluationExtent] | None]
     resolution: int
     box: EvaluationExtent
-    toCompute: dict[str, list[EvaluationExtent]]
-    computeMap: bool
+    to_compute: dict[str, list[EvaluationExtent]]
+    compute_map: bool
 
 
 class MeshIntersectionsResult(TypedDict):
@@ -140,7 +140,7 @@ class GwbMeshesResult(TypedDict):
     """Metadata for one groundwater-body mesh result."""
 
     unit_id: int
-    spring_id: int
+    spring_ids: list[int]
     volume: float
 
 

@@ -154,11 +154,11 @@
   "gwbs": [
     {
       "gwb_id": 296,
-      "spring_id": 728
+      "spring_ids": [728]
     },
     {
       "gwb_id": 297,
-      "spring_id": 724
+      "spring_ids": [724]
     }
   ],
   "is_base": false

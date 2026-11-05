@@ -384,10 +384,10 @@ def test_compute_tunnel_meshes_profiles_each_tunnel_and_applies_sub_tunnel_scale
             ],
             "nb_vertices": 8,
             "step": 0.25,
-            "idxStart": 1,
-            "idxEnd": 2,
-            "tStart": 0.5,
-            "tEnd": 1.5,
+            "idx_start": 1,
+            "idx_end": 2,
+            "t_start": 0.5,
+            "t_end": 1.5,
         },
         metadata={"env": "test"},
     )
@@ -488,10 +488,10 @@ def test_compute_tunnel_meshes_elliptic_tunnel_without_sub_tunnel_scale_when_sta
         ],
         nb_vertices=12,
         step=0.5,
-        idxStart=-1,
-        idxEnd=3,
-        tStart=0.0,
-        tEnd=2.0,
+        idx_start=-1,
+        idx_end=3,
+        t_start=0.0,
+        t_end=2.0,
     )
     result = computations.compute_tunnel_meshes(
         data,
@@ -571,7 +571,7 @@ def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
         {
             "resolution": 50,
             "box": BOX,
-            "toCompute": {
+            "to_compute": {
                 "section-a": [
                     {
                         "xmin": 1.2,
@@ -583,7 +583,7 @@ def test_compute_intersections_without_hydro_or_map_skips_optional_branches(
                     }
                 ]
             },
-            "computeMap": False,
+            "compute_map": False,
         },
         model_data=b"model",
         dem="dem",
@@ -678,7 +678,7 @@ def test_compute_intersections_with_only_gwb_meshes_runs_hydro_projection(
         {
             "resolution": 20,
             "box": BOX,
-            "toCompute": {
+            "to_compute": {
                 "section-a": [
                     {
                         "xmin": 0,
@@ -690,7 +690,7 @@ def test_compute_intersections_with_only_gwb_meshes_runs_hydro_projection(
                     }
                 ]
             },
-            "computeMap": False,
+            "compute_map": False,
         },
         model_data=b"model",
         dem="dem",
@@ -792,7 +792,7 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
             box=BOX,
             springs=springs,
             drillholes=drillholes,
-            toCompute={
+            to_compute={
                 "vertical": [
                     {
                         "xmin": 2,
@@ -804,7 +804,7 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
                     }
                 ]
             },
-            computeMap=True,
+            compute_map=True,
         ),
         model_data=b"model",
         dem="dem",

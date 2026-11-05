@@ -59,9 +59,9 @@ AquiferCalc::AquiferCalc(std::vector<UnitMesh>&& meshes, std::vector<Spring>&& s
 * Find the aquifers for all the meshes. Connected meshes are considered as one.
 * Returns meshes of all aquifers in no specific order.
 */
-std::vector<UnitMesh> AquiferCalc::calculate()
+std::vector<GroundwaterBody> AquiferCalc::calculate()
 {
-  std::vector<UnitMesh> aquifers;
+  std::vector<GroundwaterBody> groundwater_bodies;
   std::sort(springs.begin(), springs.end(), [](const Spring& s1, const Spring& s2) { return s1.location.z() > s2.location.z(); });
 
   for (const auto& spring : springs) {
@@ -85,24 +85,40 @@ std::vector<UnitMesh> AquiferCalc::calculate()
     }
 
     keepClosestSubmeshOnly(init_aquifer.mesh, spring.location);  // Cutting may result in multiple meshes. Keep the one closest to the spring
-    // Check if overlaps with existing aquifer. Cancel if so.
-    bool does_intersect = std::find_if(aquifers.cbegin(), aquifers.cend(),
-      [&init_aquifer](const UnitMesh& other) { return PMP::do_intersect(init_aquifer.mesh, other.mesh); }
-    ) != aquifers.cend();
-    if (does_intersect) {
-      continue; // This aquifer is part of a larger one, skip it. [Guaranteed due to springs being sorted]
+    // Check if overlaps with existing gwb.
+    auto existing_body = std::find_if(
+      groundwater_bodies.begin(),
+      groundwater_bodies.end(),
+      [&init_aquifer](const GroundwaterBody& body) {
+        return std::any_of(
+          body.parts.cbegin(),
+          body.parts.cend(),
+          [&init_aquifer](const UnitMesh& part) {
+            return PMP::do_intersect(init_aquifer.mesh, part.mesh);
+          }
+        );
+      }
+    );
+    if (existing_body != groundwater_bodies.end()) {
+      existing_body->spring_ids.push_back(spring.id);
+      continue;  // This aquifer is part of a larger one, associate spring with it. [Guaranteed due to springs being sorted]
     }
     
     // Propagate spring from init aquifer to touching units
-    std::vector<UnitMesh> groundwater_body = findConnectedGroundwaterBodyParts(init_aquifer, spring);
-    aquifers.insert(aquifers.cend(), groundwater_body.begin(), groundwater_body.end());
+    GroundwaterBody body;
+    body.parts = findConnectedGroundwaterBodyParts(init_aquifer, spring);
+    body.spring_ids.push_back(spring.id);
+
+    groundwater_bodies.push_back(std::move(body));
   }
 
-  for (auto& aquifer : aquifers) {
-    aquifer.volume = PMP::volume(aquifer.mesh);
+  for (auto& body : groundwater_bodies) {
+    for (auto& part : body.parts) {
+      part.volume = PMP::volume(part.mesh);
+    }
   }
-  
-  return aquifers;
+
+  return groundwater_bodies;
 }
 
 bool AquiferCalc::isMeshValid(const Mesh& mesh) {

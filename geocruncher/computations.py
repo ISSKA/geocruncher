@@ -69,7 +69,7 @@ def compute_tunnel_meshes(
     """
     output = {}
     # sub tunnel are a bit bigger to wrap main tunnel
-    sub_t = 1.10 if data["idxStart"] != -1 and data["idxEnd"] != -1 else 1.0
+    sub_t = 1.10 if data["idx_start"] != -1 and data["idx_end"] != -1 else 1.0
     plane_segment = {
         TunnelShape.CIRCLE: lambda t: get_circle_segment(
             t["radius"] * sub_t, data["nb_vertices"]
@@ -93,10 +93,10 @@ def compute_tunnel_meshes(
             tunnel["functions"],
             data["step"],
             plane_segment[tunnel["shape"]](tunnel),
-            data["idxStart"],
-            data["tStart"],
-            data["idxEnd"],
-            data["tEnd"],
+            data["idx_start"],
+            data["t_start"],
+            data["idx_end"],
+            data["t_end"],
         )
         # write profiler result before moving on to the next tunnel
         profiler.save_results()
@@ -217,8 +217,8 @@ def compute_intersections(
     ).set_metadata(
         "num_dips", MetadataHelpers.num_dips(model, fault=False)
     ).set_metadata("resolution", data["resolution"]).set_metadata(
-        "num_sections", len(data["toCompute"])
-    ).set_metadata("compute_map", data["computeMap"]).set_metadata(
+        "num_sections", len(data["to_compute"])
+    ).set_metadata("compute_map", data["compute_map"]).set_metadata(
         "num_springs", len(data.get("springs") or {})
     ).set_metadata("num_drillholes", len(data.get("drillholes") or {})).set_metadata(
         "num_gwb_parts", len(gwb_meshes)
@@ -229,7 +229,7 @@ def compute_intersections(
 
     profile_step("load_model")
 
-    for key, intersection in data["toCompute"].items():
+    for key, intersection in data["to_compute"].items():
         # create empty arrays. each segment in the cross section gets it's data
         fault_output["forCrossSections"][key] = []
         mesh_output["forCrossSections"][key] = []
@@ -283,7 +283,7 @@ def compute_intersections(
                 compute_fault_intersections(xyz, resolution, model)
             )
 
-    if data["computeMap"]:
+    if data["compute_map"]:
         start_step("map_grid")
         width = box.xmax - box.xmin
         height = box.ymax - box.ymin

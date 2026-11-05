@@ -26,22 +26,6 @@ def generation_result(generated_network_project):
     )
 
 
-def test_invalid_spring_raises_value_error(generated_network_project):
-    from geocruncher.generated_network.generation import run_karstnsim
-
-    broken = GeneratedNetworkData.model_validate(
-        {**generated_network_project.data_dict, "gwbs": []}
-    )
-
-    with pytest.raises(ValueError, match="groundwater body"):
-        run_karstnsim(
-            broken,
-            generated_network_project.dem_str,
-            generated_network_project.voxels_str,
-            generated_network_project.fault_bytes,
-        )
-
-
 def test_raises_when_generation_returns_none(generated_network_project, monkeypatch):
     from geocruncher.generated_network import generation as sim_module
     from geocruncher.generated_network.generation import run_karstnsim

@@ -4,7 +4,7 @@
 class AquiferCalc {
 public:
   AquiferCalc(std::vector<UnitMesh>&& meshes, std::vector<Spring>&& springs);
-  std::vector<UnitMesh> calculate();
+  std::vector<GroundwaterBody> calculate();
 
 private:
   std::vector<UnitMesh> meshes;

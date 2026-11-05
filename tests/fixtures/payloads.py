@@ -12,8 +12,8 @@ MESHES_DATA = {"resolution": {"x": 2, "y": 3, "z": 4}, "box": BOX}
 INTERSECTIONS_DATA = {
     "resolution": 25,
     "box": BOX,
-    "toCompute": {"section-a": [BOX]},
-    "computeMap": False,
+    "to_compute": {"section-a": [BOX]},
+    "compute_map": False,
     "springs": {"7": {"x": 1, "y": 2, "z": 3}},
 }
 
@@ -28,10 +28,10 @@ TUNNEL_MESHES_DATA = {
     ],
     "nb_vertices": 8,
     "step": 0.5,
-    "idxStart": -1,
-    "idxEnd": -1,
-    "tStart": 0.0,
-    "tEnd": 1.0,
+    "idx_start": -1,
+    "idx_end": -1,
+    "t_start": 0.0,
+    "t_end": 1.0,
 }
 
 GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}]
@@ -60,7 +60,7 @@ GENERATED_NETWORK_DATA = {
             "catchment": [[0.0, 0.0], [0.0, 10.0], [10.0, 10.0], [0.0, 0.0]],
         }
     ],
-    "gwbs": [{"gwb_id": 1, "spring_id": 1}],
+    "gwbs": [{"gwb_id": 1, "spring_ids": [1]}],
     "is_base": False,
 }
 
