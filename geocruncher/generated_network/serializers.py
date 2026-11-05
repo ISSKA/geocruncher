@@ -26,7 +26,7 @@ def serialize_result_point(point, cost_threshold: float | None) -> dict:
         "equivalentRadius": point.equivalent_radius,
         # 1 = vadose, 0 = phreatic, negative = no data
         # vadose_flags is a list of flags for each water table
-        # as a ponts should only be considered phreatic for one water table, any flag at 0 means the point is phreatic, otherwise it is vadose
+        # as a point should only be considered phreatic for one water table, any flag at 0 means the point is phreatic, otherwise it is vadose
         "vadoseFlag": not any(flag == 0 for flag in point.vadose_flags),
     }
 
