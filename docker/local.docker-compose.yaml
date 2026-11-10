@@ -16,6 +16,19 @@ services:
       - $PWD:/home/build
     environment:
       - REDIS_HOST=redis
+  trainer:
+    image: geocruncher/geocruncher-local:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: local
+    depends_on:
+      - redis
+    command: ["bash", "-lc", "uv run python -m geocruncher.profiler.train_model"]
+    volumes:
+      - $PWD:/home/build
+    environment:
+      - REDIS_HOST=redis
   worker:
     image: geocruncher/geocruncher-local:latest
     build:

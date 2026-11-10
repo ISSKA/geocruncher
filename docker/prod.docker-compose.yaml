@@ -7,6 +7,8 @@ services:
     command: ["bash", "/home/build/scripts/api.sh"]
     ports:
       - "5000:5000"
+    volumes:
+      - model-artifacts:/home/build/geocruncher/profiler/artifacts
     environment:
       - REDIS_HOST=redis
     logging:
@@ -14,6 +16,20 @@ services:
       options:
         tag: "geocruncher.prod"
         labels: "api"
+  trainer:
+    image: geocruncher/geocruncher-prod:latest
+    depends_on:
+      - redis
+    command: ["bash", "-lc", "uv run --no-sync python -m geocruncher.profiler.train_model"]
+    environment:
+      - REDIS_HOST=redis
+    volumes:
+      - model-artifacts:/home/build/geocruncher/profiler/artifacts
+    logging:
+      driver: "journald"
+      options:
+        tag: "geocruncher.prod"
+        labels: "trainer"
   worker:
     image: geocruncher/geocruncher-prod:latest
     depends_on:
@@ -40,3 +56,5 @@ services:
         tag: "geocruncher.prod"
         labels: "redis"
 
+volumes:
+  model-artifacts:
