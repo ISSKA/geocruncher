@@ -84,6 +84,13 @@ def test_compute_meshes_builds_model_uses_custom_box_and_passes_metadata(
     assert generated["box"].as_tuple() == (1, 2, 3, 4, 5, 6)
     assert computation_fakes.profile_steps == ["load_model"]
     assert computation_fakes.profilers[0].metadata["resolution"] == 24
+    assert computation_fakes.profilers[0].metadata["resolution_x"] == 2
+    assert computation_fakes.profilers[0].metadata["resolution_y"] == 3
+    assert computation_fakes.profilers[0].metadata["resolution_z"] == 4
+    assert computation_fakes.profilers[0].metadata["box_size_x"] == 3
+    assert computation_fakes.profilers[0].metadata["box_size_y"] == 3
+    assert computation_fakes.profilers[0].metadata["box_size_z"] == 3
+    assert computation_fakes.profilers[0].metadata["box_volume"] == 27
     assert computation_fakes.profilers[0].metadata["env"] == "test"
     assert_metadata_contains(
         computation_fakes.profilers[0].metadata,
@@ -317,6 +324,8 @@ def test_compute_gwb_meshes_delegates_to_geo_algo_and_profiles_metadata(
     assert computation_fakes.profilers[0].metadata == {
         "num_units": 1,
         "num_springs": 1,
+        "total_mesh_bytes": 4,
+        "mesh_bytes_per_unit": 4,
         "env": "test",
     }
     assert computation_fakes.profilers[0].saved is True
@@ -851,6 +860,7 @@ def test_compute_intersections_with_hydro_and_map_populates_optional_outputs(
     assert computation_fakes.profilers[0].metadata["num_springs"] == 1
     assert computation_fakes.profilers[0].metadata["num_drillholes"] == 1
     assert computation_fakes.profilers[0].metadata["num_gwb_parts"] == 1
+    assert computation_fakes.profilers[0].metadata["num_sections"] == 1
     assert_metadata_contains(
         computation_fakes.profilers[0].metadata,
         MODEL_METADATA,

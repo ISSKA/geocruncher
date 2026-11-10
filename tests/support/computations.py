@@ -85,6 +85,11 @@ def computation_fakes(monkeypatch):
         computations.MetadataHelpers, "num_units", staticmethod(lambda model: 3)
     )
     monkeypatch.setattr(
+        computations.MetadataHelpers,
+        "num_fault_unit_pairs",
+        staticmethod(lambda model: 9),
+    )
+    monkeypatch.setattr(
         computations.MetadataHelpers, "num_finite_faults", staticmethod(lambda model: 4)
     )
     monkeypatch.setattr(

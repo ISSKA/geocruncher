@@ -1,5 +1,6 @@
 import json
 import tarfile
+from io import BytesIO
 
 import pytest
 
@@ -58,6 +59,7 @@ GWB_MESHES_DATA = [{"id": 9, "location": {"x": 1, "y": 2, "z": 3}, "unit_id": 1}
 @pytest.fixture
 def client():
     api_module.app.config.update(TESTING=True)
+    api_module.predictor = None
     return api_module.app.test_client()
 
 
@@ -84,6 +86,57 @@ def test_filemap_to_tar_roundtrips_binary_files():
         assert fault_file is not None
         assert unit_file.read() == b"OFF data"
         assert fault_file.read() == b"fault"
+
+
+def test_post_estimate_returns_duration(client, monkeypatch):
+    class FakePredictor:
+        meta = {"features": {"faults": ["num_infinite_faults"]}}
+
+        def predict(self, factors):
+            assert factors["computation_type"] == "faults"
+            return {
+                "lower": 1.0,
+                "p10": 1.0,
+                "p50": 2.0,
+                "p90": 3.0,
+                "upper": 3.0,
+            }
+
+    setattr(api_module, "predictor", FakePredictor())
+    monkeypatch.setattr(api_module, "parse_geological_model", lambda model: None)
+    monkeypatch.setattr(api_module, "validate_evaluation_extent", lambda box: None)
+    monkeypatch.setattr(
+        api_module,
+        "load_trusted_gmlib_model",
+        lambda *args: type(
+            "Model",
+            (),
+            {
+                "nbformations": lambda self: 2,
+                "pile": type("Pile", (), {"all_series": []})(),
+                "faults_data": {},
+            },
+        )(),
+    )
+
+    response = client.post(
+        "/estimate/faults",
+        data={
+            "data": json.dumps({"resolution": {"x": 1, "y": 1, "z": 1}, "box": BOX}),
+            "model": (BytesIO(b"model"), "model.bin"),
+            "dem": (BytesIO(b"dem"), "dem.asc"),
+        },
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "lower": 1.0,
+        "p10": 1.0,
+        "p50": 2.0,
+        "p90": 3.0,
+        "upper": 3.0,
+    }
 
 
 def test_post_tunnel_meshes_valid_data_queues_task(client, monkeypatch):
