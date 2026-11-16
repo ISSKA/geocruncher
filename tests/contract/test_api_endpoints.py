@@ -107,16 +107,11 @@ def test_post_estimate_returns_duration(client, monkeypatch):
     monkeypatch.setattr(api_module, "validate_evaluation_extent", lambda box: None)
     monkeypatch.setattr(
         api_module,
-        "load_trusted_gmlib_model",
-        lambda *args: type(
-            "Model",
-            (),
-            {
-                "nbformations": lambda self: 2,
-                "pile": type("Pile", (), {"all_series": []})(),
-                "faults_data": {},
-            },
-        )(),
+        "protobuf_model_factors",
+        lambda *args: {
+            "computation_type": "faults",
+            "num_infinite_faults": 0,
+        },
     )
 
     response = client.post(
