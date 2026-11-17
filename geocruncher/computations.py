@@ -3,7 +3,6 @@
 These functions take data as input and return data as output, with no disk interaction.
 """
 
-import math
 from typing import cast
 
 import numpy as np
@@ -34,12 +33,7 @@ from .fault_intersections import compute_fault_intersections
 from .geo_algo import GeoAlgo
 from .geological_model.gmlib.adapter import load_trusted_gmlib_model
 from .mesh_generation import generate_faults_files, generate_volumes
-from .profiler import (
-    PROFILES,
-    ProfilerMetadata,
-    profile_step,
-    set_profiler,
-)
+from .profiler import PROFILES, ProfilerMetadata, profile_step, set_profiler
 from .profiler.util import MetadataHelpers
 from .tunnel_shape_generation import (
     get_circle_segment,
@@ -132,12 +126,13 @@ def compute_meshes(
     model = load_trusted_gmlib_model(model_data, data["box"], dem)
 
     shape = (data["resolution"]["x"], data["resolution"]["y"], data["resolution"]["z"])
-
     profiler.set_metadata(
         "num_erode_series", MetadataHelpers.num_erode_series(model)
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
     ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
+        "num_fault_unit_pairs", MetadataHelpers.num_fault_unit_pairs(model)
+    ).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
@@ -145,8 +140,12 @@ def compute_meshes(
         "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
     ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model)
-    ).set_metadata("num_dips", MetadataHelpers.num_dips(model)).set_metadata(
-        "resolution", shape[0] * shape[1] * shape[2]
+    ).set_metadata("num_dips", MetadataHelpers.num_dips(model))
+    profiler.update_metadata(
+        {
+            **MetadataHelpers.grid_resolution(shape),
+            **MetadataHelpers.box_size(data["box"]),
+        }
     )
     profiler.update_metadata(metadata)
 
@@ -207,6 +206,8 @@ def compute_intersections(
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
     ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
+        "num_fault_unit_pairs", MetadataHelpers.num_fault_unit_pairs(model)
+    ).set_metadata(
         "num_finite_faults", MetadataHelpers.num_finite_faults(model)
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
@@ -222,6 +223,11 @@ def compute_intersections(
         "num_springs", len(data.get("springs") or {})
     ).set_metadata("num_drillholes", len(data.get("drillholes") or {})).set_metadata(
         "num_gwb_parts", len(gwb_meshes)
+    )
+    profiler.update_metadata(
+        {
+            **MetadataHelpers.box_size(data["box"]),
+        }
     )
     profiler.update_metadata(metadata)
 
@@ -248,7 +254,7 @@ def compute_intersections(
             x_extent = round(b.xmax) - round(b.xmin)
             y_extent = round(b.ymax) - round(b.ymin)
             height = round(b.zmax) - round(b.zmin)
-            width = math.sqrt(x_extent**2 + y_extent**2)
+            width = np.sqrt(x_extent**2 + y_extent**2)
             resolution = calculate_resolution(width, height, data["resolution"])
             xyz = compute_vertical_slice_points(x_coord, y_coord, z_coord, resolution)
             profile_step("cross_section_grid")
@@ -334,12 +340,18 @@ def compute_faults(
     ).set_metadata(
         "num_infinite_faults", MetadataHelpers.num_infinite_faults(model)
     ).set_metadata(
+        "num_fault_unit_pairs", MetadataHelpers.num_fault_unit_pairs(model)
+    ).set_metadata(
         "num_stops_on_relations", MetadataHelpers.num_stops_on_relations(model)
     ).set_metadata(
         "num_contact_data", MetadataHelpers.num_contact_data(model, unit=False)
-    ).set_metadata(
-        "num_dips", MetadataHelpers.num_dips(model, unit=False)
-    ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
+    ).set_metadata("num_dips", MetadataHelpers.num_dips(model, unit=False))
+    profiler.update_metadata(
+        {
+            **MetadataHelpers.grid_resolution(shape),
+            **MetadataHelpers.box_size(data["box"]),
+        }
+    )
     profiler.update_metadata(metadata)
 
     profile_step("load_model")
@@ -390,8 +402,14 @@ def compute_voxels(
     ).set_metadata(
         "num_onlap_series", MetadataHelpers.num_onlap_series(model)
     ).set_metadata("num_units", MetadataHelpers.num_units(model)).set_metadata(
-        "num_gwb_parts", len(gwb_meshes)
-    ).set_metadata("resolution", shape[0] * shape[1] * shape[2])
+        "num_fault_unit_pairs", MetadataHelpers.num_fault_unit_pairs(model)
+    ).set_metadata("num_gwb_parts", len(gwb_meshes))
+    profiler.update_metadata(
+        {
+            **MetadataHelpers.grid_resolution(shape),
+            **MetadataHelpers.box_size(data["box"]),
+        }
+    )
     profiler.update_metadata(metadata)
 
     profile_step("load_model")
@@ -414,6 +432,7 @@ def compute_gwb_meshes(
     profiler.set_metadata("num_units", len(unit_meshes)).set_metadata(
         "num_springs", len(springs)
     )
+    profiler.update_metadata(MetadataHelpers.mesh_bytes(unit_meshes))
     profiler.update_metadata(metadata)
 
     results = GeoAlgo.output(unit_meshes, springs)

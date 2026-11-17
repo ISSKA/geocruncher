@@ -8,6 +8,38 @@ from flask import request
 from geocruncher.profiler import ProfilerMetadata
 
 
+def gwb_part_count() -> int:
+    """Count groundwater-body parts in the uploaded mesh fields."""
+    ids = {key.split("_", 1)[0] for key in request.files if key not in {"model", "dem"}}
+    return len(ids)
+
+
+def uploaded_mesh_features() -> dict[str, int | float]:
+    """Return byte-size features for uploaded groundwater-body meshes."""
+    sizes = []
+    for key, file in request.files.items():
+        if key in {"model", "dem"}:
+            continue
+        position = file.stream.tell()
+        content = file.read()
+        file.stream.seek(position)
+        sizes.append(len(content))
+
+    total = sum(sizes)
+    return {
+        "total_mesh_bytes": total,
+        "mesh_bytes_per_unit": total / len(sizes) if sizes else 0,
+    }
+
+
+def sum_estimates(estimates: list[dict]) -> dict:
+    """Sum duration ranges, such as estimates for multiple tunnels."""
+    keys = ("lower", "p10", "p50", "p90", "upper")
+    if len(estimates) == 1:
+        return {key: estimates[0][key] for key in keys}
+    return {key: sum(estimate[key] for estimate in estimates) for key in keys}
+
+
 def parse_metadata_from_request() -> ProfilerMetadata | None:
     """Parse optional metadata from Flask request.
 

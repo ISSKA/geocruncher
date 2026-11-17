@@ -3,6 +3,8 @@ from typing import Any, NamedTuple
 
 from forgeo.gmlib.GeologicalModel3D import GeologicalModel
 
+from geocruncher.contracts.computations import EvaluationExtent
+
 type ProfilerMetadata = Mapping[str, Any]
 
 
@@ -101,3 +103,47 @@ class MetadataHelpers:
             )
 
         return num_unit_dips + num_fault_dips
+
+    @staticmethod
+    def num_fault_unit_pairs(model: GeologicalModel) -> int:
+        return sum(
+            len(series.formations) * len(series.influenced_by_fault or [])
+            for series in model.pile.all_series
+        )
+
+    @staticmethod
+    def box_size(box: EvaluationExtent) -> dict[str, float]:
+        size_x = box["xmax"] - box["xmin"]
+        size_y = box["ymax"] - box["ymin"]
+        size_z = box["zmax"] - box["zmin"]
+        return {
+            "box_size_x": size_x,
+            "box_size_y": size_y,
+            "box_size_z": size_z,
+            "box_volume": size_x * size_y * size_z,
+        }
+
+    @staticmethod
+    def grid_resolution(shape: tuple[int, int, int]) -> dict[str, int]:
+        return {
+            "resolution_x": shape[0],
+            "resolution_y": shape[1],
+            "resolution_z": shape[2],
+            "resolution": shape[0] * shape[1] * shape[2],
+        }
+
+    @staticmethod
+    def mesh_bytes(
+        meshes: dict[str, bytes] | dict[str, list[bytes]],
+    ) -> dict[str, int]:
+        sizes = [
+            len(mesh)
+            for mesh_or_meshes in meshes.values()
+            for mesh in (
+                mesh_or_meshes if isinstance(mesh_or_meshes, list) else [mesh_or_meshes]
+            )
+        ]
+        return {
+            "total_mesh_bytes": sum(sizes),
+            "mesh_bytes_per_unit": sum(sizes) // len(meshes) if meshes else 0,
+        }

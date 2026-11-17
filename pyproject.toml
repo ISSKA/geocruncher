@@ -4,6 +4,7 @@ version = "0.4.0"
 description = "Geocruncher is a standalone application for Geological Computations"
 requires-python = ">=3.12"
 dependencies = [
+    "catboost",
     "DracoPy",
     "celery",
     "flask",
@@ -11,13 +12,16 @@ dependencies = [
     "forgeo-gmlib",
     "forgeo-rigs",
     "isskasiska-geocruncherbuf-bufbuild-py>=0.3.0.1.20260810093123",
+    "joblib",
     "lxml",
     "numpy",
+    "pandas",
     "pydantic",
     "pykarstnsim",
     "pyvista",
     "redis",
     "scikit-image",
+    "scikit-learn",
     "scipy",
     "shapely",
     "sympy",
@@ -25,6 +29,7 @@ dependencies = [
 
 [project.scripts]
 api = "api.api:main"
+train-duration-models = "geocruncher.profiler.train_model:main"
 
 [dependency-groups]
 dev = [
